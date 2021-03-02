@@ -1,7 +1,7 @@
 include $(HCLIB_ROOT)/../modules/system/inc/hclib_system.pre.mak
 include $(HCLIB_ROOT)/include/hclib.mak
 include $(HCLIB_ROOT)/../modules/system/inc/hclib_system.post.mak
-include ../../custom.mak
+include ../../custom.recursive.mak
 PREFIX=${PARSECDIR}/pkgs/kernels/streamcluster/inst/${PARSECPLAT}
 
 TARGET_O = sc_omp
@@ -12,7 +12,7 @@ ifdef version
   endif
 endif
 
-HCLIB_PERF_CXX?=icpc
+HCLIB_PERF_CXX?=cc
 
 all: omp
 

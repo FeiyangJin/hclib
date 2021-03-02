@@ -365,6 +365,3 @@ static void pragma143_omp_parallel_hclib_async(void *____arg, const int ___iter0
                 }
             } ;     } while (0);
 }
-
-
-

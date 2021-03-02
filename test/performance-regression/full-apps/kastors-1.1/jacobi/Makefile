@@ -1,10 +1,10 @@
 include $(HCLIB_ROOT)/../modules/system/inc/hclib_system.pre.mak
 include $(HCLIB_ROOT)/include/hclib.mak
 include $(HCLIB_ROOT)/../modules/system/inc/hclib_system.post.mak
-include ../../custom.mak
+include ../../custom.flat.mak
 
 TARGETS=jacobi-task jacobi-block-for jacobi-block-task
-HCLIB_PERF_CXX?=icpc
+HCLIB_PERF_CXX?=cc
 
 all: $(TARGETS)
 

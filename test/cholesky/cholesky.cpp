@@ -90,37 +90,67 @@ void entrypoint(void *arg) {
                 currPivotColumnTile->matrixBlock[i] = (double*) malloc (sizeof(double)*tileSize);
         }
 
-        finish ([=]() {
-                for(int j = k + 1 ; j < numTiles ; ++j ) {
-                TileBlock *prevPivotColumnTile = lkji[j][k][k];
-                TileBlock *currPivotColumnTile = lkji[j][k][k+1];
+    
+        std::vector<hclib::promise_t<void>*> allPromises;
 
-                async([=]() {
-                        trisolve (k, j, tileSize , prevPivotColumnTile, currPivotTile, currPivotColumnTile);
-                        });
-                }
-                });
-        finish([=]() {
-                for(int j = k + 1 ; j < numTiles ; ++j ) {
-                TileBlock *prevPivotColumnTile = lkji[j][k][k];
-                TileBlock *currPivotColumnTile = lkji[j][k][k+1];
-                for(int i = k + 1 ; i < j ; ++i ) {
+        for(int j = k + 1 ; j < numTiles ; ++j ) {
+            TileBlock *prevPivotColumnTile = lkji[j][k][k];
+            TileBlock *currPivotColumnTile = lkji[j][k][k+1];
+
+            allPromises.push_back(new hclib::promise_t<void>());
+            int index = allPromises.size() - 1;
+
+            hclib::async([=,&allPromises]() {
+                trisolve (k, j, tileSize , prevPivotColumnTile, currPivotTile, currPivotColumnTile);
+                allPromises.at(index)->put();
+            });
+        }
+
+        for(hclib::promise_t<void> *p : allPromises){
+            p->get_future()->wait();
+        }
+
+        allPromises.clear();
+        std::vector<hclib::promise_t<void>*> outer_allPromises;
+        
+        for(int j = k + 1 ; j < numTiles ; ++j ) {
+            TileBlock *prevPivotColumnTile = lkji[j][k][k];
+            TileBlock *currPivotColumnTile = lkji[j][k][k+1];
+
+            for(int i = k + 1 ; i < j ; ++i ) {
                 TileBlock *prevTileForUpdate = lkji[j][i][k];
                 TileBlock *currTileForUpdate = lkji[j][i][k+1];
                 TileBlock *currPivotColumnOtherTile = lkji[i][k][k+1];
 
-                async([=]() {
-                        update_nondiagonal ( k, j, i, tileSize, prevTileForUpdate, currPivotColumnOtherTile, currPivotColumnTile, currTileForUpdate);
-                        });
-                }
-                TileBlock *prevDiagonalTileForUpdate = lkji[j][j][k];
-                TileBlock *currDiagonalTileForUpdate = lkji[j][j][k+1];
+                allPromises.push_back(new hclib::promise_t<void>());
+                int index = allPromises.size() - 1;
 
-                async([=]() {
-                        update_diagonal ( k, j, j, tileSize , prevDiagonalTileForUpdate, currPivotColumnTile, currDiagonalTileForUpdate);
-                        });
-                }
+                async([=,&allPromises]() {
+                    update_nondiagonal ( k, j, i, tileSize, prevTileForUpdate, currPivotColumnOtherTile, currPivotColumnTile, currTileForUpdate);
+                    allPromises.at(index)->put();
                 });
+            }
+
+            TileBlock *prevDiagonalTileForUpdate = lkji[j][j][k];
+            TileBlock *currDiagonalTileForUpdate = lkji[j][j][k+1];
+
+            outer_allPromises.push_back(new hclib::promise_t<void>());
+            int outer_index = outer_allPromises.size()-1;
+            
+            async([=,&outer_allPromises]() {
+                update_diagonal ( k, j, j, tileSize , prevDiagonalTileForUpdate, currPivotColumnTile, currDiagonalTileForUpdate);
+                outer_allPromises.at(outer_index)->put();
+            });
+        }
+
+        for(hclib::promise_t<void> *p : allPromises){
+            p->get_future()->wait();
+        }
+
+        for(hclib::promise_t<void> *p : outer_allPromises){
+            p->get_future()->wait();
+        }
+
     }
 
     gettimeofday(&b, 0);

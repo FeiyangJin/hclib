@@ -1,14 +1,14 @@
 include $(HCLIB_ROOT)/../modules/system/inc/hclib_system.pre.mak
 include $(HCLIB_ROOT)/include/hclib.mak
 include $(HCLIB_ROOT)/../modules/system/inc/hclib_system.post.mak
-include ../../custom.mak
+include ../../custom.flat.mak
 
 ifdef OUTPUT
 override OUTPUT = -DOUTPUT
 endif
 
-HCLIB_PERF_CC?=icc
-CC = $(HCLIB_PERF_CC)
+# HCLIB_PERF_CC?=icc
+# CC = $(HCLIB_PERF_CC)
 
 # link objects(binaries) together
 heartwall: main.o kernel.o ./AVI/avilib.o ./AVI/avimod.o

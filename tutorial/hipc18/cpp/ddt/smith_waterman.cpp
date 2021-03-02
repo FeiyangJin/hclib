@@ -172,10 +172,10 @@ int main ( int argc, char* argv[] ) {
         hclib::finish([=]() {
             for (int i = 1; i < n_tiles_height+1; ++i ) {
                 for (int j = 1; j < n_tiles_width+1; ++j ) {
-
                     tile_matrix[i][j-1].right_column->get_future()->wait();
                     tile_matrix[i-1][j].bottom_row->get_future()->wait();
                     tile_matrix[i-1][j-1].bottom_right->get_future()->wait();
+
                 //hclib::async_await([=]() {
                         int index, ii, jj;
                         int* above_tile_bottom_row = (int *)tile_matrix[i-1][j  ].bottom_row->get_future()->get();
