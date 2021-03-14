@@ -24,6 +24,7 @@ uint64_t fib(uint64_t n) {
     hclib::finish([&]() {
       /* Spawn a nested async */
       hclib::async([&x, n]() {
+        
         x = fib(n-1);
       });
       y = fib(n-2);

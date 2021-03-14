@@ -26,7 +26,7 @@ public class Channel <T> implements IPromiseCollection
     if (latest == null)
       return new ArrayList<>();
 
-    return latest.getPromises();
+    return latest.getPromises(); // return a list with single item
   }
 
   public void put (T value)
