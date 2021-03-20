@@ -115,6 +115,9 @@ install(EXPORT hclib
 
 target_compile_definitions(hclib PRIVATE ${COMPILE_DEFINITIONS})
 
+target_link_libraries(hclib PUBLIC /home/fjin/gitRepo/hclib/inc/libaaa.so)
+target_link_libraries(hclib PUBLIC /home/fjin/gitRepo/hclib/inc/libaaa_c_connector.so)
+
 if (HCLIB_ENABLE_HWLOC)
 find_path(HWLOC_INCLUDE NAMES hwloc.h PATHS "$ENV{HWLOC_HOME}/include")
 target_include_directories(hclib PUBLIC ${HWLOC_INCLUDE})

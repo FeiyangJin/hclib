@@ -55,102 +55,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <hclib-module.h>
 #include <hclib-instrument.h>
 
-#include <dlfcn.h>
-#include <malloc.h>
-//typedef void*(*malloc_t)(size_t);
-//static malloc_t real_malloc = NULL;
-
-/*
-void* malloc(size_t s) {
-
-	void *(*libc_malloc)(size_t) = dlsym(RTLD_NEXT, "malloc");
-	printf("malloc hello\n");
-	return libc_malloc(s);
-
-	//uint64_t new_size = s;
-
-	//// Don't try to init, since that needs malloc.  
-	//if (real_malloc == NULL) {
-	//	real_malloc = (malloc_t)dlsym(RTLD_NEXT, "malloc");
-	//	char *error = dlerror();
-	//	if (error != NULL) {
-	//		fputs(error, stderr);
-	//		fflush(stderr);
-	//		abort();
-	//	}
-	//}
-	//void *r = real_malloc(new_size);
-
-	////printf("hello from custom malloc \n");
-
-	//return r;
-}
-*/
-
-/* Prototypes for our hooks.  */
-//static void my_init_hook(void);
-//static void *my_malloc_hook(size_t, const void *);
-//static void my_free_hook(void*, const void *);
-//
-// /*variables*/
-//void *old_malloc_hook;
-//void *old_free_hook;
-//
-//static void my_init(void)
-//{
-//	old_malloc_hook = __malloc_hook;
-//	old_free_hook = __free_hook;
-//	__malloc_hook = my_malloc_hook;
-//	__free_hook = my_free_hook;
-//}
-//
-//static void *my_malloc_hook(size_t size, const void *caller)
-//{
-//	void *result;
-//	/* Restore all old hooks */
-//	__malloc_hook = old_malloc_hook;
-//	__free_hook = old_free_hook;
-//
-//	/* Call recursively */
-//	result = malloc(size);
-//	/* Save underlying hooks */
-//	old_malloc_hook = __malloc_hook;
-//	old_free_hook = __free_hook;
-//
-//	/* printf might call malloc, so protect it too. */
-//	//printf("malloc (%u) returns %p\n", (unsigned int)size, result);
-//
-//	//printf("caller is %p \n", caller);
-//
-//	/* Restore our own hooks */
-//	__malloc_hook = my_malloc_hook;
-//	__free_hook = my_free_hook;
-//
-//	return result;
-//}
-//
-//static void my_free_hook(void *ptr, const void *caller)
-//{
-//	/* Restore all old hooks */
-//	__malloc_hook = old_malloc_hook;
-//	__free_hook = old_free_hook;
-//
-//	/* Call recursively */
-//	free(ptr);
-//
-//	/* Save underlying hooks */
-//	old_malloc_hook = __malloc_hook;
-//	old_free_hook = __free_hook;
-//
-//	/* printf might call free, so protect it too. */
-//	//printf("freed pointer %p\n", ptr);
-//	//printf("caller is %p \n", caller);
-//
-//	/* Restore our own hooks */
-//	__malloc_hook = my_malloc_hook;
-//	__free_hook = my_free_hook;
-//}
-
 
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
@@ -238,6 +142,9 @@ static unsigned long long current_time_ns() {
 }
 
 unsigned long long hclib_current_time_ns() {
+    addSet(1);
+    addSet(2);
+    printf("the element 2 is in set %d \n",findSet(2));
     return current_time_ns();
 }
 

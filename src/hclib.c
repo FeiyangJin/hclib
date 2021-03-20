@@ -479,6 +479,12 @@ void hclib_get_curr_task_info(void (**fp_out)(void *), void **args_out) {
     *args_out = curr_task->args;
 }
 
+void hclib_print_current_task_info(){
+    hclib_worker_state *ws = CURRENT_WS_INTERNAL;
+    hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
+    printf("current task id is %d, parent is %d \n",curr_task->task_id, curr_task->parent_id);
+}
+
 /*** END FORASYNC IMPLEMENTATION ***/
 
 #ifdef __cplusplus

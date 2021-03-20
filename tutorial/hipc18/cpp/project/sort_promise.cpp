@@ -387,6 +387,7 @@ void print_array(ELM *arr, unsigned long size){
 		}
 	}
 	printf("\n");
+  return;
 }
 
 
@@ -398,6 +399,8 @@ void check_result(ELM *sorted, unsigned long size){
 			break;
 		}
 	}
+  printf("result is correct from checking function \n");
+  return;
 }
 
 
@@ -406,7 +409,9 @@ int main(int argc, char* argv[]){
 	ELM *array, *tmp;
 	long i;
 
-	size = 10000000;
+  size = argc>1?atoi(argv[1]) : 10000000; // default n value is 10000000
+	printf("sort array of size %ld \n", size);
+
 	array = (ELM *) malloc(size * sizeof(ELM));
 	tmp = (ELM *) malloc(size * sizeof(ELM));
 
@@ -414,8 +419,8 @@ int main(int argc, char* argv[]){
 	
 
 	char const *deps[] = { "system" };
-  	hclib::launch(deps, 1, [&]() {
-  		long start = hclib_current_time_ms();
+  hclib::launch(deps, 1, [&]() {
+  	long start = hclib_current_time_ms();
 
   	//parallel sort
 		cilksort(array,tmp,size);

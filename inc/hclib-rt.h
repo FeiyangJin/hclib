@@ -42,6 +42,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assert.h>
 #include "litectx.h"
 
+#include "aaa_c_connector.h"
+
 #ifndef HCLIB_RT_H_
 #define HCLIB_RT_H_
 

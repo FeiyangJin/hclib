@@ -46,7 +46,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define HCLIB_ASYNC_H_
 
 namespace hclib {
-
+static int task_id_unique = 0;
 /*
  * The C API to the HC runtime defines a task at its simplest as a function
  * pointer paired with a void* pointing to some user data. This file adds a C++
@@ -130,6 +130,18 @@ inline hclib_task_t *initialize_task(Function lambda_caller, T1 *lambda_on_heap)
         new async_arguments<Function, T1>(lambda_caller, lambda_on_heap);
     t->_fp = lambda_wrapper<Function, T1>;
     t->args = args;
+    t->task_id = task_id_unique;
+
+    if(task_id_unique == 0){
+        t->parent_id = -1;
+    }
+    else{
+        hclib_worker_state *ws = current_ws();
+        hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
+        t->parent_id = curr_task->task_id;
+    }
+    task_id_unique ++;
+
     return t;
 }
 

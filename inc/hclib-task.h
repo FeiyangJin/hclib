@@ -28,6 +28,8 @@
  *   6) non_blocking: Whether this task will block on other operations (i.e.
  *      call hclib_end_finish, hclib_future_wait, etc).
  *   7) next_waiter: Used to track tasks blocked on the same future.
+ *   8) task_id: Used for data race detection
+ *   9) parent_id: the id for parent task
  */
 typedef struct hclib_task_t {
     generic_frame_ptr _fp;
@@ -41,6 +43,8 @@ typedef struct hclib_task_t {
     hclib_locale_t *locale;
     int non_blocking;
     struct hclib_task_t *next_waiter;
+    int task_id;
+    int parent_id;
 } hclib_task_t;
 
 /** @struct loop_domain_t

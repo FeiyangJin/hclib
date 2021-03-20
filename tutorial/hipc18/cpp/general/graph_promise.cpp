@@ -63,7 +63,6 @@ int main(int argc, char* argv[]){
 
 		printf("before the wait \n");
 		af->wait();
-		bf->wait();
 		cf->wait();
 		df->wait();
 		ef->wait();
