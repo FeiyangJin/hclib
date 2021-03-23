@@ -41,7 +41,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #include <assert.h>
 #include "litectx.h"
-
 #include "aaa_c_connector.h"
 
 #ifndef HCLIB_RT_H_
@@ -78,6 +77,36 @@ typedef enum {
     HCLIB_AFFINITY_CHUNKED
 } hclib_affinity_t;
 #endif
+
+void printDS();
+
+enum node_type{
+    ROOT,
+    FINISH,
+    ASYNC,
+    FUTURE,
+    STEP
+};
+
+typedef struct tree_node{
+    int index;
+    void *task;
+    enum node_type this_node_type;
+    int depth;
+    struct tree_node *parent;
+    struct tree_node *children_list_head;
+    struct tree_node *next_sibling;
+} tree_node;
+
+typedef struct dpst{
+    struct tree_node *root;
+    struct tree_node *current_tree_node;
+} dpst;
+
+struct tree_node* newtreeNode();
+void printDPST();
+
+struct dpst DPST;
 
 typedef struct _hclib_worker_state {
     // Global context for this instance of the runtime.

@@ -5,8 +5,13 @@ int main() {
     addSet(1);
     addSet(2);
     addSet(3);
-    printf("the element 2 is in %d \n",findSet(2));
-    //int elements[3] = {1,2,3};
-    //printElementSets(elements);
+    
+    merge(2,3);
+    printAll();
+
+    printf("\n");
+
+    merge(1,2);
+    printAll();
     return 0;
 }

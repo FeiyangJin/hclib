@@ -44,7 +44,8 @@ typedef struct hclib_task_t {
     int non_blocking;
     struct hclib_task_t *next_waiter;
     int task_id;
-    int parent_id;
+    struct hclib_task_t *parent;
+    tree_node *node_in_dpst;
 } hclib_task_t;
 
 /** @struct loop_domain_t

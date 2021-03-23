@@ -9,6 +9,8 @@ void addSet(int set_index);
 int findSet(int element);
 void unionSet(int a, int b);
 void printElementSets(int *element_array);
+void merge(int a, int b);
+void printAll();
 
 #ifdef __cplusplus
 }

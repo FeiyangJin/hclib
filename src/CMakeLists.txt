@@ -1,4 +1,4 @@
-enable_language(C ASM)
+enable_language(C ASM CXX)
 
 set(SOURCES
   hclib-runtime.c 
@@ -115,8 +115,8 @@ install(EXPORT hclib
 
 target_compile_definitions(hclib PRIVATE ${COMPILE_DEFINITIONS})
 
-target_link_libraries(hclib PUBLIC /home/fjin/gitRepo/hclib/inc/libaaa.so)
-target_link_libraries(hclib PUBLIC /home/fjin/gitRepo/hclib/inc/libaaa_c_connector.so)
+target_link_libraries(hclib PUBLIC ${HCLIB_INSTALL_LIBS}/libaaa.so)
+target_link_libraries(hclib PUBLIC ${HCLIB_INSTALL_LIBS}/libaaa_c_connector.so)
 
 if (HCLIB_ENABLE_HWLOC)
 find_path(HWLOC_INCLUDE NAMES hwloc.h PATHS "$ENV{HWLOC_HOME}/include")

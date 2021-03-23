@@ -7,6 +7,9 @@ DisjointSet::DisjointSet(){
 void DisjointSet::addSet(int set_index){
     parent[set_index] = set_index;
     rank[set_index] = 0;
+    vector<int> nontreejoins;
+    nt[set_index] = nontreejoins;
+    lsa[set_index] = -1;
 }
 
 void DisjointSet::addSets(vector<int> const &universe){
@@ -18,10 +21,8 @@ void DisjointSet::addSets(vector<int> const &universe){
 }
 
 int DisjointSet::Find(int k){
-    // if `k` is not the root
     if (parent[k] != k)
     {
-        // path compression
         parent[k] = Find(parent[k]);
     }
 
@@ -47,6 +48,34 @@ void DisjointSet::Union(int a, int b){
         rank[y]++;
     }
 }
+
+void DisjointSet::mergeBtoA(int a, int b){
+    int Sa = Find(a);
+    int Sb = Find(b);
+
+    if (Sa == Sb) {
+        return;
+    }
+
+    // union nt
+    vector<int> a_nt = nt.at(a);
+    vector<int> b_nt = nt.at(b);
+    for(auto i = b_nt.begin(); i != b_nt.end(); ++i){
+        a_nt.push_back(*i);
+    }
+    nt[a] = a_nt;
+    
+    // union Sb into Sa
+    parent[Sb] = Sa;
+
+}
+
+void DisjointSet::printds(){
+    for (std::pair<int, int> element: parent) {
+        printf("%d is in set: %d \n", element.first, Find(element.first));
+    };
+}
+
 
 void printSets(vector<int> const &universe, DisjointSet &ds){
     for (int i: universe) {

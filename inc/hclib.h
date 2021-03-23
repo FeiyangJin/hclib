@@ -36,6 +36,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "hclib-task.h"
 #include "hclib-promise.h"
 
+#include "aaa_c_connector.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

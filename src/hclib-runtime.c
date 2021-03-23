@@ -69,6 +69,70 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mach/mach.h>
 #endif
 
+void printDS(){
+    printAll();
+}
+
+char *node_char[5] = {'R','F','A','f','S'};
+static int node_index = 0;
+
+struct tree_node* newtreeNode()
+{
+    // Allocate memory for new node
+    tree_node* node = (tree_node*)malloc(sizeof(tree_node));
+    node->children_list_head = NULL;
+    node->next_sibling = NULL;
+    node->index = node_index;
+    node_index ++;
+    return node;
+}
+
+void printDPST(){
+    tree_node *node_array[20] = {NULL};
+    tree_node *tmp_array[20] = {NULL};
+    node_array[0] = DPST.root;
+    int depth = 0;
+
+    while (node_array[0] != NULL)
+    {
+        printf("depth %d:   ",depth);
+        int tmp_index = 0;
+        int i = 0;
+        while (i < 20)
+        {
+            tree_node *node = node_array[i];
+            if(node == NULL){
+                printf("   ");
+            }
+            else{
+                printf("%c (index:%d) ",node_char[node->this_node_type],node->index);
+                if(node->parent != NULL){
+                    printf("(parent:%d)    ",node->parent->index);
+                }
+                tree_node *child = node->children_list_head;
+                while (child != NULL)
+                {
+                    tmp_array[tmp_index] = child;
+                    tmp_index++;
+                    child = child->next_sibling;
+                }
+            }
+
+            node_array[i] = NULL;
+            i++;
+        }
+        printf("\n");
+
+        depth++;
+        int j = 0;
+        while(j < 20){
+            node_array[j] = tmp_array[j];
+            tmp_array[j] = NULL;
+            j++;
+        }
+    }
+}
+
 static double user_specified_timer = 0;
 // TODO use __thread on Linux?
 pthread_key_t ws_key;
@@ -142,9 +206,6 @@ static unsigned long long current_time_ns() {
 }
 
 unsigned long long hclib_current_time_ns() {
-    addSet(1);
-    addSet(2);
-    printf("the element 2 is in set %d \n",findSet(2));
     return current_time_ns();
 }
 
@@ -985,7 +1046,20 @@ int hclib_future_is_satisfied(hclib_future_t *future) {
 }
 
 void *hclib_future_wait(hclib_future_t *future) {
+    // save current finish scope (in case of worker swap)
+    hclib_worker_state *ws = CURRENT_WS_INTERNAL;
+    finish_t *current_finish = ws->current_finish;
+    hclib_task_t *current_task = ws->curr_task;
+
     if (future->owner->satisfied) {
+        // fj: work on disjoint set
+        if(findSet(current_task->task_id) == findSet(future->corresponding_task->parent->task_id)){
+            // merge two sets
+            merge(current_task->task_id,future->corresponding_task->parent->task_id);
+        }
+        else{
+            // add future task to current tasks' nt
+        }
         return (void *)future->owner->datum;
     }
 
@@ -993,10 +1067,7 @@ void *hclib_future_wait(hclib_future_t *future) {
     worker_stats[CURRENT_WS_INTERNAL->id].count_future_waits++;
 #endif
 
-    // save current finish scope (in case of worker swap)
-    hclib_worker_state *ws = CURRENT_WS_INTERNAL;
-    finish_t *current_finish = ws->current_finish;
-    hclib_task_t *current_task = ws->curr_task;
+
 
     hclib_task_t *need_to_swap_ctx = NULL;
     while (future->owner->satisfied == 0 &&

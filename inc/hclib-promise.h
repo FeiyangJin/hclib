@@ -68,6 +68,7 @@ struct hclib_promise_st;
 
 typedef struct _hclib_future_t {
     struct hclib_promise_st *owner;
+    struct hclib_task_t *corresponding_task;
 } hclib_future_t;
 
 struct hclib_task_t;
@@ -77,6 +78,7 @@ typedef struct hclib_promise_st {
     hclib_future_t future;
     volatile int satisfied;
     void *volatile datum;
+    struct hclib_task_t *setter_task;
     /*
      * List of tasks that are awaiting the satisfaction of this promise.
      * wait_list_head is initialized to SENTINEL_FUTURE_WAITLIST_PTR when

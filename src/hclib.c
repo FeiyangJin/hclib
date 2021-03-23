@@ -9,6 +9,8 @@
 #include "hclib-module.h"
 #include "hclib-fptr-list.h"
 
+static int task_id = 0;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -38,6 +40,10 @@ void hclib_async(generic_frame_ptr fp, void *arg, hclib_future_t **futures,
 
     task->_fp = fp;
     task->args = arg;
+
+    // addSet(task_id);
+    // printf("the new task %d is in set %d \n",task_id,findSet(task_id));
+    // task_id++;
 
     if (nfutures > 0) {
         // locale may be NULL, in which case this is equivalent to spawn_await
@@ -482,7 +488,16 @@ void hclib_get_curr_task_info(void (**fp_out)(void *), void **args_out) {
 void hclib_print_current_task_info(){
     hclib_worker_state *ws = CURRENT_WS_INTERNAL;
     hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
-    printf("current task id is %d, parent is %d \n",curr_task->task_id, curr_task->parent_id);
+    if (curr_task->task_id == 0)
+    {
+        printf("current task id is 0, parent is -1 \n");
+    }
+    else{
+        printf("current task id is %d, parent is %d     ",curr_task->task_id, curr_task->parent->task_id);
+        printf("node in dpst is %d, parent in dpst is %d \n",curr_task->node_in_dpst->index, curr_task->node_in_dpst->parent->index);
+    }
+    
+    
 }
 
 /*** END FORASYNC IMPLEMENTATION ***/

@@ -18,8 +18,10 @@
 
 int main(int argc, char **argv) {
   char const *deps[] = { "system" }; 
+  
   hclib::launch(deps, 1, [&]() {
-    hclib_current_time_ns();
+
+    hclib_print_current_task_info();
 
     hclib::future_t<void> *a = hclib::async_future([=]() {
       sleep(1);
@@ -32,6 +34,10 @@ int main(int argc, char **argv) {
       a->wait();
       printf("B ");
       hclib_print_current_task_info();
+      hclib::async([=](){
+        printf("B'  ");
+        hclib_print_current_task_info();
+      });
       return;
     });
 
@@ -56,8 +62,8 @@ int main(int argc, char **argv) {
       printf("E ");
       hclib_print_current_task_info();
 
-      hclib::async([](){
-        printf("inside E  ");
+      hclib::async([=](){
+        printf("E'  ");
         hclib_print_current_task_info();
       });
 
@@ -74,6 +80,10 @@ int main(int argc, char **argv) {
 
     f->wait();
     printf("Terminating\n");
+    //printf("%s \n", DPST.root == NULL ? "true" : "false");
+    //printDPST();
+    printf("future f corresponding task is: %d \n", f->corresponding_task->task_id);
   });
+  
   return 0;
 }
