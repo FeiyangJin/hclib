@@ -95,12 +95,13 @@ typedef struct tree_node{
     int depth;
     struct tree_node *parent;
     struct tree_node *children_list_head;
+    struct tree_node *children_list_tail;
     struct tree_node *next_sibling;
 } tree_node;
 
 typedef struct dpst{
     struct tree_node *root;
-    struct tree_node *current_tree_node;
+    struct tree_node *current_step_node;
 } dpst;
 
 struct tree_node* newtreeNode();

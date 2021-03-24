@@ -74,6 +74,10 @@ void DisjointSet::printds(){
     for (std::pair<int, int> element: parent) {
         printf("%d is in set: %d \n", element.first, Find(element.first));
     };
+
+    for (std::pair<int, std::vector<int>> element: nt) {
+        printf("%d has %d nt joins \n", element.first, element.second.size());
+    };
 }
 
 

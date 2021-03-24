@@ -51,7 +51,8 @@ namespace hclib {
 static int task_id_unique = 0;
 
 void insert_DPST(enum node_type nodeType, hclib_task_t *task){
-    // insert to DPST
+    // insert a tree_node to DPST
+    // do not use this to insert a step node
     tree_node *node= newtreeNode();
     node->this_node_type = nodeType;
     node->task = task;
@@ -65,40 +66,24 @@ void insert_DPST(enum node_type nodeType, hclib_task_t *task){
         hclib_worker_state *ws = current_ws();
         hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
 
-        if(DPST.current_tree_node->this_node_type != STEP){
-            node->parent = DPST.current_tree_node;
-            //node->depth = DPST.current_tree_node->depth + 1;
-        }
-        else if(curr_task->task_id == 0){
-            node->parent = DPST.root;
-        }
-        else{
-            node->parent = curr_task->node_in_dpst->parent;
-            //node->depth = curr_task->node_in_dpst->parent->depth + 1;
-        }
-        //printDPST();
-        //printf("%d \n",node->parent->index);
+        // each task corresponds to an async or a future tree node
+        node->parent = curr_task->node_in_dpst;
         node->depth = node->parent->depth + 1;
 
         if(node->parent->children_list_head == NULL){
             node->parent->children_list_head = node;
+            node->parent->children_list_tail = node;
         }
         else{
-            tree_node *last_sibling = node->parent->children_list_head;
-            while (last_sibling->next_sibling != NULL)
-            {
-                last_sibling = last_sibling->next_sibling;
-            }
-            last_sibling->next_sibling = node;
-        }    
+            node->parent->children_list_tail->next_sibling = node;
+            node->parent->children_list_tail = node;
+        }   
     }
 
-    if(task != NULL){
-        task->node_in_dpst = node;
-    }
+    task->node_in_dpst = node;
     
-    DPST.current_tree_node = node;
 
+    //DPST.current_tree_node = node;
     //printDPST();
 }
 
@@ -197,16 +182,12 @@ inline hclib_task_t *initialize_task(Function lambda_caller, T1 *lambda_on_heap)
         hclib_worker_state *ws = current_ws();
         hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
         t->parent = curr_task;
-
-        // insert to DPST
-        insert_DPST(STEP,t);
     }
-    
-    task_id_unique ++;
-
 
     // insert to disjoint set
     addSet(task_id_unique);
+    
+    task_id_unique ++;
     return t;
 }
 
@@ -239,8 +220,10 @@ template <typename T>
 inline void async(T &&lambda) {
 	MARK_OVH(current_ws()->id);
     typedef typename std::remove_reference<T>::type U;
-    insert_DPST(ASYNC,NULL);
-    spawn(initialize_task(call_lambda<U>, new U(lambda)));
+    hclib_task_t *task = initialize_task(call_lambda<U>, new U(lambda));
+    insert_DPST(ASYNC,task);
+    spawn(task);
+    //spawn(initialize_task(call_lambda<U>, new U(lambda)));
 }
 
 template <typename T>
@@ -470,10 +453,10 @@ auto async_future(T&& lambda) -> hclib::future_t<decltype(lambda())>* {
     };
     typedef decltype(wrapper) U;
 
-    // fj: insert a FUTURE node to DPST before the task node
-    insert_DPST(FUTURE,NULL);
-
     hclib_task_t* task = initialize_task(call_lambda<U>, new U(wrapper));
+
+    // fj: insert a FUTURE node to DPST, and a step node as child
+    insert_DPST(FUTURE,task);
 
     // fj: connect the future with the task
     event->get_future()->corresponding_task = task;

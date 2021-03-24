@@ -34,11 +34,11 @@ int main(int argc, char **argv) {
       a->wait();
       printf("B ");
       hclib_print_current_task_info();
-      hclib::async([=](){
-        printf("B'  ");
-        hclib_print_current_task_info();
-      });
-      return;
+      // hclib::async([=](){
+      //   printf("B'  ");
+      //   hclib_print_current_task_info();
+      // });
+      // return;
     });
 
     hclib::future_t<void> *c = hclib::async_future([=]() {
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
       hclib_print_current_task_info();
 
       hclib::async([=](){
-        printf("E'  ");
+        printf("  E' ");
         hclib_print_current_task_info();
       });
 
@@ -75,14 +75,18 @@ int main(int argc, char **argv) {
       e->wait();
       printf("F ");
       hclib_print_current_task_info();
+      printDS();
       return;
     });
 
     f->wait();
+    
+
     printf("Terminating\n");
     //printf("%s \n", DPST.root == NULL ? "true" : "false");
-    //printDPST();
-    printf("future f corresponding task is: %d \n", f->corresponding_task->task_id);
+    printDPST();
+    printDS();
+    //printf("future f corresponding task is: %d \n", f->corresponding_task->task_id);
   });
   
   return 0;

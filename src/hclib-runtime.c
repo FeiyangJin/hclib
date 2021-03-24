@@ -81,7 +81,10 @@ struct tree_node* newtreeNode()
     // Allocate memory for new node
     tree_node* node = (tree_node*)malloc(sizeof(tree_node));
     node->children_list_head = NULL;
+    node->children_list_tail = NULL;
     node->next_sibling = NULL;
+    node->task = NULL;
+
     node->index = node_index;
     node_index ++;
     return node;
@@ -511,6 +514,26 @@ static inline void check_out_finish(finish_t *finish) {
 }
 
 static inline void execute_task(hclib_task_t *task) {
+    // fj: update dpst
+    if(task->node_in_dpst != NULL){
+        tree_node *correspoding_tree_node = task->node_in_dpst;
+        tree_node *new_step = newtreeNode();   
+        new_step->this_node_type = STEP;
+        new_step->parent = correspoding_tree_node;
+        new_step->depth = correspoding_tree_node->depth + 1;
+        
+        if(correspoding_tree_node->children_list_head == NULL){
+            correspoding_tree_node->children_list_head = new_step;
+            correspoding_tree_node->children_list_tail = new_step;
+        }
+        else{
+            correspoding_tree_node->children_list_tail->next_sibling = new_step;
+            correspoding_tree_node->children_list_tail = new_step;
+        }
+        DPST.current_step_node = new_step;
+    }
+    
+
     finish_t *current_finish = task->current_finish;
     /*
      * Update the current finish of this worker to be inherited from the
@@ -1051,15 +1074,7 @@ void *hclib_future_wait(hclib_future_t *future) {
     finish_t *current_finish = ws->current_finish;
     hclib_task_t *current_task = ws->curr_task;
 
-    if (future->owner->satisfied) {
-        // fj: work on disjoint set
-        if(findSet(current_task->task_id) == findSet(future->corresponding_task->parent->task_id)){
-            // merge two sets
-            merge(current_task->task_id,future->corresponding_task->parent->task_id);
-        }
-        else{
-            // add future task to current tasks' nt
-        }
+    if (future->owner->satisfied) {        
         return (void *)future->owner->datum;
     }
 
@@ -1096,6 +1111,19 @@ void *hclib_future_wait(hclib_future_t *future) {
     ws->curr_task = current_task;
 
     HASSERT(future->owner->satisfied);
+
+    // fj: work on disjoint set
+    if(findSet(current_task->task_id) == findSet(future->corresponding_task->parent->task_id)){
+        // merge two sets
+        //printDS();
+        //printf("merge two sets in runtime \n");
+        //printf("current task id %d, future task id %d \n",current_task->task_id,future->corresponding_task->task_id);
+        merge(current_task->task_id,future->corresponding_task->task_id);
+    }
+    else{
+        // add future task to current tasks' nt
+    }
+    // end fj
     return future->owner->datum;
 }
 
