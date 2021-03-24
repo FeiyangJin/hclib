@@ -73,6 +73,10 @@ void printDS(){
     printAll();
 }
 
+void printDSbyset(){
+    printdsbyset();
+}
+
 char *node_char[5] = {'R','F','A','f','S'};
 static int node_index = 0;
 
@@ -1122,6 +1126,7 @@ void *hclib_future_wait(hclib_future_t *future) {
     }
     else{
         // add future task to current tasks' nt
+        addnt(current_task->task_id,future->corresponding_task->task_id);
     }
     // end fj
     return future->owner->datum;

@@ -26,8 +26,8 @@ public:
     // add single set
     void addSet(int set_index);
 
-    // add multiple sets
-    void addSets(vector<int> const &universe);
+    // // add multiple sets
+    // void addSets(vector<int> const &universe);
  
     // Find the root of the set in which element `k` belongs
     int Find(int k);
@@ -38,8 +38,23 @@ public:
     // Peform Union of two subsets where Set A is the new parent
     void mergeBtoA(int a, int b);
 
-    // print all sets
+    // add a task to other's nt
+    void addnt(int task, int nt_task_id);
+
+    // return the number of nt for task's set
+    int ntcounts(int task_id);
+
+    // get lsa
+    int getlsa(int task_id);
+
+    // set the lsa
+    void setlsa(int task_id, int lsa);
+
+    // print each item
     void printds();
+
+    // print by set
+    void printdsbyset();
 };
 
 

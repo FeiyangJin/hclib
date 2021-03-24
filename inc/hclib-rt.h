@@ -79,6 +79,7 @@ typedef enum {
 #endif
 
 void printDS();
+void printDSbyset();
 
 enum node_type{
     ROOT,

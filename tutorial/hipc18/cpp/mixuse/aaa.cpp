@@ -12,13 +12,13 @@ void DisjointSet::addSet(int set_index){
     lsa[set_index] = -1;
 }
 
-void DisjointSet::addSets(vector<int> const &universe){
-    for (int i: universe)
-    {
-        parent[i] = i;
-        rank[i] = 0;
-    }
-}
+// void DisjointSet::addSets(vector<int> const &universe){
+//     for (int i: universe)
+//     {
+//         parent[i] = i;
+//         rank[i] = 0;
+//     }
+// }
 
 int DisjointSet::Find(int k){
     if (parent[k] != k)
@@ -58,16 +58,36 @@ void DisjointSet::mergeBtoA(int a, int b){
     }
 
     // union nt
-    vector<int> a_nt = nt.at(a);
-    vector<int> b_nt = nt.at(b);
+    vector<int> a_nt = nt.at(Sa);
+    vector<int> b_nt = nt.at(Sb);
     for(auto i = b_nt.begin(); i != b_nt.end(); ++i){
         a_nt.push_back(*i);
     }
-    nt[a] = a_nt;
+    nt[Sa] = a_nt;
     
+    // Sa.lsa = Sa.lsa, do nothing 
+
     // union Sb into Sa
     parent[Sb] = Sa;
+}
 
+void DisjointSet::addnt(int task, int nt_task_id){
+    int Sa = Find(task);
+    nt[Sa].push_back(nt_task_id);
+}
+
+int DisjointSet::ntcounts(int task_id){
+    int Sa = Find(task_id);
+    return nt[Sa].size();
+}
+
+int DisjointSet::getlsa(int task_id){
+    return this->lsa[Find(task_id)];
+}
+
+void DisjointSet::setlsa(int task_id, int lsa){
+    int Sa = Find(task_id);
+    this->lsa[Sa] = lsa;
 }
 
 void DisjointSet::printds(){
@@ -80,6 +100,37 @@ void DisjointSet::printds(){
     };
 }
 
+void DisjointSet::printdsbyset(){
+    unordered_map<int, vector<int>> all_sets;
+
+    for (std::pair<int, int> element: parent) {
+        int the_parent = Find(element.first);
+        if(all_sets.count(the_parent) > 0){
+            all_sets[the_parent].push_back(element.first);
+        }
+        else{
+            vector<int> initial_set;
+            initial_set.push_back(element.first);
+            all_sets[the_parent] = initial_set;
+        }
+    };
+
+    for (std::pair<int,vector<int>> the_set: all_sets){
+        printf("In set %d, we have elements: ",the_set.first);
+        for(auto member = the_set.second.begin(); member != the_set.second.end(); member++){
+            printf("%d ",*member);
+        }
+
+        printf("\n    nt_joins: ");
+        for(auto nt_join = nt[the_set.first].begin(); nt_join != nt[the_set.first].end(); nt_join++){
+            printf("%d ",*nt_join);
+        }
+
+        printf("\n      lsa is: %d ", this->lsa[the_set.first]);
+
+        printf("\n\n");
+    }
+}
 
 void printSets(vector<int> const &universe, DisjointSet &ds){
     for (int i: universe) {

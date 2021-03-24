@@ -10,7 +10,12 @@ int findSet(int element);
 void unionSet(int a, int b);
 void printElementSets(int *element_array);
 void merge(int a, int b);
+void addnt(int task, int nt_task_id);
+int ntcounts(int task_id);
+int getlsa(int task_id);
+void setlsa(int task_id, int lsa);
 void printAll();
+void printdsbyset();
 
 #ifdef __cplusplus
 }
