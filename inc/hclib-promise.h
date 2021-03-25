@@ -68,7 +68,7 @@ struct hclib_promise_st;
 
 typedef struct _hclib_future_t {
     struct hclib_promise_st *owner;
-    struct hclib_task_t *corresponding_task;
+    int corresponding_task_id;
 } hclib_future_t;
 
 struct hclib_task_t;

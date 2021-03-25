@@ -5,10 +5,32 @@
 #include <unordered_map>
 using namespace std;
 
+enum task_state{
+    ACTIVE,
+    BLOCKED,
+    FINISHED_NOT_JOINED,
+    JOINED
+};
+
+class hclib_task
+{
+    public:
+        int task_id;
+        int parent_id;
+        void *node_in_dpst;
+        void *task_address; // could be null if the task is freed
+        task_state this_task_state;
+
+        hclib_task(int task_id, int parent_id, void *node_in_dpst, void *task_address, task_state state);
+};
+
 // A class to represent a disjoint set
 class DisjointSet
 {
-    // a map from the task_index to set
+    // a map from task_id to task
+    unordered_map<int, hclib_task*> all_tasks;
+
+    // a map from task_index to set
     unordered_map<int, int> parent;
  
     // stores the depth of trees
@@ -22,12 +44,13 @@ class DisjointSet
 
 public:
     DisjointSet();
+    // add task
+    void addTask(int task_id, hclib_task *task);
+
+    hclib_task* get_task_info(int task_id);
 
     // add single set
     void addSet(int set_index);
-
-    // // add multiple sets
-    // void addSets(vector<int> const &universe);
  
     // Find the root of the set in which element `k` belongs
     int Find(int k);

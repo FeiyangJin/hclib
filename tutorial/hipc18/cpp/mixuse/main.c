@@ -4,43 +4,50 @@
 
 int main() {
     for(int i=0; i<10; i++){
-        addSet(i);
+        ds_addSet(i);
     }
 
     //test initialization
     for (int i = 0; i < 10; i++)
     {
-        assert(findSet(i) == i);
-        assert(getlsa(i) == -1);
-        assert(ntcounts(i) == 0);
+        assert(ds_findSet(i) == i);
+        assert(ds_getlsa(i) == -1);
+        assert(ds_ntcounts(i) == 0);
     }
     
     // test merge
-    merge(2,3);
-    assert(findSet(3) == 2);
+    ds_merge(2,3);
+    assert(ds_findSet(3) == 2);
 
-    merge(7,2);
-    merge(5,7);
-    assert(findSet(3) == 5);
-    assert(findSet(2) == 5);
-    assert(findSet(7) == 5);
-    assert(findSet(5) == 5);
+    ds_merge(7,2);
+    ds_merge(5,7);
+    assert(ds_findSet(3) == 5);
+    assert(ds_findSet(2) == 5);
+    assert(ds_findSet(7) == 5);
+    assert(ds_findSet(5) == 5);
 
     // test non tree joins
-    addnt(1,2);
-    addnt(1,3);
-    addnt(1,5);
-    assert(ntcounts(1) == 3);
+    ds_addnt(1,2);
+    ds_addnt(1,3);
+    ds_addnt(1,5);
+    assert(ds_ntcounts(1) == 3);
 
     // test lsa
-    setlsa(4,9);
-    assert(getlsa(4) == 9);
+    ds_setlsa(4,9);
+    assert(ds_getlsa(4) == 9);
 
     // test merge
-    merge(4,1);
-    assert(ntcounts(4) == 3);
+    ds_merge(4,1);
+    assert(ds_ntcounts(4) == 3);
 
     //printAll();
-    printdsbyset();
+    ds_printdsbyset();
+
+    // test task
+    ds_addtask(1,0,NULL,NULL,2);
+    assert(ds_parentid(1) == 0);
+    assert(ds_get_dpst_node(1) == NULL);
+    assert(ds_taskState(1) == 2);
+    
     return 0;
 }

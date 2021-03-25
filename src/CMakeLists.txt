@@ -93,6 +93,7 @@ set(INCLUDE_DIRS
  ${CMAKE_SOURCE_DIR}/src/fcontext
  ${CMAKE_SOURCE_DIR}/src/jsmn
  ${CMAKE_BINARY_DIR}/inc
+ ${CMAKE_SOURCE_DIR}/tutorial/hipc18/cpp/mixuse
 )
 
 foreach(DIR ${INCLUDE_DIRS})

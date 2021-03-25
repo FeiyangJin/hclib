@@ -70,15 +70,82 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 void printDS(){
-    printAll();
+    ds_printAll();
 }
 
 void printDSbyset(){
-    printdsbyset();
+    ds_printdsbyset();
 }
 
 char *node_char[5] = {'R','F','A','f','S'};
 static int node_index = 0;
+
+tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent){
+    tree_node *node = newtreeNode();   
+    node->this_node_type = nodeType;
+
+    if(nodeType == ROOT){
+        node->depth = 0;
+        node->parent = NULL;
+        DPST.root = node;
+    }
+    else{
+        hclib_worker_state *ws = current_ws();
+        hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
+
+        // each task corresponds to an async or a future tree node
+        node->parent = curr_task->node_in_dpst;
+        node->depth = node->parent->depth + 1;
+
+        if(node->parent->children_list_head == NULL){
+            node->parent->children_list_head = node;
+            node->parent->children_list_tail = node;
+        }
+        else{
+            node->parent->children_list_tail->next_sibling = node;
+            node->parent->children_list_tail = node;
+        }   
+    }
+
+    return node;
+}
+
+void insert_leaf(tree_node *task_node){
+    tree_node *new_step = newtreeNode();   
+    new_step->this_node_type = STEP;
+    new_step->parent = task_node;
+    new_step->depth = task_node->depth + 1;
+    
+    if(task_node->children_list_head == NULL){
+        task_node->children_list_head = new_step;
+        task_node->children_list_tail = new_step;
+    }
+    else{
+        task_node->children_list_tail->next_sibling = new_step;
+        task_node->children_list_tail = new_step;
+    }
+    DPST.current_step_node = new_step;
+}
+
+tree_node* find_lca(tree_node *node1,tree_node *node2){
+    while (node1->depth != node2->depth)
+    {
+        if (node1->depth > node2->depth)
+        {
+            node1 = node1->parent;
+        }
+        else{
+            node2 = node2->parent;
+        }
+    }
+    
+    while(node1->index != node2->index){
+        node1 = node1->parent;
+        node2 = node2->parent;
+    }
+
+    return node1;
+}
 
 struct tree_node* newtreeNode()
 {
@@ -518,25 +585,10 @@ static inline void check_out_finish(finish_t *finish) {
 }
 
 static inline void execute_task(hclib_task_t *task) {
-    // fj: update dpst
+    // fj: insert a step node into DPST
     if(task->node_in_dpst != NULL){
-        tree_node *correspoding_tree_node = task->node_in_dpst;
-        tree_node *new_step = newtreeNode();   
-        new_step->this_node_type = STEP;
-        new_step->parent = correspoding_tree_node;
-        new_step->depth = correspoding_tree_node->depth + 1;
-        
-        if(correspoding_tree_node->children_list_head == NULL){
-            correspoding_tree_node->children_list_head = new_step;
-            correspoding_tree_node->children_list_tail = new_step;
-        }
-        else{
-            correspoding_tree_node->children_list_tail->next_sibling = new_step;
-            correspoding_tree_node->children_list_tail = new_step;
-        }
-        DPST.current_step_node = new_step;
+        insert_leaf(task->node_in_dpst);
     }
-    
 
     finish_t *current_finish = task->current_finish;
     /*
@@ -561,12 +613,14 @@ static inline void execute_task(hclib_task_t *task) {
     // task->_fp is of type 'void (*generic_frame_ptr)(void*)'
     (task->_fp)(task->args);
     check_out_finish(current_finish);
+
 #ifndef HCLIB_INLINE_FUTURES_ONLY
     if (task->waiting_on_extra) {
         free(task->waiting_on_extra);
     }
 #endif
     free(task);
+    
 }
 
 void hclib_default_queue_capacity(int* used, int* capacity) {
@@ -704,7 +758,8 @@ void spawn_handler(hclib_task_t *task, hclib_locale_t *locale,
 #ifdef VERBOSE
     fprintf(stderr, "spawn_handler: task=%p escaping=%d\n", task, escaping);
 #endif
-
+    
+    //execute_task(task);
     try_schedule_async(task, ws);
 }
 
@@ -1078,56 +1133,66 @@ void *hclib_future_wait(hclib_future_t *future) {
     finish_t *current_finish = ws->current_finish;
     hclib_task_t *current_task = ws->curr_task;
 
-    if (future->owner->satisfied) {        
-        return (void *)future->owner->datum;
+    // if (future->owner->satisfied) {        
+    //     return (void *)future->owner->datum;
+    // }
+
+    if (future->owner->satisfied == false){
+    #ifdef HCLIB_STATS
+        worker_stats[CURRENT_WS_INTERNAL->id].count_future_waits++;
+    #endif
+
+        hclib_task_t *need_to_swap_ctx = NULL;
+        while (future->owner->satisfied == 0 &&
+                need_to_swap_ctx == NULL) {
+            need_to_swap_ctx = find_and_run_task(ws, 0,
+                    &(future->owner->satisfied), 1, NULL);
+        }
+
+        if (need_to_swap_ctx) {
+            LiteCtx *currentCtx = get_curr_lite_ctx();
+            HASSERT(currentCtx);
+            LiteCtx *newCtx = LiteCtx_create(_help_wait);
+            newCtx->arg1 = future;
+            newCtx->arg2 = need_to_swap_ctx;
+
+    #ifdef HCLIB_STATS
+            worker_stats[CURRENT_WS_INTERNAL->id].count_ctx_creates++;
+    #endif
+
+            ctx_swap(currentCtx, newCtx, __func__);
+            LiteCtx_destroy(currentCtx->prev);
+        }
+        // restore current finish scope (in case of worker swap)
+        ws = CURRENT_WS_INTERNAL;
+        ws->current_finish = current_finish;
+        ws->curr_task = current_task;
     }
 
-#ifdef HCLIB_STATS
-    worker_stats[CURRENT_WS_INTERNAL->id].count_future_waits++;
-#endif
-
-
-
-    hclib_task_t *need_to_swap_ctx = NULL;
-    while (future->owner->satisfied == 0 &&
-            need_to_swap_ctx == NULL) {
-        need_to_swap_ctx = find_and_run_task(ws, 0,
-                &(future->owner->satisfied), 1, NULL);
-    }
-
-    if (need_to_swap_ctx) {
-        LiteCtx *currentCtx = get_curr_lite_ctx();
-        HASSERT(currentCtx);
-        LiteCtx *newCtx = LiteCtx_create(_help_wait);
-        newCtx->arg1 = future;
-        newCtx->arg2 = need_to_swap_ctx;
-
-#ifdef HCLIB_STATS
-        worker_stats[CURRENT_WS_INTERNAL->id].count_ctx_creates++;
-#endif
-
-        ctx_swap(currentCtx, newCtx, __func__);
-        LiteCtx_destroy(currentCtx->prev);
-    }
-    // restore current finish scope (in case of worker swap)
-    ws = CURRENT_WS_INTERNAL;
-    ws->current_finish = current_finish;
-    ws->curr_task = current_task;
 
     HASSERT(future->owner->satisfied);
 
-    // fj: work on disjoint set
-    if(findSet(current_task->task_id) == findSet(future->corresponding_task->parent->task_id)){
-        // merge two sets
-        //printDS();
-        //printf("merge two sets in runtime \n");
-        //printf("current task id %d, future task id %d \n",current_task->task_id,future->corresponding_task->task_id);
-        merge(current_task->task_id,future->corresponding_task->task_id);
+    // fj: work on disjoint set if the future is an independent task
+    if(future->corresponding_task_id != NULL){
+        int future_task_id = future->corresponding_task_id;
+        int future_parent_id = ds_parentid(future_task_id);
+        if(ds_findSet(current_task->task_id) == ds_findSet(future_parent_id)){
+            // merge two sets
+            ds_merge(current_task->task_id,future_task_id);
+        }
+        else{
+            // add future task to current tasks' nt
+            ds_addnt(current_task->task_id,future_task_id);
+        }
     }
     else{
-        // add future task to current tasks' nt
-        addnt(current_task->task_id,future->corresponding_task->task_id);
+        // otherwise the future is just an access to a promise, we do promise operations on disjoint set
+        // current_task->parent = future->owner->setter_task;
+        // update all_tasks[task_id].parent_id = future->owner->setter_task->task_id;
+        // update DPST structure: change parent, update original parent child_list
+        // add nt-joins from part before the block to the part after the block
     }
+
     // end fj
     return future->owner->datum;
 }

@@ -213,7 +213,7 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
     promise_to_be_put->datum = datum_to_be_put;
     promise_to_be_put->satisfied = 1;
 
-    // set the promise's setter
+    // fj: set the promise's setter
     hclib_worker_state *ws = CURRENT_WS_INTERNAL;
     hclib_task_t *curr_task = wait_list_of_promise;
     hclib_task_t *next_task = NULL;

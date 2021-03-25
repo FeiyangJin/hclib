@@ -9,25 +9,68 @@ using namespace std;
 extern "C" {
 #endif
 
-// Inside this "extern C" block, I can implement functions in C++, which will externally 
-//   appear as C functions (which means that the function IDs will be their names, unlike
-//   the regular C++ behavior, which allows defining multiple functions with the same name
-//   (overloading) and hence uses function signature hashing to enforce unique IDs),
-
 static DisjointSet *ds = new DisjointSet();
-void addSet(int set_index){
+
+void ds_addtask(int task_id, int parent_id, void *node_in_dpst, void *task_address, int state){
+    task_state val = static_cast<task_state>(state);
+    hclib_task *new_task = new hclib_task(task_id, parent_id, node_in_dpst, task_address, val);
+    ds->addTask(task_id,new_task);
+}
+
+int ds_parentid(int task_id){
+    return ds->get_task_info(task_id)->parent_id;
+}
+
+int ds_taskState(int task_id){
+    int val = static_cast<int>(ds->get_task_info(task_id)->this_task_state);
+    return val;
+}
+
+void* ds_get_dpst_node(int task_id){
+    return ds->get_task_info(task_id)->node_in_dpst;
+}
+
+void ds_addSet(int set_index){
     ds->addSet(set_index);
 }
 
-int findSet(int element){
+int ds_findSet(int element){
     return ds->Find(element);
 }
 
-void unionSet(int a, int b){
+void ds_unionSet(int a, int b){
     ds->Union(a,b);
 }
 
-void printElementSets(int *element_array){
+void ds_merge(int a, int b){
+    ds->mergeBtoA(a,b);
+}
+
+void ds_addnt(int task, int nt_task_id){
+    ds->addnt(task,nt_task_id);
+}
+
+int ds_ntcounts(int task_id){
+    return ds->ntcounts(task_id);
+}
+
+int ds_getlsa(int task_id){
+    return ds->getlsa(task_id);
+}
+
+void ds_setlsa(int task_id, int lsa){
+    ds->setlsa(task_id,lsa);
+}
+
+void ds_printAll(){
+    ds->printds();
+}
+
+void ds_printdsbyset(){
+    ds->printdsbyset();
+}
+
+void ds_printElementSets(int *element_array){
     
 }
 

@@ -4,11 +4,24 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
- 
-void addSet(int set_index);
-int findSet(int element);
-void unionSet(int a, int b);
-void printElementSets(int *element_array);
+
+
+void ds_addSet(int set_index);
+int ds_findSet(int element);
+void ds_unionSet(int a, int b);
+void ds_printElementSets(int *element_array);
+void ds_merge(int a, int b);
+void ds_addnt(int task, int nt_task_id);
+int ds_ntcounts(int task_id);
+int ds_getlsa(int task_id);
+void ds_setlsa(int task_id, int lsa);
+void ds_printAll();
+void ds_printdsbyset();
+
+void ds_addtask(int task_id, int parent_id, void *node_in_dpst, void *task_address, int state);
+int ds_parentid(int task_id);
+int ds_taskState(int task_id);
+void* ds_get_dpst_node(int task_id);
 
 #ifdef __cplusplus
 }

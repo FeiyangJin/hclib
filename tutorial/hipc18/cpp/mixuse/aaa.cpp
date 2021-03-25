@@ -1,5 +1,23 @@
 #include "aaa.h"
 
+
+hclib_task::hclib_task(int task_id, int parent_id, void *node_in_dpst, void *task_address, task_state state){
+    this->task_id = task_id;
+    this->parent_id = parent_id;
+    this->node_in_dpst = node_in_dpst;
+    this->task_address = task_address;
+    this->this_task_state = state;
+}
+
+
+void DisjointSet::addTask(int task_id, hclib_task *task){
+    all_tasks[task_id] = task;
+};
+
+hclib_task* DisjointSet::get_task_info(int task_id){
+    return this->all_tasks[task_id];
+}
+
 DisjointSet::DisjointSet(){
 
 }
@@ -11,14 +29,6 @@ void DisjointSet::addSet(int set_index){
     nt[set_index] = nontreejoins;
     lsa[set_index] = -1;
 }
-
-// void DisjointSet::addSets(vector<int> const &universe){
-//     for (int i: universe)
-//     {
-//         parent[i] = i;
-//         rank[i] = 0;
-//     }
-// }
 
 int DisjointSet::Find(int k){
     if (parent[k] != k)

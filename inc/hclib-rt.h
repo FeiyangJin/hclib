@@ -107,6 +107,9 @@ typedef struct dpst{
 
 struct tree_node* newtreeNode();
 void printDPST();
+tree_node* find_lca(tree_node *node1,tree_node *node2);
+tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent);
+void insert_leaf(tree_node *task_node);
 
 struct dpst DPST;
 
