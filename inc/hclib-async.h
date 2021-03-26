@@ -255,6 +255,10 @@ inline void async(T &&lambda) {
     task->node_in_dpst = the_node;
     the_node->task = task;
 
+    // insert two step nodes as child and sibling
+    insert_leaf(task->node_in_dpst->parent);
+    insert_leaf(task->node_in_dpst);
+
     ds_addtask(task->task_id,curr_task->task_id,the_node,task,0);
 
     spawn(task);
@@ -502,6 +506,10 @@ auto async_future(T&& lambda) -> hclib::future_t<decltype(lambda())>* {
     
     task->node_in_dpst = the_node;
     the_node->task = task;
+
+    // insert two step nodes as child and sibling
+    insert_leaf(task->node_in_dpst->parent);
+    insert_leaf(task->node_in_dpst);
 
     // fj: connect the future with the task
     event->get_future()->corresponding_task_id = task->task_id;

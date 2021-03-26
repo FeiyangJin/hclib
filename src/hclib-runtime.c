@@ -583,13 +583,14 @@ static inline void check_out_finish(finish_t *finish) {
 
 static inline void execute_task(hclib_task_t *task) {
     // fj: insert a step node into DPST
-    if(task->node_in_dpst != NULL){
-        if(task->current_finish != NULL && task->current_finish->belong_to_task_id == task->task_id){
-            insert_leaf(task->current_finish->node_in_dpst);
-        }
-        else{
-            insert_leaf(task->node_in_dpst);
-        }
+    if(task->node_in_dpst != NULL && task->node_in_dpst->index > 1){
+        HASSERT(task->node_in_dpst->children_list_tail->this_node_type == STEP);
+        // if(task->current_finish != NULL && task->current_finish->belong_to_task_id == task->task_id){
+        //     insert_leaf(task->current_finish->node_in_dpst);
+        // }
+        // else{
+        //     insert_leaf(task->node_in_dpst);
+        // }
     }
 
     finish_t *current_finish = task->current_finish;
@@ -1416,6 +1417,13 @@ void hclib_start_finish() {
         finish->belong_to_task_id = curr_task->task_id;
     }
     
+    finish->node_in_dpst->task = finish;
+
+    if(finish->node_in_dpst->index > 1){
+        // if it is not the finish for main task, we have a continuation step
+        insert_leaf(finish->node_in_dpst->parent);
+    }
+    insert_leaf(finish->node_in_dpst);
     
     /*
      * Set finish counter to 1 initially to emulate the main thread inside the
