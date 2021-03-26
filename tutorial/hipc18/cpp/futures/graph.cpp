@@ -49,6 +49,16 @@ int main(int argc, char **argv) {
       c->wait();
       printf("D ");
       hclib_print_current_task_info();
+      hclib_worker_state *out_ws = current_ws();
+      hclib_task_t *out_task = (hclib_task_t *)out_ws->curr_task;
+
+      hclib::finish([=](){
+        hclib::async([=](){
+          printf("  d_finish ");
+          hclib_print_current_task_info();
+        });
+      });
+
       return;
     });
 
@@ -57,23 +67,23 @@ int main(int argc, char **argv) {
       printf("E ");
       hclib_print_current_task_info();
 
-      hclib_worker_state *out_ws = current_ws();
-      hclib_task_t *out_task = (hclib_task_t *)out_ws->curr_task;
-      int out_index = out_task->task_id;
-      tree_node *step1 = out_task->node_in_dpst->children_list_head;
+      // hclib_worker_state *out_ws = current_ws();
+      // hclib_task_t *out_task = (hclib_task_t *)out_ws->curr_task;
+      // int out_index = out_task->task_id;
+      // tree_node *step1 = out_task->node_in_dpst->children_list_head;
 
-      hclib::async([=](){
-        printf("  E' ");
-        hclib_print_current_task_info();
+      // hclib::async([=](){
+      //   printf("  E' ");
+      //   hclib_print_current_task_info();
 
-        hclib_worker_state *in_ws = current_ws();
-        hclib_task_t *in_task = (hclib_task_t *)in_ws->curr_task;
+      //   hclib_worker_state *in_ws = current_ws();
+      //   hclib_task_t *in_task = (hclib_task_t *)in_ws->curr_task;
 
-        tree_node* both_parent = (tree_node*) ds_get_dpst_node(out_index);
-        HASSERT(find_lca(step1,in_task->node_in_dpst)->index == both_parent->index);
-      });
+      //   tree_node* both_parent = (tree_node*) ds_get_dpst_node(out_index);
+      //   HASSERT(find_lca(step1,in_task->node_in_dpst)->index == both_parent->index);
+      // });
 
-      printf("after E' \n");
+      // printf("after E' \n");
       return;
     });
 
@@ -89,7 +99,7 @@ int main(int argc, char **argv) {
 
     printf("Terminating\n");
 
-    printDSbyset();
+    //printDSbyset();
     //printf("%s \n", DPST.root == NULL ? "true" : "false");
     printDPST();
   });

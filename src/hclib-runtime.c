@@ -90,11 +90,8 @@ tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent){
         DPST.root = node;
     }
     else{
-        hclib_worker_state *ws = current_ws();
-        hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
-
         // each task corresponds to an async or a future tree node
-        node->parent = curr_task->node_in_dpst;
+        node->parent = parent;
         node->depth = node->parent->depth + 1;
 
         if(node->parent->children_list_head == NULL){
@@ -587,7 +584,12 @@ static inline void check_out_finish(finish_t *finish) {
 static inline void execute_task(hclib_task_t *task) {
     // fj: insert a step node into DPST
     if(task->node_in_dpst != NULL){
-        insert_leaf(task->node_in_dpst);
+        if(task->current_finish != NULL && task->current_finish->belong_to_task_id == task->task_id){
+            insert_leaf(task->current_finish->node_in_dpst);
+        }
+        else{
+            insert_leaf(task->node_in_dpst);
+        }
     }
 
     finish_t *current_finish = task->current_finish;
@@ -1393,6 +1395,28 @@ void hclib_start_finish() {
     hclib_worker_state *ws = CURRENT_WS_INTERNAL;
     finish_t *finish = (finish_t *)calloc(1, sizeof(*finish));
     HASSERT(finish);
+
+    // fj: insert a finish node into DPST
+    hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
+
+    if(ws->current_finish == NULL && curr_task == NULL){
+        // This is the very beginning of program, only root main task exists
+        tree_node *the_node = insert_tree_node(FINISH,DPST.root);
+        finish->node_in_dpst = the_node;
+        finish->belong_to_task_id = 0;
+    }
+    else if(ws->current_finish->belong_to_task_id == curr_task->task_id){
+        tree_node *the_node = insert_tree_node(FINISH,ws->current_finish->node_in_dpst);
+        finish->node_in_dpst = the_node;
+        finish->belong_to_task_id = curr_task->task_id;
+    }
+    else{
+        tree_node *the_node = insert_tree_node(FINISH,curr_task->node_in_dpst);
+        finish->node_in_dpst = the_node;
+        finish->belong_to_task_id = curr_task->task_id;
+    }
+    
+    
     /*
      * Set finish counter to 1 initially to emulate the main thread inside the
      * finish being a task registered on the finish. When we reach the

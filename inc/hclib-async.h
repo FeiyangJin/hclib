@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "hclib_promise.h"
 #include "hclib_future.h"
 #include "aaa_c_connector.h"
+#include "hclib-finish.h"
 
 
 #ifndef HCLIB_ASYNC_H_
@@ -173,6 +174,7 @@ inline hclib_task_t *initialize_task(Function lambda_caller, T1 *lambda_on_heap)
 
     t->task_id = task_id_unique;
     if(task_id_unique == 0){
+        printf("main task created here \n");
         t->parent = NULL;
 
         // insert to DPST
@@ -240,7 +242,16 @@ inline void async(T &&lambda) {
     // fj
     hclib_worker_state *ws = current_ws();
     hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
-    tree_node *the_node = insert_tree_node(ASYNC,curr_task->node_in_dpst);
+    tree_node *the_node;
+    // printf("current finish is null %s \n", curr_task->current_finish == NULL ? "true" : "false");
+    // printf("%d %d \n",ws->current_finish->belong_to_task_id, curr_task->task_id);
+    if(ws->current_finish != NULL && ws->current_finish->belong_to_task_id == curr_task->task_id){
+        the_node = insert_tree_node(ASYNC,ws->current_finish->node_in_dpst);
+    }
+    else{
+        the_node = insert_tree_node(ASYNC,curr_task->node_in_dpst);
+    }
+    
     task->node_in_dpst = the_node;
     the_node->task = task;
 
@@ -481,7 +492,14 @@ auto async_future(T&& lambda) -> hclib::future_t<decltype(lambda())>* {
     // fj: insert a FUTURE node to DPST, and a step node as child
     hclib_worker_state *ws = current_ws();
     hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
-    tree_node *the_node = insert_tree_node(FUTURE,curr_task->node_in_dpst);
+    tree_node *the_node;
+    if(ws->current_finish != NULL && ws->current_finish->belong_to_task_id == curr_task->task_id){
+        the_node = insert_tree_node(FUTURE,ws->current_finish->node_in_dpst);
+    }
+    else{
+        the_node = insert_tree_node(FUTURE,curr_task->node_in_dpst);
+    }
+    
     task->node_in_dpst = the_node;
     the_node->task = task;
 
