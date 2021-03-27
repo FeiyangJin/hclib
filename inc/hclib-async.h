@@ -243,8 +243,7 @@ inline void async(T &&lambda) {
     hclib_worker_state *ws = current_ws();
     hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
     tree_node *the_node;
-    // printf("current finish is null %s \n", curr_task->current_finish == NULL ? "true" : "false");
-    // printf("%d %d \n",ws->current_finish->belong_to_task_id, curr_task->task_id);
+
     if(ws->current_finish != NULL && ws->current_finish->belong_to_task_id == curr_task->task_id){
         the_node = insert_tree_node(ASYNC,ws->current_finish->node_in_dpst);
     }

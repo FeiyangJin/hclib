@@ -24,9 +24,24 @@ class hclib_task
         hclib_task(int task_id, int parent_id, void *node_in_dpst, void *task_address, task_state state);
 };
 
+class hclib_finish
+{
+    public:
+        int finish_id;
+        int belong_to_task_id;
+        void *node_in_dpst;
+        void *finish_address;
+        vector<int> task_in_this_finish;
+
+        hclib_finish(int finish_id, int belong_to_task_id, void *node_in_dpst, void *finish_address);
+};
+
 // A class to represent a disjoint set
 class DisjointSet
 {
+    // a map from finish dpst node id to finish
+    unordered_map<int, hclib_finish*> all_finishes;
+
     // a map from task_id to task
     unordered_map<int, hclib_task*> all_tasks;
 
@@ -44,6 +59,14 @@ class DisjointSet
 
 public:
     DisjointSet();
+
+    void end_finish_merge(int finish_id);
+
+    void add_task_to_finish(int finish_id, int task_id);
+
+    // add finish
+    void addFinish(int finish_id, hclib_finish *finish);
+
     // add task
     void addTask(int task_id, hclib_task *task);
 

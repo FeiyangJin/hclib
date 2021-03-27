@@ -1,5 +1,29 @@
 #include "aaa.h"
 
+hclib_finish::hclib_finish(int finish_id, int belong_to_task_id, void *node_in_dpst, void *finish_address){
+    this->finish_id = finish_id;
+    this->belong_to_task_id = belong_to_task_id;
+    this->node_in_dpst = node_in_dpst;
+    this->finish_address = finish_address;
+    //this->task_in_this_finish = new vector<int>();
+}
+
+void DisjointSet::add_task_to_finish(int finish_id, int task_id){
+    this->all_finishes[finish_id]->task_in_this_finish.push_back(task_id);
+}
+
+void DisjointSet::addFinish(int finish_id, hclib_finish *finish){
+    this->all_finishes[finish_id] = finish;
+}
+
+void DisjointSet::end_finish_merge(int finish_id){
+    hclib_finish *finish = this->all_finishes[finish_id];
+    int finish_owner_task = finish->belong_to_task_id;
+    for(vector<int>::iterator i = finish->task_in_this_finish.begin(); i != finish->task_in_this_finish.end(); i++){
+        int sub_task_id = *i;
+        this->mergeBtoA(finish_owner_task, sub_task_id);
+    }
+}
 
 hclib_task::hclib_task(int task_id, int parent_id, void *node_in_dpst, void *task_address, task_state state){
     this->task_id = task_id;

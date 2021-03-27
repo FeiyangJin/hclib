@@ -585,12 +585,6 @@ static inline void execute_task(hclib_task_t *task) {
     // fj: insert a step node into DPST
     if(task->node_in_dpst != NULL && task->node_in_dpst->index > 1){
         HASSERT(task->node_in_dpst->children_list_tail->this_node_type == STEP);
-        // if(task->current_finish != NULL && task->current_finish->belong_to_task_id == task->task_id){
-        //     insert_leaf(task->current_finish->node_in_dpst);
-        // }
-        // else{
-        //     insert_leaf(task->node_in_dpst);
-        // }
     }
 
     finish_t *current_finish = task->current_finish;
@@ -729,6 +723,9 @@ void spawn_handler(hclib_task_t *task, hclib_locale_t *locale,
     } else {
         check_in_finish(ws->current_finish);
         set_current_finish(task, ws->current_finish);
+
+        // fj: ds operation
+        ds_add_task_to_finish(ws->current_finish->node_in_dpst->index, task->task_id);
     }
 
     if (locale) {
@@ -1424,6 +1421,9 @@ void hclib_start_finish() {
         insert_leaf(finish->node_in_dpst->parent);
     }
     insert_leaf(finish->node_in_dpst);
+
+    // ds operation
+    ds_addFinish(finish->node_in_dpst->index, finish->belong_to_task_id, finish->node_in_dpst, finish);
     
     /*
      * Set finish counter to 1 initially to emulate the main thread inside the
@@ -1468,12 +1468,15 @@ void hclib_end_finish() {
     help_finish(current_finish);
 
     check_out_finish(current_finish->parent); // NULL check in check_out_finish
-
 #ifdef VERBOSE
     fprintf(stderr, "hclib_end_finish: out of finish, setting current finish "
             "of %p to %p from %p\n", CURRENT_WS_INTERNAL,
             current_finish->parent, current_finish);
 #endif
+
+    // fj: ds operation
+    ds_end_finish_merge(current_finish->node_in_dpst->index);
+
     // Don't reuse worker-state! (we might not be on the same worker anymore)
     ws = CURRENT_WS_INTERNAL;
     ws->current_finish = current_finish->parent;

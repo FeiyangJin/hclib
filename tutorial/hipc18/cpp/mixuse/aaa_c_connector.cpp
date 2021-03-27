@@ -11,6 +11,19 @@ extern "C" {
 
 static DisjointSet *ds = new DisjointSet();
 
+void ds_end_finish_merge(int finish_id){
+    ds->end_finish_merge(finish_id);
+}
+
+void ds_add_task_to_finish(int finish_id, int task_id){
+    ds->add_task_to_finish(finish_id,task_id);
+}
+
+void ds_addFinish(int finish_id, int belong_to_task_id, void *node_in_dpst, void *finish_address){
+    hclib_finish *new_finish = new hclib_finish(finish_id, belong_to_task_id,node_in_dpst,finish_address);
+    ds->addFinish(finish_id, new_finish);
+}
+
 void ds_addtask(int task_id, int parent_id, void *node_in_dpst, void *task_address, int state){
     task_state val = static_cast<task_state>(state);
     hclib_task *new_task = new hclib_task(task_id, parent_id, node_in_dpst, task_address, val);
