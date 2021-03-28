@@ -69,13 +69,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mach/mach.h>
 #endif
 
-void printDS(){
-    ds_printAll();
-}
-
-void printDSbyset(){
-    ds_printdsbyset();
-}
 
 char *node_char[5] = {'R','F','A','f','S'};
 static int node_index = 0;
@@ -1187,8 +1180,8 @@ void *hclib_future_wait(hclib_future_t *future) {
     }
     else{
         // otherwise the future is just an access to a promise, we do promise operations on disjoint set
-        // current_task->parent = future->owner->setter_task;
-        // update all_tasks[task_id].parent_id = future->owner->setter_task->task_id;
+        // current_task->parent = future->owner->setter_task_id;
+        // update all_tasks[task_id].parent_id = future->owner->setter_task_id->task_id;
         // update DPST structure: change parent, update original parent child_list
         // add nt-joins from part before the block to the part after the block
     }

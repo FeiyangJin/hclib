@@ -78,9 +78,6 @@ typedef enum {
 } hclib_affinity_t;
 #endif
 
-void printDS();
-void printDSbyset();
-
 enum node_type{
     ROOT,
     FINISH,

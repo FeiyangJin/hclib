@@ -30,7 +30,7 @@ class hclib_finish
         int finish_id;
         int belong_to_task_id;
         void *node_in_dpst;
-        void *finish_address;
+        void *finish_address; // could be null if the finish is freed
         vector<int> task_in_this_finish;
 
         hclib_finish(int finish_id, int belong_to_task_id, void *node_in_dpst, void *finish_address);

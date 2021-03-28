@@ -60,7 +60,7 @@ void hclib_promise_init(hclib_promise_t *promise) {
     promise->datum = UNINITIALIZED_PROMISE_DATA_PTR;
     promise->wait_list_head = SENTINEL_FUTURE_WAITLIST_PTR;
     promise->future.owner = promise;
-    promise->setter_task = NULL;
+    promise->setter_task_id = NULL;
 }
 
 /**
@@ -217,7 +217,8 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
     hclib_worker_state *ws = CURRENT_WS_INTERNAL;
     hclib_task_t *curr_task = wait_list_of_promise;
     hclib_task_t *next_task = NULL;
-    promise_to_be_put->setter_task = curr_task;
+    hclib_task_t *setter_task = ( hclib_task_t*) ws->curr_task;
+    promise_to_be_put->setter_task_id = setter_task->task_id;
 
     /*
      * Loop while this CAS fails, trying to atomically grab the list of tasks
@@ -228,6 +229,7 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
     while (!__sync_bool_compare_and_swap(&(promise_to_be_put->wait_list_head),
                                          wait_list_of_promise,
                                          SATISFIED_FUTURE_WAITLIST_PTR)) {
+        // fj: should update waiting tasks' parents here
         wait_list_of_promise = promise_to_be_put->wait_list_head;
     }
 

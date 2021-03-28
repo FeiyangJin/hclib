@@ -486,12 +486,11 @@ void hclib_print_current_task_info(){
     hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
     if (curr_task->task_id == 0)
     {
-        printf("current task id is 0, parent is -1 \n");
+        printf("current task id is 0, parent is NULL \n");
     }
     else{
         printf("current task id is %d, parent is %d     ",curr_task->task_id, ds_parentid(curr_task->task_id));
-        tree_node* node_in_dpst = (tree_node*) ds_get_dpst_node(curr_task->task_id);
-        printf("node in dpst is %d, parent in dpst is %d \n",curr_task->node_in_dpst->index, node_in_dpst->parent->index);
+        printf("node in dpst is %d, parent in dpst is %d \n", curr_task->node_in_dpst->index, curr_task->node_in_dpst->parent->index);
     }
     
     

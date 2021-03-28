@@ -51,42 +51,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace hclib {
 static int task_id_unique = 0;
 
-// void insert_DPST(enum node_type nodeType, hclib_task_t *task){
-//     // insert a tree_node to DPST
-//     // do not use this to insert a step node
-//     tree_node *node= newtreeNode();
-//     node->this_node_type = nodeType;
-//     node->task = task;
-
-//     if(nodeType == ROOT){
-//         node->depth = 0;
-//         node->parent = NULL;
-//         DPST.root = node;
-//     }
-//     else{
-//         hclib_worker_state *ws = current_ws();
-//         hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
-
-//         // each task corresponds to an async or a future tree node
-//         node->parent = curr_task->node_in_dpst;
-//         node->depth = node->parent->depth + 1;
-
-//         if(node->parent->children_list_head == NULL){
-//             node->parent->children_list_head = node;
-//             node->parent->children_list_tail = node;
-//         }
-//         else{
-//             node->parent->children_list_tail->next_sibling = node;
-//             node->parent->children_list_tail = node;
-//         }   
-//     }
-
-//     task->node_in_dpst = node;
-    
-
-//     //DPST.current_tree_node = node;
-//     //printDPST();
-// }
 
 /*
  * The C API to the HC runtime defines a task at its simplest as a function
@@ -174,7 +138,6 @@ inline hclib_task_t *initialize_task(Function lambda_caller, T1 *lambda_on_heap)
 
     t->task_id = task_id_unique;
     if(task_id_unique == 0){
-        printf("main task created here \n");
         t->parent = NULL;
 
         // insert to DPST
@@ -254,7 +217,7 @@ inline void async(T &&lambda) {
     task->node_in_dpst = the_node;
     the_node->task = task;
 
-    // insert two step nodes as child and sibling
+    // insert two step nodes as sibling and child
     insert_leaf(task->node_in_dpst->parent);
     insert_leaf(task->node_in_dpst);
 
@@ -506,7 +469,7 @@ auto async_future(T&& lambda) -> hclib::future_t<decltype(lambda())>* {
     task->node_in_dpst = the_node;
     the_node->task = task;
 
-    // insert two step nodes as child and sibling
+    // insert two step nodes as sibling and child
     insert_leaf(task->node_in_dpst->parent);
     insert_leaf(task->node_in_dpst);
 

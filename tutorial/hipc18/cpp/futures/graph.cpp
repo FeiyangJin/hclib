@@ -49,8 +49,6 @@ int main(int argc, char **argv) {
       c->wait();
       printf("D ");
       hclib_print_current_task_info();
-      hclib_worker_state *out_ws = current_ws();
-      hclib_task_t *out_task = (hclib_task_t *)out_ws->curr_task;
 
       hclib::finish([=](){
         hclib::async([=](){
@@ -99,7 +97,7 @@ int main(int argc, char **argv) {
 
     printf("Terminating\n");
 
-    //printDSbyset();
+    ds_printdsbyset();
     //printf("%s \n", DPST.root == NULL ? "true" : "false");
     printDPST();
   });
