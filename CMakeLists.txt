@@ -70,7 +70,8 @@ endif()
 
 include(cmake/hclib_config.h.cmake)
 
-set(HCLIB_INSTALL_LIBS "${CMAKE_CURRENT_SOURCE_DIR}/hclib-install/lib")
+set(HCLIB_INSTALL_LIBS "${CMAKE_INSTALL_PREFIX}/lib")
+add_subdirectory(mixuse)
 add_subdirectory(src)
 
 #foreach(_mod ${HCLIB_MODULES})
