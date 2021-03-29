@@ -1,5 +1,7 @@
 enable_language(C ASM CXX)
 
+add_subdirectory(mixuse)
+
 set(SOURCES
   hclib-runtime.c 
   hclib-deque.c 
@@ -78,6 +80,7 @@ else()
 endif()
 
 add_library(hclib SHARED ${SOURCES})
+add_dependencies(hclib mixuse)
 
 if(HCLIB_PRIVATIZE_C_STD_11)
   target_compile_features(hclib PRIVATE c_std_11)
