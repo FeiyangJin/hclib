@@ -616,7 +616,7 @@ static inline void check_out_finish(finish_t *finish) {
 }
 
 static inline void execute_task(hclib_task_t *task) {
-    // fj: insert a step node into DPST
+    // fj: check if we are at a step node
     if(task->node_in_dpst != NULL && task->node_in_dpst->index > 1){
         HASSERT(task->node_in_dpst->children_list_tail->this_node_type == STEP);
     }

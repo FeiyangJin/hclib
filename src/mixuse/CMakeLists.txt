@@ -8,12 +8,15 @@ set(SOURCES
 set(HEADERS
     aaa_c_connector.h 
 )
-
+set(MIXUSE_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} PARENT_SCOPE)
 add_library(aaa_c_connector SHARED ${SOURCES})
 set_target_properties(aaa_c_connector PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(aaa_c_connector PROPERTIES PUBLIC_HEADER ${HEADERS})
+
+target_include_directories(aaa_c_connector PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/inc>
+  $<INSTALL_INTERFACE:include>
+)
 
 install(TARGETS aaa_c_connector EXPORT aaa_c_connector
-        PUBLIC_HEADER DESTINATION include
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib)
