@@ -21,6 +21,7 @@ void ds_printdsbyset();
 void ds_addtask(int task_id, int parent_id, void *node_in_dpst, void *task_address, int state);
 int ds_parentid(int task_id);
 int ds_taskState(int task_id);
+void ds_update_task_parent(int task_id, int new_parent_id);
 void* ds_get_dpst_node(int task_id);
 
 void ds_addFinish(int finish_id, int belong_to_task_id, void *node_in_dpst, void *finish_address);

@@ -42,6 +42,19 @@ hclib_task* DisjointSet::get_task_info(int task_id){
     return this->all_tasks[task_id];
 }
 
+void DisjointSet::update_task_parent(int task_id, int new_parent_id){
+    this->all_tasks[task_id]->parent_id = new_parent_id;
+    // also need to update nt joins and lsa
+    if(this->ntcounts(new_parent_id) > 0){
+        this->lsa[task_id] = new_parent_id;
+    }
+    else{
+        this->lsa[task_id] = -1;
+    }
+
+    this->nt[task_id].clear();
+}
+
 DisjointSet::DisjointSet(){
 
 }

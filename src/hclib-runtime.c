@@ -73,6 +73,47 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 char *node_char[5] = {'R','F','A','f','S'};
 static int node_index = 0;
 
+void dpst_update_parent(tree_node *task_node, tree_node *new_parent){
+    // 1. remove task_node from current parent's children list
+    tree_node *current_parent = task_node->parent;
+    if(task_node->index == current_parent->children_list_head->index){
+        current_parent->children_list_head = task_node->next_sibling;
+    }
+    else{
+        tree_node *sibling = current_parent->children_list_head;
+        while (sibling->next_sibling->index != task_node->index)
+        {
+            sibling = sibling->next_sibling;
+        }
+        // here, sibling, task_node, task_node's next sibling
+        sibling->next_sibling = task_node->next_sibling;
+        if(sibling->next_sibling == NULL){
+            current_parent->children_list_tail = sibling;
+        }
+    }
+
+    // 2. update parent and children depth
+    task_node->parent = new_parent;
+    task_node->depth = new_parent->depth + 1;
+    tree_node *child = task_node->children_list_head;
+    while (child != NULL)
+    {
+        // should be only one child, but we will do this right now
+        child->depth = task_node->depth + 1;
+        child = child->next_sibling;
+    }
+
+    // 3. update new sibling
+    if(new_parent->children_list_head == NULL){
+        new_parent->children_list_head = task_node;
+        new_parent->children_list_tail = task_node;
+    } 
+    else{
+        new_parent->children_list_tail->next_sibling = task_node;
+        new_parent->children_list_tail = task_node;
+    }
+}
+
 tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent){
     tree_node *node = newtreeNode();   
     node->this_node_type = nodeType;
@@ -1180,7 +1221,17 @@ void *hclib_future_wait(hclib_future_t *future) {
     }
     else{
         // otherwise the future is just an access to a promise, we do promise operations on disjoint set
-        // current_task->parent = future->owner->setter_task_id;
+        if(future->owner->setter_task_id != current_task->task_id){
+            // 0. possibly update parent_id
+
+            // 1. dpst operation
+            tree_node *dpst_new_parent = ds_get_dpst_node(future->owner->setter_task_id);
+            dpst_update_parent(current_task->node_in_dpst,dpst_new_parent);
+
+            // 2. disjoint set operation
+            ds_update_task_parent(current_task->task_id,current_task->parent_id);
+
+        }
         // update all_tasks[task_id].parent_id = future->owner->setter_task_id->task_id;
         // update DPST structure: change parent, update original parent child_list
         // add nt-joins from part before the block to the part after the block

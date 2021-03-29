@@ -217,7 +217,8 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
     hclib_worker_state *ws = CURRENT_WS_INTERNAL;
     hclib_task_t *curr_task = wait_list_of_promise;
     hclib_task_t *next_task = NULL;
-    hclib_task_t *setter_task = ( hclib_task_t*) ws->curr_task;
+
+    hclib_task_t *setter_task = (hclib_task_t*) ws->curr_task;
     promise_to_be_put->setter_task_id = setter_task->task_id;
 
     /*

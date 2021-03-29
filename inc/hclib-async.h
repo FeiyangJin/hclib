@@ -138,7 +138,7 @@ inline hclib_task_t *initialize_task(Function lambda_caller, T1 *lambda_on_heap)
 
     t->task_id = task_id_unique;
     if(task_id_unique == 0){
-        t->parent = NULL;
+        t->parent_id = -1;
 
         // insert to DPST
         tree_node *the_node = insert_tree_node(ROOT,NULL);
@@ -152,11 +152,11 @@ inline hclib_task_t *initialize_task(Function lambda_caller, T1 *lambda_on_heap)
     else{
         hclib_worker_state *ws = current_ws();
         hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
-        t->parent = curr_task;
+        t->parent_id = curr_task->task_id;
 
         // disjoint set operation
         ds_addSet(task_id_unique);
-        int parent_id = t->parent->task_id;
+        int parent_id = t->parent_id;
         int parent_nt_counts = ds_ntcounts(parent_id);
         if(parent_nt_counts > 0){
             ds_setlsa(task_id_unique,parent_id);

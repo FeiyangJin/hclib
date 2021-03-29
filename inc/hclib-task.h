@@ -29,7 +29,7 @@
  *      call hclib_end_finish, hclib_future_wait, etc).
  *   7) next_waiter: Used to track tasks blocked on the same future.
  *   8) task_id: Used for data race detection
- *   9) parent: the task who creates this task
+ *   9) parent_id: the task who creates this task
  *  10) node_in_dpst: every task has a corresponding ASYNC or FUTURE tree node in DPST
  */
 
@@ -46,7 +46,7 @@ typedef struct hclib_task_t {
     int non_blocking;
     struct hclib_task_t *next_waiter;
     int task_id;
-    struct hclib_task_t *parent;
+    int parent_id;
     tree_node *node_in_dpst;
 } hclib_task_t;
 

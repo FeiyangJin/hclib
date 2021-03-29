@@ -72,6 +72,8 @@ public:
 
     hclib_task* get_task_info(int task_id);
 
+    void update_task_parent(int task_id, int new_parent_id);
+
     // add single set
     void addSet(int set_index);
  

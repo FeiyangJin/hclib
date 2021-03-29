@@ -30,7 +30,7 @@ class hclib_finish
         int finish_id;
         int belong_to_task_id;
         void *node_in_dpst;
-        void *finish_address; // could be null if the finish is freed
+        void *finish_address;
         vector<int> task_in_this_finish;
 
         hclib_finish(int finish_id, int belong_to_task_id, void *node_in_dpst, void *finish_address);
@@ -71,6 +71,8 @@ public:
     void addTask(int task_id, hclib_task *task);
 
     hclib_task* get_task_info(int task_id);
+
+    void update_task_parent(int task_id, int new_parent_id);
 
     // add single set
     void addSet(int set_index);

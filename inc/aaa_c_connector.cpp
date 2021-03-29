@@ -39,6 +39,10 @@ int ds_taskState(int task_id){
     return val;
 }
 
+void ds_update_task_parent(int task_id, int new_parent_id){
+    ds->update_task_parent(task_id, new_parent_id);
+}
+
 void* ds_get_dpst_node(int task_id){
     return ds->get_task_info(task_id)->node_in_dpst;
 }
