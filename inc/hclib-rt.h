@@ -78,6 +78,9 @@ typedef enum {
 } hclib_affinity_t;
 #endif
 
+int get_task_id_unique();
+void increase_task_id_unique();
+
 enum node_type{
     ROOT,
     FINISH,
@@ -88,7 +91,7 @@ enum node_type{
 
 typedef struct tree_node{
     int index;
-    void *task;
+    int corresponding_task_id;
     enum node_type this_node_type;
     int depth;
     struct tree_node *parent;

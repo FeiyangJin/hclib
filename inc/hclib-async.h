@@ -49,7 +49,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define HCLIB_ASYNC_H_
 
 namespace hclib {
-static int task_id_unique = 0;
 
 
 /*
@@ -136,6 +135,7 @@ inline hclib_task_t *initialize_task(Function lambda_caller, T1 *lambda_on_heap)
     t->_fp = lambda_wrapper<Function, T1>;
     t->args = args;
 
+    int task_id_unique = get_task_id_unique();
     t->task_id = task_id_unique;
     if(task_id_unique == 0){
         t->parent_id = -1;
@@ -143,7 +143,7 @@ inline hclib_task_t *initialize_task(Function lambda_caller, T1 *lambda_on_heap)
         // insert to DPST
         tree_node *the_node = insert_tree_node(ROOT,NULL);
         t->node_in_dpst = the_node;
-        the_node->task = t;
+        the_node->corresponding_task_id = t->task_id;
 
         // disjoint set operation
         ds_addSet(task_id_unique);
@@ -167,7 +167,7 @@ inline hclib_task_t *initialize_task(Function lambda_caller, T1 *lambda_on_heap)
         }
     }
     
-    task_id_unique ++;
+    increase_task_id_unique();
     return t;
 }
 
@@ -215,7 +215,7 @@ inline void async(T &&lambda) {
     }
     
     task->node_in_dpst = the_node;
-    the_node->task = task;
+    the_node->corresponding_task_id = task->task_id;
 
     // insert two step nodes as sibling and child
     insert_leaf(task->node_in_dpst->parent);
@@ -467,7 +467,7 @@ auto async_future(T&& lambda) -> hclib::future_t<decltype(lambda())>* {
     }
     
     task->node_in_dpst = the_node;
-    the_node->task = task;
+    the_node->corresponding_task_id = task->task_id;
 
     // insert two step nodes as sibling and child
     insert_leaf(task->node_in_dpst->parent);

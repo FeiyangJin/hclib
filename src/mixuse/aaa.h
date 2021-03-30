@@ -45,11 +45,8 @@ class DisjointSet
     // a map from task_id to task
     unordered_map<int, hclib_task*> all_tasks;
 
-    // a map from task_index to set
-    unordered_map<int, int> parent;
- 
-    // stores the depth of trees
-    unordered_map<int, int> rank;
+    // a map from task_index to set, aka which set the task is currently in
+    unordered_map<int, int> parent_aka_setnowin;
 
     // stores the non-tree joins for each set
     unordered_map<int,vector<int>> nt;
@@ -74,14 +71,17 @@ public:
 
     void update_task_parent(int task_id, int new_parent_id);
 
+    void update_task_dpst_node(int task, void *new_node);
+
+    void break_previous_steps(int task_id, int task_id_for_previous_steps);
+
+    void print_all_tasks();
+
     // add single set
     void addSet(int set_index);
  
     // Find the root of the set in which element `k` belongs
     int Find(int k);
- 
-    // Perform Union of two subsets based on rank
-    void Union(int a, int b);
 
     // Peform Union of two subsets where Set A is the new parent
     void mergeBtoA(int a, int b);

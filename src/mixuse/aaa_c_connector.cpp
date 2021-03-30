@@ -19,6 +19,22 @@ void ds_add_task_to_finish(int finish_id, int task_id){
     ds->add_task_to_finish(finish_id,task_id);
 }
 
+void ds_break_previous_steps(int task_id, int task_id_for_previous_steps){
+    ds->break_previous_steps(task_id,task_id_for_previous_steps);
+}
+
+void ds_print_all_tasks(){
+    ds->print_all_tasks();
+}
+
+void ds_update_task_dpst_node(int task_id, void *new_node){
+    ds->update_task_dpst_node(task_id,new_node);
+}
+
+void ds_print_nt(int task_id){
+    
+}
+
 void ds_addFinish(int finish_id, int belong_to_task_id, void *node_in_dpst, void *finish_address){
     hclib_finish *new_finish = new hclib_finish(finish_id, belong_to_task_id,node_in_dpst,finish_address);
     ds->addFinish(finish_id, new_finish);
@@ -53,10 +69,6 @@ void ds_addSet(int set_index){
 
 int ds_findSet(int element){
     return ds->Find(element);
-}
-
-void ds_unionSet(int a, int b){
-    ds->Union(a,b);
 }
 
 void ds_merge(int a, int b){

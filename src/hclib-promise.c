@@ -230,7 +230,6 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
     while (!__sync_bool_compare_and_swap(&(promise_to_be_put->wait_list_head),
                                          wait_list_of_promise,
                                          SATISFIED_FUTURE_WAITLIST_PTR)) {
-        // fj: should update waiting tasks' parents here
         wait_list_of_promise = promise_to_be_put->wait_list_head;
     }
 

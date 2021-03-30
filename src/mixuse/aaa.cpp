@@ -42,8 +42,10 @@ hclib_task* DisjointSet::get_task_info(int task_id){
     return this->all_tasks[task_id];
 }
 
+
 void DisjointSet::update_task_parent(int task_id, int new_parent_id){
     this->all_tasks[task_id]->parent_id = new_parent_id;
+
     // also need to update nt joins and lsa
     if(this->ntcounts(new_parent_id) > 0){
         this->lsa[task_id] = new_parent_id;
@@ -52,48 +54,57 @@ void DisjointSet::update_task_parent(int task_id, int new_parent_id){
         this->lsa[task_id] = -1;
     }
 
-    this->nt[task_id].clear();
 }
+
+void DisjointSet::break_previous_steps(int task_id, int task_id_for_previous_steps){
+    hclib_task *whole_task = this->all_tasks[task_id];
+    int previous_parent_id = whole_task->parent_id;
+    void *previous_dpst_node = whole_task->node_in_dpst;
+    void *previous_task_address = whole_task->task_address;
+    task_state new_state = JOINED;
+
+    hclib_task *task_for_previous_steps = new hclib_task(task_id_for_previous_steps,previous_parent_id,previous_dpst_node,previous_task_address,new_state);
+
+    this->all_tasks[task_id_for_previous_steps] = task_for_previous_steps;
+    this->lsa[task_id_for_previous_steps] = this->lsa[task_id];
+    this->nt[task_id_for_previous_steps] = this->nt[task_id];
+    this->parent_aka_setnowin[task_id_for_previous_steps] = task_id_for_previous_steps;
+
+    this->nt[task_id].clear();
+    this->nt[task_id].push_back(task_id_for_previous_steps);
+}
+
+void DisjointSet::print_all_tasks(){
+    for (std::pair<int, hclib_task*> element: this->all_tasks) {
+        hclib_task *task = element.second;
+        int task_id = element.first;
+        printf("task %d, parent is %d, has %d nt joins and lsa is %d \n", task_id, task->parent_id, this->ntcounts(task_id), this->lsa[task_id] );
+    }
+}
+
+void DisjointSet::update_task_dpst_node(int task_id, void *new_node){
+    this->all_tasks[task_id]->node_in_dpst = new_node;
+}
+
 
 DisjointSet::DisjointSet(){
 
 }
 
 void DisjointSet::addSet(int set_index){
-    parent[set_index] = set_index;
-    rank[set_index] = 0;
+    this->parent_aka_setnowin[set_index] = set_index;
     vector<int> nontreejoins;
     nt[set_index] = nontreejoins;
     lsa[set_index] = -1;
 }
 
 int DisjointSet::Find(int k){
-    if (parent[k] != k)
+    if (parent_aka_setnowin[k] != k)
     {
-        parent[k] = Find(parent[k]);
+        parent_aka_setnowin[k] = Find(parent_aka_setnowin[k]);
     }
 
-    return parent[k];
-}
-
-void DisjointSet::Union(int a, int b){
-    int x = Find(a);
-    int y = Find(b);
-
-    if (x == y) {
-        return;
-    }
-
-    if (rank[x] > rank[y]) {
-        parent[y] = x;
-    }
-    else if (rank[x] < rank[y]) {
-        parent[x] = y;
-    }
-    else {
-        parent[x] = y;
-        rank[y]++;
-    }
+    return parent_aka_setnowin[k];
 }
 
 void DisjointSet::mergeBtoA(int a, int b){
@@ -115,30 +126,30 @@ void DisjointSet::mergeBtoA(int a, int b){
     // Sa.lsa = Sa.lsa, do nothing 
 
     // union Sb into Sa
-    parent[Sb] = Sa;
+    parent_aka_setnowin[Sb] = Sa;
 }
 
 void DisjointSet::addnt(int task, int nt_task_id){
-    int Sa = Find(task);
-    nt[Sa].push_back(nt_task_id);
+    //int Sa = Find(task);
+    nt[task].push_back(nt_task_id);
 }
 
 int DisjointSet::ntcounts(int task_id){
-    int Sa = Find(task_id);
-    return nt[Sa].size();
+    //int Sa = Find(task_id);
+    return nt[task_id].size();
 }
 
 int DisjointSet::getlsa(int task_id){
-    return this->lsa[Find(task_id)];
+    return this->lsa[task_id];
 }
 
 void DisjointSet::setlsa(int task_id, int lsa){
-    int Sa = Find(task_id);
-    this->lsa[Sa] = lsa;
+    //int Sa = Find(task_id);
+    this->lsa[task_id] = lsa;
 }
 
 void DisjointSet::printds(){
-    for (std::pair<int, int> element: parent) {
+    for (std::pair<int, int> element: parent_aka_setnowin) {
         printf("%d is in set: %d \n", element.first, Find(element.first));
     };
 
@@ -150,7 +161,7 @@ void DisjointSet::printds(){
 void DisjointSet::printdsbyset(){
     unordered_map<int, vector<int>> all_sets;
 
-    for (std::pair<int, int> element: parent) {
+    for (std::pair<int, int> element: parent_aka_setnowin) {
         int the_parent = Find(element.first);
         if(all_sets.count(the_parent) > 0){
             all_sets[the_parent].push_back(element.first);

@@ -72,6 +72,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 char *node_char[5] = {'R','F','A','f','S'};
 static int node_index = 0;
+int task_id_unique = 0;
+
+int get_task_id_unique(){
+    return task_id_unique;
+}
+
+void increase_task_id_unique(){
+    task_id_unique++;
+}
 
 void dpst_update_parent(tree_node *task_node, tree_node *new_parent){
     // 1. remove task_node from current parent's children list
@@ -185,7 +194,7 @@ struct tree_node* newtreeNode()
     node->children_list_head = NULL;
     node->children_list_tail = NULL;
     node->next_sibling = NULL;
-    node->task = NULL;
+    node->corresponding_task_id = -2;
 
     node->index = node_index;
     node_index ++;
@@ -1223,18 +1232,26 @@ void *hclib_future_wait(hclib_future_t *future) {
         // otherwise the future is just an access to a promise, we do promise operations on disjoint set
         if(future->owner->setter_task_id != current_task->task_id){
             // 0. possibly update parent_id
+            current_task->parent_id = future->owner->setter_task_id;
 
             // 1. dpst operation
+            tree_node *old_dpst_node = current_task->node_in_dpst;
+            old_dpst_node->corresponding_task_id = task_id_unique;
+
             tree_node *dpst_new_parent = ds_get_dpst_node(future->owner->setter_task_id);
-            dpst_update_parent(current_task->node_in_dpst,dpst_new_parent);
+            tree_node *new_dpst_node = insert_tree_node(old_dpst_node->this_node_type,dpst_new_parent);
+            current_task->node_in_dpst = new_dpst_node;
+            insert_leaf(new_dpst_node->parent);
+            insert_leaf(new_dpst_node);
+
+            old_dpst_node->this_node_type = FUTURE;
 
             // 2. disjoint set operation
-            ds_update_task_parent(current_task->task_id,current_task->parent_id);
-
+            ds_break_previous_steps(current_task->task_id, task_id_unique);
+            task_id_unique ++;
+            ds_update_task_parent(current_task->task_id,future->owner->setter_task_id);
+            ds_update_task_dpst_node(current_task->task_id,new_dpst_node);
         }
-        // update all_tasks[task_id].parent_id = future->owner->setter_task_id->task_id;
-        // update DPST structure: change parent, update original parent child_list
-        // add nt-joins from part before the block to the part after the block
     }
 
     // end fj
@@ -1458,7 +1475,7 @@ void hclib_start_finish() {
         finish->belong_to_task_id = curr_task->task_id;
     }
     
-    finish->node_in_dpst->task = finish;
+    //finish->node_in_dpst->corresponding_task_id = finish;
 
     if(finish->node_in_dpst->index > 1){
         // if it is not the finish for main task, we have a continuation step
