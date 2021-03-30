@@ -2,7 +2,7 @@ include $(HCLIB_ROOT)/../modules/system/inc/hclib_system.pre.mak
 include $(HCLIB_ROOT)/include/hclib.mak
 include $(HCLIB_ROOT)/../modules/system/inc/hclib_system.post.mak
 
-EXE=graph cd channelReader
+EXE=graph cd channelReader promise_yield
 
 all: $(EXE)
 
@@ -16,6 +16,9 @@ cd: cholesky_deadlock.cpp
 # 	$(CXX) -O3 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
 
 channelReader: ChannelReader.cpp
+	$(CXX) -O3 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
+
+promise_yield: promise_yield.cpp
 	$(CXX) -O3 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
 
 clean:

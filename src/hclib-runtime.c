@@ -802,7 +802,6 @@ void spawn_handler(hclib_task_t *task, hclib_locale_t *locale,
     fprintf(stderr, "spawn_handler: task=%p escaping=%d\n", task, escaping);
 #endif
     
-    //execute_task(task);
     try_schedule_async(task, ws);
 }
 
@@ -1192,6 +1191,8 @@ void *hclib_future_wait(hclib_future_t *future) {
                     &(future->owner->satisfied), 1, NULL);
         }
 
+        // yield: pop the top task in queue, create a continuation for current task and goes into scheduling queue
+        // future blocking: create a continuation and goes into waiting queue
         if (need_to_swap_ctx) {
             LiteCtx *currentCtx = get_curr_lite_ctx();
             HASSERT(currentCtx);
@@ -1416,6 +1417,7 @@ void hclib_yield(hclib_locale_t *locale) {
         }
 
         if (task) {
+            //printf("the task we yield is %d \n",task->task_id);
             if (task->non_blocking) {
                 execute_task(task);
             } else {

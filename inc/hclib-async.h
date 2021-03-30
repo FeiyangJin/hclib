@@ -224,6 +224,8 @@ inline void async(T &&lambda) {
     ds_addtask(task->task_id,curr_task->task_id,the_node,task,0);
 
     spawn(task);
+
+    hclib_yield(NULL);
 }
 
 template <typename T>
@@ -480,6 +482,7 @@ auto async_future(T&& lambda) -> hclib::future_t<decltype(lambda())>* {
     ds_addtask(task->task_id,curr_task->task_id,the_node,task,0);
 
     spawn(task);
+    hclib_yield(NULL);
     return event->get_future();
 }
 

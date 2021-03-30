@@ -1,3 +1,13 @@
+# Ignore all
+*
+
+# Unignore all with extensions
+!*.*
+
+# Unignore all dirs
+!*/
+
+### Above combination will ignore all files without extension ###
 build
 hclib-install
 compileTree
@@ -6,3 +16,4 @@ configure
 autom4te.cache
 Makefile.in
 aclocal.m4
+yield

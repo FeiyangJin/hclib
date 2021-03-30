@@ -245,6 +245,7 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
          */
         if (register_on_all_promise_dependencies(curr_task)) {
             try_schedule_async(curr_task, ws);
+            hclib_yield(NULL);
         }
 
         curr_task = next_task;
