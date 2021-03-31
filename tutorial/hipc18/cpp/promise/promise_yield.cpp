@@ -20,14 +20,10 @@ int main(int argc, char **argv){
                 hclib::async([=](){
                     printf("C ");
                     hclib_print_current_task_info();
+
                     B->get_future()->wait();
 
-                    // hclib::async([=](){
-                    //     printf("E ");
-                    //     hclib_print_current_task_info();
-                    // });
-
-                    printf("    C continuation");
+                    printf("    C after promise");
                     hclib_print_current_task_info();
                 });
 
@@ -51,6 +47,8 @@ int main(int argc, char **argv){
 
         a->wait();
         //ds_printdsbyset();
+        //printDPST();
+        ds_print_all_tasks();
 	});
 	return 0;
 }
