@@ -60,7 +60,9 @@ void hclib_promise_init(hclib_promise_t *promise) {
     promise->datum = UNINITIALIZED_PROMISE_DATA_PTR;
     promise->wait_list_head = SENTINEL_FUTURE_WAITLIST_PTR;
     promise->future.owner = promise;
-    promise->setter_task_id = NULL;
+    promise->future.corresponding_task_id = -1;
+    promise->setter_task_id = -1;
+    promise->empty_future_id = -1;
 }
 
 /**
@@ -221,6 +223,20 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
     hclib_task_t *setter_task = (hclib_task_t*) ws->curr_task;
     promise_to_be_put->setter_task_id = setter_task->task_id;
 
+    // fj: create an empty future just for happened-before relationship
+    if(promise_to_be_put->future.corresponding_task_id == -1){
+        // we know this future is just an access to a promise
+        // which means some tasks will get this promise, not the future
+        int empty_future_id = get_task_id_unique();
+        increase_task_id_unique();
+        tree_node *empty_future_node = insert_tree_node(FUTURE,setter_task->node_in_dpst);
+        insert_leaf(setter_task->node_in_dpst);
+
+        ds_addSet(empty_future_id);
+        ds_addtask(empty_future_id,setter_task->task_id,empty_future_node,NULL,2);
+        promise_to_be_put->empty_future_id = empty_future_id;
+    }
+
     /*
      * Loop while this CAS fails, trying to atomically grab the list of tasks
      * dependent on the future of this promise. Anyone else who comes along will
@@ -245,6 +261,7 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
          */
         if (register_on_all_promise_dependencies(curr_task)) {
             try_schedule_async(curr_task, ws);
+            ds_update_task_state(curr_task->task_id,0);
             hclib_yield(NULL);
         }
 

@@ -2,6 +2,7 @@ include $(HCLIB_ROOT)/../modules/system/inc/hclib_system.pre.mak
 include $(HCLIB_ROOT)/include/hclib.mak
 include $(HCLIB_ROOT)/../modules/system/inc/hclib_system.post.mak
 
+CXX=clang++
 EXE=non_serial_project non_serial_project2 failed_case fib sort matmul_promise randomized
 
 all: $(EXE)

@@ -21,6 +21,7 @@ void DisjointSet::end_finish_merge(int finish_id){
     int finish_owner_task = finish->belong_to_task_id;
     for(vector<int>::iterator i = finish->task_in_this_finish.begin(); i != finish->task_in_this_finish.end(); i++){
         int sub_task_id = *i;
+        this->update_task_state(sub_task_id,JOINED);
         this->mergeBtoA(finish_owner_task, sub_task_id);
     }
 }
@@ -36,6 +37,12 @@ hclib_task::hclib_task(int task_id, int parent_id, void *node_in_dpst, void *tas
 
 void DisjointSet::addTask(int task_id, hclib_task *task){
     all_tasks[task_id] = task;
+    if(this->ntcounts(task->parent_id) > 0){
+        this->setlsa(task_id, task->parent_id);
+    }
+    else{
+        this->setlsa(task_id, -1);
+    }
 };
 
 hclib_task* DisjointSet::get_task_info(int task_id){
@@ -74,11 +81,15 @@ void DisjointSet::break_previous_steps(int task_id, int task_id_for_previous_ste
     this->nt[task_id].push_back(task_id_for_previous_steps);
 }
 
+string state_string[4] = {"Active", "Blocked", "Finished_not_Joined", "Joined"};
+
 void DisjointSet::print_all_tasks(){
     for (std::pair<int, hclib_task*> element: this->all_tasks) {
         hclib_task *task = element.second;
         int task_id = element.first;
-        printf("task %d, parent is %d, has %d nt joins and lsa is %d \n", task_id, task->parent_id, this->ntcounts(task_id), this->lsa[task_id] );
+        printf("task %d, parent is %d, has %d nt joins, lsa is %d, task state is: ", task_id, task->parent_id, this->ntcounts(task_id), this->lsa[task_id]);
+        int state = static_cast<int>(this->all_tasks[task_id]->this_task_state);
+        std::cout << state_string[state] << std::endl;
     }
 }
 
@@ -122,8 +133,6 @@ void DisjointSet::mergeBtoA(int a, int b){
         a_nt.push_back(*i);
     }
     nt[Sa] = a_nt;
-    
-    // Sa.lsa = Sa.lsa, do nothing 
 
     // union Sb into Sa
     parent_aka_setnowin[Sb] = Sa;
@@ -132,6 +141,9 @@ void DisjointSet::mergeBtoA(int a, int b){
 void DisjointSet::addnt(int task, int nt_task_id){
     //int Sa = Find(task);
     nt[task].push_back(nt_task_id);
+    if(this->all_tasks[nt_task_id]->this_task_state != JOINED){
+        this->all_tasks[nt_task_id]->this_task_state = JOINED;
+    }
 }
 
 int DisjointSet::ntcounts(int task_id){
@@ -195,4 +207,49 @@ void printSets(vector<int> const &universe, DisjointSet &ds){
         printf("element %d is in set %d \n",i,ds.Find(i));
     }
     printf("\n");
+}
+
+void DisjointSet::print_table(){
+    unordered_map<int, vector<int>> all_sets;
+
+    for (std::pair<int, int> element: parent_aka_setnowin) {
+        int the_parent = Find(element.first);
+        if(all_sets.count(the_parent) > 0){
+            all_sets[the_parent].push_back(element.first);
+        }
+        else{
+            vector<int> initial_set;
+            initial_set.push_back(element.first);
+            all_sets[the_parent] = initial_set;
+        }
+    };
+
+    printf("Disjoint Set | Task | NT | LSA \n");
+
+    for (std::pair<int,vector<int>> the_set: all_sets){
+        printf("%d", the_set.first);
+        
+        printf(" | ");
+
+        for(auto member = the_set.second.begin(); member != the_set.second.end(); member++){
+            printf("%d,",*member);
+        }
+
+        printf(" | ");
+
+        for(auto nt_join = nt[the_set.first].begin(); nt_join != nt[the_set.first].end(); nt_join++){
+            printf("%d,",*nt_join);
+        }
+
+        printf(" | ");
+
+        printf("%d", this->lsa[the_set.first]);
+
+        printf("\n\n");
+    }
+
+}
+
+void DisjointSet::update_task_state(int task_id, task_state new_state){
+    this->all_tasks[task_id]->this_task_state = new_state;
 }

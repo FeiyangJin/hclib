@@ -23,7 +23,7 @@ int main(int argc, char **argv){
 
                     B->get_future()->wait();
 
-                    printf("    C after promise");
+                    printf("    C after promise ");
                     hclib_print_current_task_info();
                 });
 
@@ -39,7 +39,6 @@ int main(int argc, char **argv){
                 printf("D ");
                 hclib_print_current_task_info();
             });
-
             B->put(3);
 
 			return;
@@ -49,6 +48,7 @@ int main(int argc, char **argv){
         //ds_printdsbyset();
         //printDPST();
         ds_print_all_tasks();
+        ds_print_table();
 	});
 	return 0;
 }

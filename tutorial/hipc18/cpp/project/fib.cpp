@@ -35,11 +35,13 @@ uint64_t fib_async_finish(uint64_t n) {
   hclib::promise_t<uint64_t> *y = new hclib::promise_t<uint64_t>();
 
     hclib::async([&x, n]() {
-      x->put(fib_async_finish(n-1));
+      uint64_t value = fib_async_finish(n-1);
+      x->put(value);
     });
 
     hclib::async([&y,n]() {
-      y->put(fib_async_finish(n-2));
+      uint64_t value = fib_async_finish(n-2);
+      y->put(value);
     });
     
   return (x->get_future()->wait() + y->get_future()->wait());

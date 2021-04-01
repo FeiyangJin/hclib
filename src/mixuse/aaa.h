@@ -18,7 +18,7 @@ class hclib_task
         int task_id;
         int parent_id;
         void *node_in_dpst;
-        void *task_address; // could be null if the task is freed
+        void *task_address; // could be null if the task is freed or is empty
         task_state this_task_state;
 
         hclib_task(int task_id, int parent_id, void *node_in_dpst, void *task_address, task_state state);
@@ -57,6 +57,8 @@ class DisjointSet
 public:
     DisjointSet();
 
+    void print_table();
+
     void end_finish_merge(int finish_id);
 
     void add_task_to_finish(int finish_id, int task_id);
@@ -72,6 +74,8 @@ public:
     void update_task_parent(int task_id, int new_parent_id);
 
     void update_task_dpst_node(int task, void *new_node);
+
+    void update_task_state(int task_id, task_state new_state);
 
     void break_previous_steps(int task_id, int task_id_for_previous_steps);
 

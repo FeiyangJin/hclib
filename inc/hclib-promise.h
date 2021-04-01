@@ -79,6 +79,7 @@ typedef struct hclib_promise_st {
     volatile int satisfied;
     void *volatile datum;
     int setter_task_id;
+    int empty_future_id;
     /*
      * List of tasks that are awaiting the satisfaction of this promise.
      * wait_list_head is initialized to SENTINEL_FUTURE_WAITLIST_PTR when

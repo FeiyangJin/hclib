@@ -99,8 +99,13 @@ void ds_printdsbyset(){
     ds->printdsbyset();
 }
 
-void ds_printElementSets(int *element_array){
-    
+void ds_print_table(){
+    ds->print_table();
+}
+
+void ds_update_task_state(int task_id, int new_state){
+    task_state state = static_cast<task_state>(new_state);
+    ds->update_task_state(task_id,state);
 }
 
 #ifdef __cplusplus

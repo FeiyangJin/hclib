@@ -97,7 +97,7 @@ void fulfill(PromiseCollection promises){
     }
 
     for(auto cf : tasks){
-        cf->get();
+        cf->wait();
     }
 }
 
