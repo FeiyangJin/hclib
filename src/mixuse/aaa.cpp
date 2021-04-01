@@ -37,14 +37,21 @@ hclib_task::hclib_task(int task_id, int parent_id, void *node_in_dpst, void *tas
 
 void DisjointSet::addTask(int task_id, hclib_task *task){
     all_tasks[task_id] = task;
+
     if(task_id == 0){
-        this->setlsa(task_id, -1);
+        this->lsa[0] == -1;
+        return;
     }
-    else if(this->ntcounts(task->parent_id) > 0){
-        this->setlsa(task_id, task->parent_id);
+
+    int task_set = Find(task_id);
+    int parent_set = Find(task->parent_id);
+
+    if(this->ntcounts(parent_set) > 0){
+        this->setlsa(task_set, parent_set);
     }
     else{
-        this->setlsa(task_id, -1);
+        int parentLSA = this->lsa[parent_set];
+        this->setlsa(task_set, parentLSA);
     }
 };
 
@@ -90,7 +97,9 @@ void DisjointSet::print_all_tasks(){
     for (std::pair<int, hclib_task*> element: this->all_tasks) {
         hclib_task *task = element.second;
         int task_id = element.first;
-        printf("task %d, parent is %d, has %d nt joins, lsa is %d, task state is: ", task_id, task->parent_id, this->ntcounts(task_id), this->lsa[task_id]);
+        printf("task %d, parent is %d, has %d nt joins, lsa is %d, now in set: %d, task state is: ", 
+            task_id, task->parent_id, this->nt[task_id].size(), this->lsa[task_id], Find(task_id));
+
         int state = static_cast<int>(this->all_tasks[task_id]->this_task_state);
         std::cout << state_string[state] << std::endl;
     }
@@ -113,18 +122,29 @@ void DisjointSet::Union(int a, int b){
         return;
     }
 
+    if(rank[Sa] > rank[Sb]){
+        parent_aka_setnowin[Sb] = Sa;
+    }
+    else if(rank[Sa] < rank[Sb]){
+        parent_aka_setnowin[Sa] = Sb;
+    }
+    else{
+        parent_aka_setnowin[Sb] = Sa;
+        rank[Sa] ++;
+    }
     
 }
 
 void DisjointSet::addSet(int set_index){
     this->parent_aka_setnowin[set_index] = set_index;
-    this->rank[set_index] = 1;
+    this->rank[set_index] = 0;
     vector<int> nontreejoins;
     nt[set_index] = nontreejoins;
     lsa[set_index] = -1;
 }
 
 int DisjointSet::Find(int k){
+    assert(k != -1);
     if (parent_aka_setnowin[k] != k)
     {
         parent_aka_setnowin[k] = Find(parent_aka_setnowin[k]);
@@ -134,49 +154,76 @@ int DisjointSet::Find(int k){
 }
 
 void DisjointSet::mergeBtoA(int a, int b){
-    int Sa = Find(a);
-    int Sb = Find(b);
+    int a_set = Find(a);
+    int b_set = Find(b);
 
-    if (Sa == Sb) {
+    assert(a_set >= 0);
+    assert(b_set >= 0);
+
+    if (a_set == b_set) {
         return;
     }
 
     // union nt
-    vector<int> a_nt = nt.at(Sa);
-    vector<int> b_nt = nt.at(Sb);
+    vector<int> a_nt = nt.at(a_set);
+    vector<int> b_nt = nt.at(b_set);
     for(auto i = b_nt.begin(); i != b_nt.end(); ++i){
         a_nt.push_back(*i);
     }
-    nt[Sa] = a_nt;
 
-    // union Sb into Sa
-    parent_aka_setnowin[Sb] = Sa;
+    // set new lsa
+    int new_lsa = this->lsa[a_set];
+
+    // union two sets
+    int new_set = -1;
+    if(rank[a_set] > rank[b_set]){
+        parent_aka_setnowin[b_set] = a_set;
+        new_set = a_set;
+    }
+    else if(rank[a_set] < rank[b_set]){
+        parent_aka_setnowin[a_set] = b_set;
+        new_set = b_set;
+    }
+    else{
+        parent_aka_setnowin[b_set] = a_set;
+        rank[a_set] ++;
+        new_set = a_set;
+    }
+
+    this->nt[new_set] = a_nt;
+    this->lsa[new_set] = new_lsa;
 }
 
 void DisjointSet::addnt(int task, int nt_task_id){
-    //int Sa = Find(task);
-    if(task < 0 || nt_task_id < 0){
-        printf("warning: index is less than 0 \n");
-    }
+    int task_set = Find(task);
 
-    nt[task].push_back(nt_task_id);
+    nt[task_set].push_back(nt_task_id);
     if(this->all_tasks[nt_task_id]->this_task_state != JOINED){
         this->all_tasks[nt_task_id]->this_task_state = JOINED;
     }
 }
 
 int DisjointSet::ntcounts(int task_id){
-    //int Sa = Find(task_id);
-    return nt[task_id].size();
+    int task_set = Find(task_id);
+    return nt[task_set].size();
 }
 
 int DisjointSet::getlsa(int task_id){
-    return this->lsa[task_id];
+    int task_set = Find(task_id);
+    return this->lsa[task_set];
 }
 
 void DisjointSet::setlsa(int task_id, int lsa){
-    //int Sa = Find(task_id);
-    this->lsa[task_id] = lsa;
+    int task_set = Find(task_id);
+
+    if(lsa != -1){
+        int lsa_set = Find(lsa);
+        this->lsa[task_set] = lsa_set;
+    }
+    else{
+        this->lsa[task_set] = -1;
+    }
+
 }
 
 void DisjointSet::printds(){
@@ -230,13 +277,6 @@ void DisjointSet::printdsbyset(){
 
         printf("\n\n");
     }
-}
-
-void printSets(vector<int> const &universe, DisjointSet &ds){
-    for (int i: universe) {
-        printf("element %d is in set %d \n",i,ds.Find(i));
-    }
-    printf("\n");
 }
 
 void DisjointSet::print_table(){

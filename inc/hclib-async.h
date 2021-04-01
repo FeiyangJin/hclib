@@ -156,15 +156,6 @@ inline hclib_task_t *initialize_task(Function lambda_caller, T1 *lambda_on_heap)
 
         // disjoint set operation
         ds_addSet(task_id_unique);
-        int parent_id = t->parent_id;
-        int parent_nt_counts = ds_ntcounts(parent_id);
-        if(parent_nt_counts > 0){
-            ds_setlsa(task_id_unique,parent_id);
-        }
-        else{
-            int parent_lsa = ds_getlsa(parent_id);
-            ds_setlsa(task_id_unique,parent_lsa);
-        }
     }
     
     increase_task_id_unique();

@@ -663,7 +663,6 @@ static inline void execute_task(hclib_task_t *task) {
 #endif
 
     // fj: update task state in ds
-    printf("mark %d task as finished_not_joined \n",task->task_id);
     ds_update_task_state(task->task_id,2);
     free(task);
     

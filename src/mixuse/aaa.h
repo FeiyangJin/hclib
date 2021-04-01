@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include "assert.h"
 using namespace std;
 
 enum task_state{
@@ -113,6 +114,4 @@ public:
     void printdsbyset();
 };
 
-
-void printSets(vector<int> const &universe, DisjointSet &ds);
 #endif

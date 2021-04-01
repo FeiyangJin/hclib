@@ -261,8 +261,6 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
          */
         if (register_on_all_promise_dependencies(curr_task)) {
             try_schedule_async(curr_task, ws);
-            //ds_update_task_state(curr_task->task_id,0);
-            //hclib_yield(NULL);
             counter ++;
         }
 

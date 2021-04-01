@@ -56,9 +56,10 @@ int main(int argc, char **argv){
 		assert(ds_ntcounts(b->corresponding_task_id) == 1);
 
 		// printDPST();
-		//ds_print_all_tasks();
+		ds_print_all_tasks();
+		ds_print_table();
 		//ds_printdsbyset();
-		ds_printAll();
+		//ds_printAll();
 	});
 	return 0;
 }
