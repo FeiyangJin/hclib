@@ -41,7 +41,7 @@ int main(int argc, char **argv){
 		c->wait();
 
 		printf("waiting is over \n");
-		printDPST();
+		//printDPST();
 
 		assert(A->setter_task_id == a->corresponding_task_id);
 		assert(ds_findSet(a->corresponding_task_id) == a->corresponding_task_id);
@@ -56,9 +56,9 @@ int main(int argc, char **argv){
 		assert(ds_ntcounts(b->corresponding_task_id) == 1);
 
 		// printDPST();
-		ds_print_all_tasks();
-		ds_printdsbyset();
-
+		//ds_print_all_tasks();
+		//ds_printdsbyset();
+		ds_printAll();
 	});
 	return 0;
 }

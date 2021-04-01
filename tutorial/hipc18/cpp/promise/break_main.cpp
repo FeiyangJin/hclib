@@ -7,24 +7,38 @@ int main(int argc, char **argv){
   	hclib::launch(deps, 1, [&]() {
 		hclib::promise_t<int> *A = new hclib::promise_t<int>();
         hclib::promise_t<int> *B = new hclib::promise_t<int>();
+        hclib::promise_t<int> *C = new hclib::promise_t<int>();
+        
+        printf("1 ");
 
         hclib::async([=](){
-            A->put(5);
+            printf("2 ");
+            hclib::async([=](){
+                printf("3 ");
+                //ds_print_all_tasks();
+                hclib::async([=](){
+                    printf("4 " );
+                    A->get_future()->wait();
+                    printf("8 ");
+                });
+                printf("5 ");
+                B->get_future()->wait();
+                printf("11 ");
+                
+            });
+            printf("6 ");
+            A->get_future()->wait();
+            printf("9 ");
         });
 
-        A->get_future()->wait();
-
-        //printDPST();
-        ds_print_table();
-        ds_print_all_tasks();
-
+        printf("7 ");
+        A->put(5);
+        printf("10 ");
         B->put(7);
-        B->get_future()->wait();
 
-        ds_print_table();
+        printf("\n");
         ds_print_all_tasks();
-
-        printDPST();
+        ds_print_table();
 	});
 	return 0;
 }
