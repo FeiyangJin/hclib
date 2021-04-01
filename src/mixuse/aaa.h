@@ -48,6 +48,8 @@ class DisjointSet
     // a map from task_index to set, aka which set the task is currently in
     unordered_map<int, int> parent_aka_setnowin;
 
+    unordered_map<int, int> rank;
+
     // stores the non-tree joins for each set
     unordered_map<int,vector<int>> nt;
 
@@ -89,6 +91,8 @@ public:
 
     // Peform Union of two subsets where Set A is the new parent
     void mergeBtoA(int a, int b);
+
+    void Union(int a, int b);
 
     // add a task to other's nt
     void addnt(int task, int nt_task_id);

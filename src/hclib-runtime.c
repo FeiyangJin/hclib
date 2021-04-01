@@ -626,10 +626,11 @@ static inline void check_out_finish(finish_t *finish) {
 }
 
 static inline void execute_task(hclib_task_t *task) {
-    // fj: check if we are at a step node
+    // fj: check if we are at a step node, and mark the task as active
     if(task->node_in_dpst != NULL && task->node_in_dpst->index > 1){
         HASSERT(task->node_in_dpst->children_list_tail->this_node_type == STEP);
     }
+    ds_update_task_state(task->task_id,0);
 
     finish_t *current_finish = task->current_finish;
     /*
@@ -662,6 +663,7 @@ static inline void execute_task(hclib_task_t *task) {
 #endif
 
     // fj: update task state in ds
+    printf("mark %d task as finished_not_joined \n",task->task_id);
     ds_update_task_state(task->task_id,2);
     free(task);
     
@@ -1219,7 +1221,7 @@ void *hclib_future_wait(hclib_future_t *future) {
     HASSERT(future->owner->satisfied);
 
     // fj: work on disjoint set if the future is an independent task
-    if(future->corresponding_task_id > 0){
+    if(future->corresponding_task_id >= 0){
         int future_task_id = future->corresponding_task_id;
         int future_parent_id = ds_parentid(future_task_id);
         if(ds_findSet(current_task->task_id) == ds_findSet(future_parent_id)){
@@ -1238,6 +1240,9 @@ void *hclib_future_wait(hclib_future_t *future) {
         if(future->owner->setter_task_id != current_task->task_id){
             // version 2: add a empty future
             // see promise_put in hclib-promise.c for details
+            assert(future->corresponding_task_id == -1);
+            assert(future->owner->empty_future_id >= 0);
+            assert(future->owner->setter_task_id >= 0);
             ds_addnt(current_task->task_id,future->owner->empty_future_id);
 
 

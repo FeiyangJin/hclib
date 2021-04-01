@@ -37,7 +37,10 @@ hclib_task::hclib_task(int task_id, int parent_id, void *node_in_dpst, void *tas
 
 void DisjointSet::addTask(int task_id, hclib_task *task){
     all_tasks[task_id] = task;
-    if(this->ntcounts(task->parent_id) > 0){
+    if(task_id == 0){
+        this->setlsa(task_id, -1);
+    }
+    else if(this->ntcounts(task->parent_id) > 0){
         this->setlsa(task_id, task->parent_id);
     }
     else{
@@ -102,8 +105,20 @@ DisjointSet::DisjointSet(){
 
 }
 
+void DisjointSet::Union(int a, int b){
+    int Sa = Find(a);
+    int Sb = Find(b);
+
+    if (Sa == Sb) {
+        return;
+    }
+
+    
+}
+
 void DisjointSet::addSet(int set_index){
     this->parent_aka_setnowin[set_index] = set_index;
+    this->rank[set_index] = 1;
     vector<int> nontreejoins;
     nt[set_index] = nontreejoins;
     lsa[set_index] = -1;
@@ -140,6 +155,10 @@ void DisjointSet::mergeBtoA(int a, int b){
 
 void DisjointSet::addnt(int task, int nt_task_id){
     //int Sa = Find(task);
+    if(task < 0 || nt_task_id < 0){
+        printf("warning: index is less than 0 \n");
+    }
+
     nt[task].push_back(nt_task_id);
     if(this->all_tasks[nt_task_id]->this_task_state != JOINED){
         this->all_tasks[nt_task_id]->this_task_state = JOINED;
@@ -166,8 +185,19 @@ void DisjointSet::printds(){
     };
 
     for (std::pair<int, std::vector<int>> element: nt) {
-        printf("%d has %d nt joins \n", element.first, element.second.size());
+        int task_id = element.first;
+        printf("%d has nt joins: ", task_id);
+
+        for(auto item = element.second.begin(); item != element.second.end(); ++item){
+            printf("%d ",*item);
+        }
+        printf("\n");
     };
+
+    for(std::pair<int,int> element: lsa){
+        printf("task %d has lsa %d \n",element.first,element.second);
+    }
+
 }
 
 void DisjointSet::printdsbyset(){

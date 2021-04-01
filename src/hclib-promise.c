@@ -226,7 +226,7 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
     // fj: create an empty future just for happened-before relationship
     if(promise_to_be_put->future.corresponding_task_id == -1){
         // we know this future is just an access to a promise
-        // which means some tasks will get this promise, not the future
+        // which means some tasks will get this promise
         int empty_future_id = get_task_id_unique();
         increase_task_id_unique();
         tree_node *empty_future_node = insert_tree_node(FUTURE,setter_task->node_in_dpst);
@@ -249,7 +249,7 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
         wait_list_of_promise = promise_to_be_put->wait_list_head;
     }
 
-
+    int counter = 0;
     while (curr_task != SENTINEL_FUTURE_WAITLIST_PTR) {
 
         next_task = *_next_waiting_task(curr_task);
@@ -261,12 +261,20 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
          */
         if (register_on_all_promise_dependencies(curr_task)) {
             try_schedule_async(curr_task, ws);
-            ds_update_task_state(curr_task->task_id,0);
-            hclib_yield(NULL);
+            //ds_update_task_state(curr_task->task_id,0);
+            //hclib_yield(NULL);
+            counter ++;
         }
 
         curr_task = next_task;
     }
+
+    while (counter > 0)
+    {
+        hclib_yield(NULL);
+        counter --;
+    }
+    
 }
 
 

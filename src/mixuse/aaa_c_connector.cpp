@@ -31,10 +31,6 @@ void ds_update_task_dpst_node(int task_id, void *new_node){
     ds->update_task_dpst_node(task_id,new_node);
 }
 
-void ds_print_nt(int task_id){
-    
-}
-
 void ds_addFinish(int finish_id, int belong_to_task_id, void *node_in_dpst, void *finish_address){
     hclib_finish *new_finish = new hclib_finish(finish_id, belong_to_task_id,node_in_dpst,finish_address);
     ds->addFinish(finish_id, new_finish);
