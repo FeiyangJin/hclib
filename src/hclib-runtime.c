@@ -69,6 +69,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mach/mach.h>
 #endif
 
+struct dpst DPST;
 
 char *node_char[5] = {'R','F','A','f','S'};
 static int node_index = 0;

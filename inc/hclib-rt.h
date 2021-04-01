@@ -112,7 +112,7 @@ void dpst_update_parent(tree_node *task_node, tree_node *new_parent);
 tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent);
 void insert_leaf(tree_node *task_node);
 
-struct dpst DPST;
+extern struct dpst DPST;
 
 typedef struct _hclib_worker_state {
     // Global context for this instance of the runtime.
