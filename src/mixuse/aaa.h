@@ -49,6 +49,7 @@ class DisjointSet
     // a map from task_index to set, aka which set the task is currently in
     unordered_map<int, int> parent_aka_setnowin;
 
+    // rank for each set
     unordered_map<int, int> rank;
 
     // stores the non-tree joins for each set
@@ -60,16 +61,14 @@ class DisjointSet
 public:
     DisjointSet();
 
-    void print_table();
-
+    // finish functions
     void end_finish_merge(int finish_id);
 
     void add_task_to_finish(int finish_id, int task_id);
 
-    // add finish
     void addFinish(int finish_id, hclib_finish *finish);
 
-    // add task
+    // task functions
     void addTask(int task_id, hclib_task *task);
 
     hclib_task* get_task_info(int task_id);
@@ -84,27 +83,33 @@ public:
 
     void print_all_tasks();
 
-    // add single set
+    // disjoint set functions
     void addSet(int set_index);
  
     // Find the root of the set in which element `k` belongs
     int Find(int k);
 
-    // Peform Union of two subsets where Set A is the new parent
+    // Peform Union of two subsets where a called get(b)
     void mergeBtoA(int a, int b);
 
     void Union(int a, int b);
 
-    // add a task to other's nt
+    // add a set to other's nt
     void addnt(int task, int nt_task_id);
 
     // return the number of nt for task's set
     int ntcounts(int task_id);
 
-    // get lsa
+    // return the number of nt for the task
+    int ntcounts_task(int task_id);
+
+    // get lsa of the set task is now in
     int getlsa(int task_id);
 
-    // set the lsa
+    // get lsa of the task
+    int getlsa_task(int task_id);
+
+    // set lsa of the set task is now in
     void setlsa(int task_id, int lsa);
 
     // print each item
@@ -112,6 +117,9 @@ public:
 
     // print by set
     void printdsbyset();
+
+    // print in table format
+    void print_table();
 };
 
 #endif

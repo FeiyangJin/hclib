@@ -34,7 +34,13 @@ hclib_task::hclib_task(int task_id, int parent_id, void *node_in_dpst, void *tas
     this->this_task_state = state;
 }
 
-
+/**
+ * @brief  Add a struct hclib_task to map and update lsa 
+ * @note   
+ * @param  task_id: task_id
+ * @param  *task: the struct hclib_task
+ * @retval None
+ */
 void DisjointSet::addTask(int task_id, hclib_task *task){
     all_tasks[task_id] = task;
 
@@ -50,8 +56,7 @@ void DisjointSet::addTask(int task_id, hclib_task *task){
         this->setlsa(task_set, parent_set);
     }
     else{
-        int parentLSA = this->lsa[parent_set];
-        this->setlsa(task_set, parentLSA);
+        this->setlsa(task_set, this->lsa[parent_set]);
     }
 };
 
@@ -145,7 +150,6 @@ void DisjointSet::addSet(int set_index){
 
 int DisjointSet::Find(int k){
     assert(k != -1);
-    //printf("k is %d \n",k);
     if (parent_aka_setnowin[k] != k)
     {
         parent_aka_setnowin[k] = Find(parent_aka_setnowin[k]);
@@ -154,6 +158,13 @@ int DisjointSet::Find(int k){
     return parent_aka_setnowin[k];
 }
 
+/**
+ * @brief  task a called get(b), merge the two disjoint sets
+ * @note   the new set could be a_set or b_set, depends on rank
+ * @param  a: task a task_id
+ * @param  b: task b task_id
+ * @retval None
+ */
 void DisjointSet::mergeBtoA(int a, int b){
     int a_set = Find(a);
     int b_set = Find(b);
@@ -205,13 +216,19 @@ void DisjointSet::addnt(int task, int nt_task_id){
 }
 
 int DisjointSet::ntcounts(int task_id){
-    int task_set = Find(task_id);
-    return nt[task_set].size();
+    return nt[Find(task_id)].size();
+}
+
+int DisjointSet::ntcounts_task(int task_id){
+    return this->nt[task_id].size();
 }
 
 int DisjointSet::getlsa(int task_id){
-    int task_set = Find(task_id);
-    return this->lsa[task_set];
+    return this->lsa[Find(task_id)];
+}
+
+int DisjointSet::getlsa_task(int task_id){
+    return this->lsa[task_id];
 }
 
 void DisjointSet::setlsa(int task_id, int lsa){

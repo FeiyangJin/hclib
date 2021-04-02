@@ -79,8 +79,16 @@ int ds_ntcounts(int task_id){
     return ds->ntcounts(task_id);
 }
 
+int ds_ntcounts_task(int task_id){
+    return ds->ntcounts_task(task_id);
+}
+
 int ds_getlsa(int task_id){
     return ds->getlsa(task_id);
+}
+
+int ds_getlsa_task(int task_id){
+    return ds->getlsa_task(task_id);
 }
 
 void ds_setlsa(int task_id, int lsa){
