@@ -135,6 +135,7 @@ tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent){
     }
     else{
         // each task corresponds to an async or a future tree node
+        assert(parent);
         node->parent = parent;
         node->depth = node->parent->depth + 1;
 

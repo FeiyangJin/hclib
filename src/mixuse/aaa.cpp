@@ -145,6 +145,7 @@ void DisjointSet::addSet(int set_index){
 
 int DisjointSet::Find(int k){
     assert(k != -1);
+    //printf("k is %d \n",k);
     if (parent_aka_setnowin[k] != k)
     {
         parent_aka_setnowin[k] = Find(parent_aka_setnowin[k]);
