@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
     assert(ds_parentid(task_id) == -1);
     assert(ds_taskState(task_id) == 0);
 
-    // test finish join
+    // test finish join and execution order
     std::vector<int> v;
     hclib::finish([&](){
         for(int i=0; i<10; i++){
@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
     assert(ds_ntcounts(task_id) == 1);
     assert(ds_getlsa(task_id) == -1);
     
-    printf("all tests passsed \n");
+    printf("all tests passsed int test 1\n");
     // end of hclib
   });
   
