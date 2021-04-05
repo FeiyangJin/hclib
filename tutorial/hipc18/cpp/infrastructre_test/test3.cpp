@@ -9,35 +9,35 @@ int main(int argc, char **argv) {
 
     hclib::launch(deps, 1, [&]() {
         // test finding lca and lca left child
-        // hclib_worker_state *main_ws = current_ws();
-        // hclib_task_t *main_task = (hclib_task_t *) main_ws->curr_task;
-        // tree_node* root = main_task->node_in_dpst;
+        hclib_worker_state *main_ws = current_ws();
+        hclib_task_t *main_task = (hclib_task_t *) main_ws->curr_task;
+        tree_node* root = main_task->node_in_dpst;
 
-        // assert(root->number_of_child == 1);
-        // assert(root->children_list_head->is_parent_nth_child == 0);
+        assert(root->number_of_child == 1);
+        assert(root->children_list_head->is_parent_nth_child == 0);
 
-        // tree_node* step1;
-        // tree_node* step2;
-        // hclib::async([&](){
-        //     hclib::finish([&](){
-        //         step1 = get_current_step_node();
-        //     }); 
-        // });
+        tree_node* step1;
+        tree_node* step2;
+        hclib::async([&](){
+            hclib::finish([&](){
+                step1 = get_current_step_node();
+            }); 
+        });
 
-        // hclib::async([&](){
+        hclib::async([&](){
 
-        //     hclib::finish([&](){
+            hclib::finish([&](){
                 
-        //         hclib::async([&](){
-        //             step2 = get_current_step_node();
-        //         });
+                hclib::async([&](){
+                    step2 = get_current_step_node();
+                });
                 
-        //     }); 
-        // });
+            }); 
+        });
 
-        // tree_node* lca = find_lca(step1,step2);
-        // tree_node* lca_lc = find_lca_left_child(step1,step2);
-        // assert(lca->this_node_type == FINISH);
+        tree_node* lca = find_lca(step1,step2);
+        tree_node* lca_lc = find_lca_left_child(step1,step2);
+        assert(lca->this_node_type == FINISH);
         // printf("lca index: %d, lca left child index: %d, lca left child type: ",lca->index,lca_lc->index);
         // std::cout << nodeTypes[static_cast<int>(lca_lc->this_node_type)] << std::endl;
 

@@ -447,7 +447,7 @@ auto async_future(T&& lambda) -> hclib::future_t<decltype(lambda())>* {
     typedef decltype(wrapper) U;
 
     hclib_task_t* task = initialize_task(call_lambda<U>, new U(wrapper));
-    event->get_future()->corresponding_task_id = task->task_id;
+    
 
     // fj: insert a FUTURE node to DPST, and a step node as child
     hclib_worker_state *ws = current_ws();
@@ -468,8 +468,7 @@ auto async_future(T&& lambda) -> hclib::future_t<decltype(lambda())>* {
     insert_leaf(task->node_in_dpst);
 
     // fj: connect the future with the task
-    
-    //printf("async future set future task id %d \n",task->task_id);
+    event->get_future()->corresponding_task_id = task->task_id;
 
     // fj: disjoint set operation
     ds_addtask(task->task_id,curr_task->task_id,the_node,task,0);

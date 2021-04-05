@@ -1298,31 +1298,6 @@ void *hclib_future_wait(hclib_future_t *future) {
             assert(future->owner->empty_future_id >= 0);
             assert(future->owner->setter_task_id >= 0);
             ds_addnt(current_task->task_id,future->owner->empty_future_id);
-
-
-            // version 1: break task
-            // 0. possibly update parent_id
-            //current_task->parent_id = future->owner->setter_task_id;
-
-            // 1. dpst operation
-            // tree_node *old_dpst_node = current_task->node_in_dpst;
-            // old_dpst_node->corresponding_task_id = task_id_unique;
-
-            // tree_node *dpst_new_parent = (tree_node*) ds_get_dpst_node(future->owner->setter_task_id);
-            // tree_node *new_dpst_node = insert_tree_node(old_dpst_node->this_node_type,dpst_new_parent);
-            // current_task->node_in_dpst = new_dpst_node;
-
-            // HASSERT(dpst_new_parent->index == new_dpst_node->parent->index);
-            // insert_leaf(new_dpst_node->parent);
-            // insert_leaf(new_dpst_node);
-
-            // old_dpst_node->this_node_type = FUTURE;
-
-            // 2. disjoint set operation
-            //ds_break_previous_steps(current_task->task_id, task_id_unique);
-            //task_id_unique ++;
-            //ds_update_task_parent(current_task->task_id,future->owner->setter_task_id);
-            //ds_update_task_dpst_node(current_task->task_id,new_dpst_node);
         }
     }
 
