@@ -94,6 +94,8 @@ typedef struct tree_node{
     int corresponding_task_id;
     enum node_type this_node_type;
     int depth;
+    int number_of_child;
+    int is_parent_nth_child;
     struct tree_node *parent;
     struct tree_node *children_list_head;
     struct tree_node *children_list_tail;
@@ -105,9 +107,11 @@ typedef struct dpst{
     struct tree_node *current_step_node;
 } dpst;
 
-struct tree_node* newtreeNode();
+tree_node* newtreeNode();
 void printDPST();
 tree_node* find_lca(tree_node *node1,tree_node *node2);
+tree_node* find_lca_left_child(tree_node *node1,tree_node *node2);
+tree_node* get_current_step_node();
 void dpst_update_parent(tree_node *task_node, tree_node *new_parent);
 tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent);
 void insert_leaf(tree_node *task_node);

@@ -1,3 +1,5 @@
 HCLIB_WORKERS=1 ./test1
 
 HCLIB_WORKERS=1 ./test2
+
+HCLIB_WORKERS=1 ./test3
