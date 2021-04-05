@@ -112,6 +112,18 @@ void ds_update_task_state(int task_id, int new_state){
     ds->update_task_state(task_id,state);
 }
 
+int ds_find_task_node_index(int task_id){
+    return ds->find_task_node_index(task_id);
+}
+
+void* ds_find_lca_left_child(int task_A_id,int task_B_id){
+    return (void*) ds->find_lca_left_child_cpp(task_A_id,task_B_id); 
+}
+
+bool ds_precede(int task_A_id, int task_B_id){
+    return ds->precede(task_A_id,task_B_id);
+}
+
 #ifdef __cplusplus
 }
 #endif

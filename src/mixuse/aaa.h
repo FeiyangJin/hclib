@@ -2,9 +2,31 @@
 #define AAA_H
 #include <iostream>
 #include <vector>
+#include <set>
 #include <unordered_map>
 #include "assert.h"
 using namespace std;
+
+enum node_type_cpp{
+    ROOT,
+    FINISH,
+    ASYNC,
+    FUTURE,
+    STEP
+};
+
+typedef struct tree_node_cpp{
+    int index;
+    int corresponding_task_id;
+    enum node_type_cpp this_node_type;
+    int depth;
+    int number_of_child;
+    int is_parent_nth_child;
+    struct tree_node_cpp *parent;
+    struct tree_node_cpp *children_list_head;
+    struct tree_node_cpp *children_list_tail;
+    struct tree_node_cpp *next_sibling;
+} tree_node_cpp;
 
 enum task_state{
     ACTIVE,
@@ -120,6 +142,13 @@ public:
 
     // print in table format
     void print_table();
+
+    bool precede(int task_A_id, int task_B_id);
+    bool visit(int task_A_id, int task_B_id, set<int> visited);
+
+    tree_node_cpp* find_lca_left_child_cpp(int task_A_id,int task_B_id);
+
+    int find_task_node_index(int task_id);
 };
 
 #endif

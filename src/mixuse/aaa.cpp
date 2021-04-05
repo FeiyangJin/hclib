@@ -341,3 +341,99 @@ void DisjointSet::print_table(){
 void DisjointSet::update_task_state(int task_id, task_state new_state){
     this->all_tasks[task_id]->this_task_state = new_state;
 }
+
+int DisjointSet::find_task_node_index(int task_id){
+    tree_node_cpp* node = (tree_node_cpp*) this->all_tasks[task_id]->node_in_dpst;
+    return node->index;
+}
+
+tree_node_cpp* DisjointSet::find_lca_left_child_cpp(int task_A_id,int task_B_id){
+    tree_node_cpp *node1 = (tree_node_cpp*) this->all_tasks[task_A_id]->node_in_dpst;
+    tree_node_cpp *node2 = (tree_node_cpp*) this->all_tasks[task_B_id]->node_in_dpst;
+
+    while (node1->depth != node2->depth)
+    {
+        if (node1->depth > node2->depth)
+        {
+            node1 = node1->parent;
+        }
+        else{
+            node2 = node2->parent;
+        }
+    }
+
+    tree_node_cpp* node1_last_node;
+    tree_node_cpp* node2_last_node;
+
+    while(node1->index != node2->index){
+        node1_last_node = node1;
+        node2_last_node = node2;
+        node1 = node1->parent;
+        node2 = node2->parent;
+    }; // end
+
+    if(node1_last_node->is_parent_nth_child < node2_last_node->is_parent_nth_child){
+        // node1 is to the left of node 2
+        return node1_last_node;
+    }
+
+    return node2_last_node;
+}
+
+bool DisjointSet::precede(int task_A_id, int task_B_id){
+    set<int> visited;
+    return this->visit(task_A_id,task_B_id,visited);
+}
+
+bool DisjointSet::visit(int task_A_id, int task_B_id, set<int> visited){
+    // if A is still active ,return true
+    if(this->all_tasks[task_A_id]->this_task_state == ACTIVE){
+        return true;
+    }
+
+    const bool b_in_visited = visited.find(task_B_id) != visited.end();
+    if(b_in_visited){
+        return false;
+    }
+
+    visited.insert(task_B_id);
+
+    int Sa = this->Find(task_A_id);
+    int Sb = this->Find(task_B_id);
+
+    if(Sa == Sb){
+        return true;
+    }
+
+    // lca  
+    tree_node_cpp *lca_lc = find_lca_left_child_cpp(task_A_id,task_B_id);
+    if(lca_lc->this_node_type != FUTURE && lca_lc->this_node_type != ASYNC){
+        return false;
+    }
+
+    // if A is blocked or not joined, return False
+    if(this->all_tasks[task_A_id]->this_task_state == BLOCKED || this->all_tasks[task_A_id]->this_task_state == FINISHED_NOT_JOINED){
+        return false;
+    }
+    
+    // nt joins
+    for(auto nt_join = nt[task_B_id].begin(); nt_join != nt[task_B_id].end(); nt_join++){
+        if(visit(task_A_id,*nt_join,visited)){
+            return true;
+        }
+    }
+
+    // lsa
+    int lsa_id = this->getlsa(Sb);
+    while(lsa_id != -1){
+        for (auto lsa_nt = nt[lsa_id].begin(); lsa_nt != nt[lsa_id].end(); lsa_nt++)
+        {
+            if(visit(task_A_id, *lsa_nt, visited)){
+                return true;
+            }
+        }
+        lsa_id = this->getlsa(lsa_id);
+    }
+
+    return false;
+}

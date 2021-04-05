@@ -33,6 +33,12 @@ void ds_addFinish(int finish_id, int belong_to_task_id, void *node_in_dpst, void
 void ds_add_task_to_finish(int finish_id, int task_id);
 void ds_end_finish_merge(int finish_id);
 
+
+// reachability
+int ds_find_task_node_index(int task_id);
+void* ds_find_lca_left_child(int task_A_id,int task_B_id);
+bool ds_precede(int task_A_id, int task_B_id);
+
 #ifdef __cplusplus
 }
 #endif
