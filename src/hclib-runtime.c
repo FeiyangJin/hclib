@@ -230,6 +230,12 @@ struct tree_node* get_current_step_node(){
     finish_t *task_finish = task->current_finish;
     finish_t *ws_finish = ws->current_finish;
     if(task_finish->node_in_dpst->index == ws_finish->node_in_dpst->index){
+        if(task->task_id == 0){
+            // special case, for main task, the finish is under it in DPST
+            // for other tasks, the finish is above it in DPST
+            HASSERT(task_finish->node_in_dpst->children_list_tail->this_node_type == STEP);
+            return task_finish->node_in_dpst->children_list_tail;
+        }
         HASSERT(task->node_in_dpst->children_list_tail->this_node_type == STEP);
         return task->node_in_dpst->children_list_tail;
     }
@@ -1274,7 +1280,7 @@ void *hclib_future_wait(hclib_future_t *future) {
 
     HASSERT(future->owner->satisfied);
 
-    // fj: work on disjoint set if the future is an independent task
+    // fj: work on disjoint set
     if(future->corresponding_task_id >= 0){
         int future_task_id = future->corresponding_task_id;
         int future_parent_id = ds_parentid(future_task_id);
@@ -1284,7 +1290,8 @@ void *hclib_future_wait(hclib_future_t *future) {
         }
         else{
             // add future task to current tasks' nt
-            ds_addnt(current_task->task_id,future_task_id);
+            void* current_step_node = (void*) get_current_step_node();
+            ds_addnt(current_task->task_id,future_task_id,current_step_node);
         }
         // mark the future task joined
         ds_update_task_state(future->corresponding_task_id,3);
@@ -1297,9 +1304,13 @@ void *hclib_future_wait(hclib_future_t *future) {
             assert(future->corresponding_task_id == -1);
             assert(future->owner->empty_future_id >= 0);
             assert(future->owner->setter_task_id >= 0);
-            ds_addnt(current_task->task_id,future->owner->empty_future_id);
+            void* current_step_node = (void*) get_current_step_node();
+            ds_addnt(current_task->task_id,future->owner->empty_future_id,current_step_node);
         }
     }
+
+    // fj: insert a new step node in DPST after getting future
+    insert_leaf(current_task->node_in_dpst);
 
     // end fj
     return future->owner->datum;

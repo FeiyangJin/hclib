@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
         assert(step5->parent->this_node_type == ASYNC);
         assert(step6->is_parent_nth_child == 2);
         assert(step6->parent->this_node_type == FINISH);
-        assert(step7->is_parent_nth_child == 0);
+        assert(step7->is_parent_nth_child == 1);
         assert(step7->parent->this_node_type == ASYNC);
 
         printf("all tests passsed int test 3\n");

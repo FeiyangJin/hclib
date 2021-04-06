@@ -34,8 +34,7 @@ int main(int argc, char **argv) {
 
     assert(ds_ntcounts(0) == 0);
     assert(ds_getlsa(0) == -1);
-
-
+    
     // test finish join 2
     int inner_task = -1;
 
@@ -60,7 +59,7 @@ int main(int argc, char **argv) {
     assert(ds_taskState(inner_task) == 3);
     assert(ds_taskState(a->corresponding_task_id) == 2);
 
-    // // test non-tree joins and lsa
+    // test non-tree joins and lsa
     int b_task = -1;
     int inner_task2 = -1;
     hclib::future_t<void> *b = hclib::async_future([&]() {
@@ -89,7 +88,7 @@ int main(int argc, char **argv) {
     assert(ds_findSet(a->corresponding_task_id) != ds_findSet(b->corresponding_task_id));
     
 
-    // // test future joins
+    // test future joins
     a->wait();
     b->wait();
 

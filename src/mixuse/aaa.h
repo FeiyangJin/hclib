@@ -59,6 +59,16 @@ class hclib_finish
         hclib_finish(int finish_id, int belong_to_task_id, void *node_in_dpst, void *finish_address);
 };
 
+typedef struct nt_info{
+    int task_id;
+    tree_node_cpp *last_node_before_this_nt;
+} nt_info;
+
+typedef struct lsa_info{
+    int task_id;
+    tree_node_cpp *last_node_reachable_in_lsa;
+} lsa_info;
+
 // A class to represent a disjoint set
 class DisjointSet
 {
@@ -75,10 +85,15 @@ class DisjointSet
     unordered_map<int, int> rank;
 
     // stores the non-tree joins for each set
-    unordered_map<int,vector<int>> nt;
+    // unordered_map<int,vector<int>> nt;
 
     // stores the least-significant ancesotr for each set
-    unordered_map<int,int> lsa;
+    // unordered_map<int,int> lsa;
+
+    unordered_map<int,vector<nt_info>> nt;
+
+    unordered_map<int, lsa_info> lsa;
+
 
 public:
     DisjointSet();
@@ -91,17 +106,13 @@ public:
     void addFinish(int finish_id, hclib_finish *finish);
 
     // task functions
-    void addTask(int task_id, hclib_task *task);
+    void addTask(int task_id, hclib_task *task, tree_node_cpp *last_node_reachable_in_parent);
 
     hclib_task* get_task_info(int task_id);
-
-    void update_task_parent(int task_id, int new_parent_id);
 
     void update_task_dpst_node(int task, void *new_node);
 
     void update_task_state(int task_id, task_state new_state);
-
-    void break_previous_steps(int task_id, int task_id_for_previous_steps);
 
     void print_all_tasks();
 
@@ -117,7 +128,7 @@ public:
     void Union(int a, int b);
 
     // add a set to other's nt
-    void addnt(int task, int nt_task_id);
+    void addnt(int task, int nt_task_id,tree_node_cpp* last_node_before_nt);
 
     // return the number of nt for task's set
     int ntcounts(int task_id);
@@ -132,7 +143,7 @@ public:
     int getlsa_task(int task_id);
 
     // set lsa of the set task is now in
-    void setlsa(int task_id, int lsa);
+    void setlsa(int task_id, lsa_info lsa);
 
     // print each item
     void printds();

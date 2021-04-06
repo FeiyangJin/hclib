@@ -233,7 +233,8 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
         insert_leaf(setter_task->node_in_dpst);
 
         ds_addSet(empty_future_id);
-        ds_addtask(empty_future_id,setter_task->task_id,empty_future_node,NULL,2);
+        void* current_step_node = (void*) get_current_step_node();
+        ds_addtask(empty_future_id,setter_task->task_id,empty_future_node,NULL,2,current_step_node);
         promise_to_be_put->empty_future_id = empty_future_id;
     }
 
