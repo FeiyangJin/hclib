@@ -8,10 +8,11 @@ extern "C" {
 
 void ds_addSet(int set_index);
 int ds_findSet(int element);
-void ds_merge(int a, int b);
+void ds_merge(int a, int b, void* query_node);
 void ds_addnt(int task, int nt_task_id, void* last_step_before_nt);
 int ds_ntcounts(int task_id);
 int ds_ntcounts_task(int task_id);
+void ds_print_nt(int set_id);
 int ds_getlsa(int task_id);
 int ds_getlsa_task(int task_id);
 void ds_printAll();
@@ -28,7 +29,7 @@ void ds_update_task_state(int task_id, int new_state);
 
 void ds_addFinish(int finish_id, int belong_to_task_id, void *node_in_dpst, void *finish_address);
 void ds_add_task_to_finish(int finish_id, int task_id);
-void ds_end_finish_merge(int finish_id);
+void ds_end_finish_merge(int finish_id, void* query_node);
 
 
 // reachability

@@ -11,8 +11,9 @@ extern "C" {
 
 static DisjointSet *ds = new DisjointSet();
 
-void ds_end_finish_merge(int finish_id){
-    ds->end_finish_merge(finish_id);
+void ds_end_finish_merge(int finish_id, void* query_node){
+    tree_node_cpp* query_node_cpp = (tree_node_cpp*) query_node;
+    ds->end_finish_merge(finish_id, query_node_cpp);
 }
 
 void ds_add_task_to_finish(int finish_id, int task_id){
@@ -60,8 +61,9 @@ int ds_findSet(int element){
     return ds->Find(element);
 }
 
-void ds_merge(int a, int b){
-    ds->mergeBtoA(a,b);
+void ds_merge(int a, int b, void* query_node){
+    tree_node_cpp* query_node_cpp = (tree_node_cpp*) query_node;
+    ds->mergeBtoA(a,b,query_node_cpp);
 }
 
 void ds_addnt(int task, int nt_task_id, void* last_step_before_nt){
@@ -75,6 +77,10 @@ int ds_ntcounts(int task_id){
 
 int ds_ntcounts_task(int task_id){
     return ds->ntcounts_task(task_id);
+}
+
+void ds_print_nt(int set_id){
+    ds->print_nt(set_id);
 }
 
 int ds_getlsa(int task_id){

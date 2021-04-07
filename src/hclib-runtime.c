@@ -154,7 +154,7 @@ tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent){
     return node;
 }
 
-void insert_leaf(tree_node *task_node){
+tree_node* insert_leaf(tree_node *task_node){
     HASSERT(task_node);
     tree_node *new_step = newtreeNode();   
     new_step->this_node_type = STEP;
@@ -171,7 +171,7 @@ void insert_leaf(tree_node *task_node){
         task_node->children_list_tail->next_sibling = new_step;
         task_node->children_list_tail = new_step;
     }
-    DPST.current_step_node = new_step;
+    return new_step;
 }
 
 tree_node* find_lca(tree_node *node1,tree_node *node2){
@@ -1280,13 +1280,16 @@ void *hclib_future_wait(hclib_future_t *future) {
 
     HASSERT(future->owner->satisfied);
 
+    // fj: insert a new step node in DPST after getting future
+    tree_node* continuation = insert_leaf(get_current_step_node()->parent);
+    
     // fj: work on disjoint set
     if(future->corresponding_task_id >= 0){
         int future_task_id = future->corresponding_task_id;
         int future_parent_id = ds_parentid(future_task_id);
         if(ds_findSet(current_task->task_id) == ds_findSet(future_parent_id)){
             // merge two sets
-            ds_merge(current_task->task_id,future_task_id);
+            ds_merge(current_task->task_id, future_task_id, (void*)continuation);
         }
         else{
             // add future task to current tasks' nt
@@ -1308,9 +1311,6 @@ void *hclib_future_wait(hclib_future_t *future) {
             ds_addnt(current_task->task_id,future->owner->empty_future_id,current_step_node);
         }
     }
-
-    // fj: insert a new step node in DPST after getting future
-    insert_leaf(current_task->node_in_dpst);
 
     // end fj
     return future->owner->datum;
@@ -1595,7 +1595,12 @@ void hclib_end_finish() {
 #endif
 
     // fj: ds operation
-    ds_end_finish_merge(current_finish->node_in_dpst->index);
+    if(current_finish->node_in_dpst->index > 1){
+        tree_node* continuation = current_finish->node_in_dpst->next_sibling;
+        HASSERT(continuation->this_node_type == STEP);
+        ds_end_finish_merge(current_finish->node_in_dpst->index, (void*)continuation);
+    }
+
 
     // Don't reuse worker-state! (we might not be on the same worker anymore)
     ws = CURRENT_WS_INTERNAL;

@@ -73,8 +73,8 @@ int main(int argc, char **argv) {
                 ws = current_ws();
                 task = (hclib_task_t *)ws->curr_task;
                 inner_task2 = task->task_id;
-                assert(ds_ntcounts_task(inner_task2) == 0);
-                assert(ds_getlsa_task(inner_task2) == ds_findSet(b_task));
+                assert(ds_ntcounts(inner_task2) == 0);
+                assert(ds_getlsa(inner_task2) == ds_findSet(b_task));
                 assert(ds_ntcounts(ds_findSet(b_task)) == 1);
             });
         });

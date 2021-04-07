@@ -16,13 +16,13 @@ void DisjointSet::addFinish(int finish_id, hclib_finish *finish){
     this->all_finishes[finish_id] = finish;
 }
 
-void DisjointSet::end_finish_merge(int finish_id){
+void DisjointSet::end_finish_merge(int finish_id, tree_node_cpp* query_node){
     hclib_finish *finish = this->all_finishes[finish_id];
     int finish_owner_task = finish->belong_to_task_id;
     for(vector<int>::iterator i = finish->task_in_this_finish.begin(); i != finish->task_in_this_finish.end(); i++){
         int sub_task_id = *i;
         this->update_task_state(sub_task_id,JOINED);
-        this->mergeBtoA(finish_owner_task, sub_task_id);
+        this->mergeBtoA(finish_owner_task, sub_task_id, query_node);
     }
 }
 
@@ -80,6 +80,7 @@ void DisjointSet::print_all_tasks(){
     for (std::pair<int, hclib_task*> element: this->all_tasks) {
         hclib_task *task = element.second;
         int task_id = element.first;
+        printf("query node %d ", this->find_helper(task_id).query_node_in_current_set == NULL ? -1:this->find_helper(task_id).query_node_in_current_set->index);
         printf("task %d, parent is %d, has %d nt joins, lsa is %d, now in set: %d, task state is: ", 
             task_id, task->parent_id, this->nt[task_id].size(), this->lsa[task_id].task_id, Find(task_id));
 
@@ -97,29 +98,33 @@ DisjointSet::DisjointSet(){
 
 }
 
-void DisjointSet::Union(int a, int b){
-    int Sa = Find(a);
-    int Sb = Find(b);
+// void DisjointSet::Union(int a, int b){
+//     int Sa = Find(a);
+//     int Sb = Find(b);
 
-    if (Sa == Sb) {
-        return;
-    }
+//     if (Sa == Sb) {
+//         return;
+//     }
 
-    if(rank[Sa] > rank[Sb]){
-        parent_aka_setnowin[Sb] = Sa;
-    }
-    else if(rank[Sa] < rank[Sb]){
-        parent_aka_setnowin[Sa] = Sb;
-    }
-    else{
-        parent_aka_setnowin[Sb] = Sa;
-        rank[Sa] ++;
-    }
+//     if(rank[Sa] > rank[Sb]){
+//         parent_aka_setnowin[Sb] = Sa;
+//     }
+//     else if(rank[Sa] < rank[Sb]){
+//         parent_aka_setnowin[Sa] = Sb;
+//     }
+//     else{
+//         parent_aka_setnowin[Sb] = Sa;
+//         rank[Sa] ++;
+//     }
     
-}
+// }
 
 void DisjointSet::addSet(int set_index){
-    this->parent_aka_setnowin[set_index] = set_index;
+    set_info new_set = {
+        .set_id = set_index,
+        .query_node_in_current_set = NULL
+    };
+    this->parent_aka_setnowin[set_index] = new_set;
     this->rank[set_index] = 0;
 
     vector<nt_info> nontreejoins;
@@ -132,14 +137,29 @@ void DisjointSet::addSet(int set_index){
     this->lsa[set_index] = null_lsa;
 }
 
-int DisjointSet::Find(int k){
+
+set_info DisjointSet::find_helper(int k){
     assert(k != -1);
-    if (parent_aka_setnowin[k] != k)
+    if (parent_aka_setnowin[k].set_id != k)
     {
-        parent_aka_setnowin[k] = Find(parent_aka_setnowin[k]);
+        set_info result = find_helper(parent_aka_setnowin[k].set_id);
+
+        // the first returned recursion will go into this if
+        // because the immediately returned set is the previous parent
+        if(result.query_node_in_current_set == NULL && parent_aka_setnowin[k].query_node_in_current_set != NULL){
+            parent_aka_setnowin[k].set_id = result.set_id;
+        }
+        else{
+            parent_aka_setnowin[k] = result;
+        }
+        
     }
 
     return parent_aka_setnowin[k];
+}
+
+int DisjointSet::Find(int k){
+    return find_helper(k).set_id;
 }
 
 /**
@@ -147,9 +167,12 @@ int DisjointSet::Find(int k){
  * @note   the new set could be a_set or b_set, depends on rank
  * @param  a: task a task_id
  * @param  b: task b task_id
+ * @param query_node: the step node in DPST that we should query on
  * @retval None
  */
-void DisjointSet::mergeBtoA(int a, int b){
+void DisjointSet::mergeBtoA(int a, int b, tree_node_cpp* query_node){
+    assert(query_node->this_node_type == STEP);
+
     int a_set = Find(a);
     int b_set = Find(b);
 
@@ -170,21 +193,28 @@ void DisjointSet::mergeBtoA(int a, int b){
     // set new lsa
     lsa_info new_lsa = this->lsa[a_set];
 
+    // now just join B to A
+    int new_set = a_set;
+    this->parent_aka_setnowin[b_set].set_id = a_set;
+    this->parent_aka_setnowin[b_set].query_node_in_current_set = query_node;
     // union two sets
-    int new_set = -1;
-    if(rank[a_set] > rank[b_set]){
-        parent_aka_setnowin[b_set] = a_set;
-        new_set = a_set;
-    }
-    else if(rank[a_set] < rank[b_set]){
-        parent_aka_setnowin[a_set] = b_set;
-        new_set = b_set;
-    }
-    else{
-        parent_aka_setnowin[b_set] = a_set;
-        rank[a_set] ++;
-        new_set = a_set;
-    }
+    // int new_set = -1;
+    // if(rank[a_set] > rank[b_set]){
+    //     parent_aka_setnowin[b_set].set_id = a_set;
+    //     parent_aka_setnowin[b_set].query_node_in_current_set = query_node;
+    //     new_set = a_set;
+    // }
+    // else if(rank[a_set] < rank[b_set]){
+    //     parent_aka_setnowin[a_set].set_id = b_set;
+    //     parent_aka_setnowin[a_set].query_node_in_current_set = query_node;
+    //     new_set = b_set;
+    // }
+    // else{
+    //     parent_aka_setnowin[b_set].set_id = a_set;
+    //     parent_aka_setnowin[b_set].query_node_in_current_set = query_node;
+    //     rank[a_set] ++;
+    //     new_set = a_set;
+    // }
 
     this->nt[new_set] = a_nt;
     this->lsa[new_set] = new_lsa;
@@ -210,6 +240,14 @@ int DisjointSet::ntcounts_task(int task_id){
     return this->nt[task_id].size();
 }
 
+void DisjointSet::print_nt(int set_id){
+    vector<nt_info> ntjoins = this->nt[set_id];
+    printf("set %d has non-tree joins: \n",set_id);
+    for(auto join = ntjoins.begin(); join != ntjoins.end(); join++){
+        printf("task %d, DPST index of last node before this join %d \n",(*join).task_id,(*join).last_node_before_this_nt->index);
+    }
+}
+
 int DisjointSet::getlsa(int task_id){
     return this->lsa[Find(task_id)].task_id;
 }
@@ -225,7 +263,7 @@ void DisjointSet::setlsa(int task_id, lsa_info new_lsa){
 }
 
 void DisjointSet::printds(){
-    for (std::pair<int, int> element: parent_aka_setnowin) {
+    for (std::pair<int, set_info> element: parent_aka_setnowin) {
         printf("%d is in set: %d \n", element.first, Find(element.first));
     };
 
@@ -248,7 +286,7 @@ void DisjointSet::printds(){
 void DisjointSet::printdsbyset(){
     unordered_map<int, vector<int>> all_sets;
 
-    for (std::pair<int, int> element: parent_aka_setnowin) {
+    for (std::pair<int, set_info> element: parent_aka_setnowin) {
         int the_parent = Find(element.first);
         if(all_sets.count(the_parent) > 0){
             all_sets[the_parent].push_back(element.first);
@@ -280,7 +318,7 @@ void DisjointSet::printdsbyset(){
 void DisjointSet::print_table(){
     unordered_map<int, vector<int>> all_sets;
 
-    for (std::pair<int, int> element: parent_aka_setnowin) {
+    for (std::pair<int, set_info> element: parent_aka_setnowin) {
         int the_parent = Find(element.first);
         if(all_sets.count(the_parent) > 0){
             all_sets[the_parent].push_back(element.first);

@@ -114,7 +114,7 @@ tree_node* find_lca_left_child(tree_node *node1,tree_node *node2);
 tree_node* get_current_step_node();
 void dpst_update_parent(tree_node *task_node, tree_node *new_parent);
 tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent);
-void insert_leaf(tree_node *task_node);
+tree_node* insert_leaf(tree_node *task_node);
 
 //extern struct dpst DPST;
 

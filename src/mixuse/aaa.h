@@ -69,6 +69,11 @@ typedef struct lsa_info{
     tree_node_cpp *last_node_reachable_in_lsa;
 } lsa_info;
 
+typedef struct set_info{
+    int set_id;
+    tree_node_cpp *query_node_in_current_set;
+} set_info;
+
 // A class to represent a disjoint set
 class DisjointSet
 {
@@ -79,16 +84,10 @@ class DisjointSet
     unordered_map<int, hclib_task*> all_tasks;
 
     // a map from task_index to set, aka which set the task is currently in
-    unordered_map<int, int> parent_aka_setnowin;
+    unordered_map<int, set_info> parent_aka_setnowin;
 
     // rank for each set
     unordered_map<int, int> rank;
-
-    // stores the non-tree joins for each set
-    // unordered_map<int,vector<int>> nt;
-
-    // stores the least-significant ancesotr for each set
-    // unordered_map<int,int> lsa;
 
     unordered_map<int,vector<nt_info>> nt;
 
@@ -99,7 +98,7 @@ public:
     DisjointSet();
 
     // finish functions
-    void end_finish_merge(int finish_id);
+    void end_finish_merge(int finish_id, tree_node_cpp* query_node);
 
     void add_task_to_finish(int finish_id, int task_id);
 
@@ -122,10 +121,12 @@ public:
     // Find the root of the set in which element `k` belongs
     int Find(int k);
 
-    // Peform Union of two subsets where a called get(b)
-    void mergeBtoA(int a, int b);
+    set_info find_helper(int k);
 
-    void Union(int a, int b);
+    // Peform Union of two subsets where a called get(b)
+    void mergeBtoA(int a, int b, tree_node_cpp* query_node_in_current_set);
+
+    //void Union(int a, int b);
 
     // add a set to other's nt
     void addnt(int task, int nt_task_id,tree_node_cpp* last_node_before_nt);
@@ -135,6 +136,8 @@ public:
 
     // return the number of nt for the task
     int ntcounts_task(int task_id);
+
+    void print_nt(int set_id);
 
     // get lsa of the set task is now in
     int getlsa(int task_id);
