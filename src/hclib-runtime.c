@@ -83,47 +83,6 @@ void increase_task_id_unique(){
     task_id_unique++;
 }
 
-void dpst_update_parent(tree_node *task_node, tree_node *new_parent){
-    // 1. remove task_node from current parent's children list
-    tree_node *current_parent = task_node->parent;
-    if(task_node->index == current_parent->children_list_head->index){
-        current_parent->children_list_head = task_node->next_sibling;
-    }
-    else{
-        tree_node *sibling = current_parent->children_list_head;
-        while (sibling->next_sibling->index != task_node->index)
-        {
-            sibling = sibling->next_sibling;
-        }
-        // here, sibling, task_node, task_node's next sibling
-        sibling->next_sibling = task_node->next_sibling;
-        if(sibling->next_sibling == NULL){
-            current_parent->children_list_tail = sibling;
-        }
-    }
-
-    // 2. update parent and children depth
-    task_node->parent = new_parent;
-    task_node->depth = new_parent->depth + 1;
-    tree_node *child = task_node->children_list_head;
-    while (child != NULL)
-    {
-        // should be only one child, but we will do this right now
-        child->depth = task_node->depth + 1;
-        child = child->next_sibling;
-    }
-
-    // 3. update new sibling
-    if(new_parent->children_list_head == NULL){
-        new_parent->children_list_head = task_node;
-        new_parent->children_list_tail = task_node;
-    } 
-    else{
-        new_parent->children_list_tail->next_sibling = task_node;
-        new_parent->children_list_tail = task_node;
-    }
-}
-
 tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent){
     tree_node *node = newtreeNode();   
     node->this_node_type = nodeType;
@@ -229,6 +188,7 @@ struct tree_node* get_current_step_node(){
     hclib_task_t *task = (hclib_task_t *) ws->curr_task;
     finish_t *task_finish = task->current_finish;
     finish_t *ws_finish = ws->current_finish;
+    
     if(task_finish->node_in_dpst->index == ws_finish->node_in_dpst->index){
         if(task->task_id == 0){
             // special case, for main task, the finish is under it in DPST
@@ -1280,6 +1240,7 @@ void *hclib_future_wait(hclib_future_t *future) {
 
     HASSERT(future->owner->satisfied);
 
+    ds_update_task_state(current_task->task_id,0);
     // fj: insert a new step node in DPST after getting future
     tree_node* continuation = insert_leaf(get_current_step_node()->parent);
     

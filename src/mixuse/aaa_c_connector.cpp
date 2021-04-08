@@ -61,6 +61,15 @@ int ds_findSet(int element){
     return ds->Find(element);
 }
 
+void* ds_find_set_info(int task_id){
+    set_info si = ds->find_helper(task_id);
+    set_info *sip = new set_info();
+    sip->set_id = si.set_id;
+    sip->query_node_in_current_set = si.query_node_in_current_set;
+    void* result = (void*) sip;
+    return result;
+}
+
 void ds_merge(int a, int b, void* query_node){
     tree_node_cpp* query_node_cpp = (tree_node_cpp*) query_node;
     ds->mergeBtoA(a,b,query_node_cpp);
@@ -112,12 +121,16 @@ int ds_find_task_node_index(int task_id){
     return ds->find_task_node_index(task_id);
 }
 
-void* ds_find_lca_left_child(int task_A_id,int task_B_id){
-    return (void*) ds->find_lca_left_child_cpp(task_A_id,task_B_id); 
+void* ds_find_lca_left_child(void* node1, void* node2){
+    tree_node_cpp* node1_tree = (tree_node_cpp*) node1;
+    tree_node_cpp* node2_tree = (tree_node_cpp*) node2;
+    return (void*) ds->find_lca_left_child_cpp(node1_tree,node2_tree); 
 }
 
-bool ds_precede(int task_A_id, int task_B_id){
-    return ds->precede(task_A_id,task_B_id);
+bool ds_precede(void* step_a, void* step_b, int task_a, int task_b){
+    tree_node_cpp* step_a_tree = (tree_node_cpp*) step_a;
+    tree_node_cpp* step_b_tree = (tree_node_cpp*) step_b;
+    return ds->precede(step_a_tree,step_b_tree,task_a,task_b);
 }
 
 #ifdef __cplusplus

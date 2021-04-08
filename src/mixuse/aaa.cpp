@@ -57,6 +57,7 @@ void DisjointSet::addTask(int task_id, hclib_task *task, tree_node_cpp *last_nod
     int parent_set = Find(task->parent_id);
     
     if(this->ntcounts(parent_set) > 0){
+        assert(last_node_reachable_in_parent != NULL);
         lsa_info new_lsa = {
             .task_id = task->parent_id,
             .last_node_reachable_in_lsa = last_node_reachable_in_parent
@@ -85,7 +86,15 @@ void DisjointSet::print_all_tasks(){
             task_id, task->parent_id, this->nt[task_id].size(), this->lsa[task_id].task_id, Find(task_id));
 
         int state = static_cast<int>(this->all_tasks[task_id]->this_task_state);
-        std::cout << state_string[state] << std::endl;
+        std::cout << state_string[state];
+
+        if(this->lsa[task_id].task_id != -1){
+            assert(this->lsa[task_id].last_node_reachable_in_lsa != NULL);
+            printf("    lsa last reachable node index is %d \n",this->lsa[task_id].last_node_reachable_in_lsa->index);
+        }
+        else{
+            printf("\n");
+        }
     }
 }
 
@@ -365,10 +374,7 @@ int DisjointSet::find_task_node_index(int task_id){
     return node->index;
 }
 
-tree_node_cpp* DisjointSet::find_lca_left_child_cpp(int task_A_id,int task_B_id){
-    tree_node_cpp *node1 = (tree_node_cpp*) this->all_tasks[task_A_id]->node_in_dpst;
-    tree_node_cpp *node2 = (tree_node_cpp*) this->all_tasks[task_B_id]->node_in_dpst;
-
+tree_node_cpp* DisjointSet::find_lca_left_child_cpp(tree_node_cpp* node1, tree_node_cpp* node2){
     while (node1->depth != node2->depth)
     {
         if (node1->depth > node2->depth)
@@ -398,62 +404,78 @@ tree_node_cpp* DisjointSet::find_lca_left_child_cpp(int task_A_id,int task_B_id)
     return node2_last_node;
 }
 
-bool DisjointSet::precede(int task_A_id, int task_B_id){
-    return true;
-    // set<int> visited;
-    // return this->visit(task_A_id,task_B_id,visited);
+bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b){
+    set<int> visited;
+    return this->visit(step_a,step_b,task_a,task_b,visited);
 }
 
-bool DisjointSet::visit(int task_A_id, int task_B_id, set<int> visited){
-    return true;
-    // if A is still active ,return true
-    // if(this->all_tasks[task_A_id]->this_task_state == ACTIVE){
-    //     return true;
-    // }
+bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b, set<int> visited){
+    const bool b_in_visited = visited.find(task_b) != visited.end();
+    if(b_in_visited){
+        return false;
+    }
 
-    // const bool b_in_visited = visited.find(task_B_id) != visited.end();
-    // if(b_in_visited){
-    //     return false;
-    // }
+    visited.insert(task_b);
 
-    // visited.insert(task_B_id);
+    set_info Sa = this->find_helper(task_a);
+    set_info Sb = this->find_helper(task_b);
 
-    // int Sa = this->Find(task_A_id);
-    // int Sb = this->Find(task_B_id);
+    if(Sa.set_id == Sb.set_id){
+        return true;
+    }
 
-    // if(Sa == Sb){
-    //     return true;
-    // }
+    // this covers ancestor in DPST
+    tree_node_cpp* query_node = step_a;
+    if(Sa.query_node_in_current_set != NULL){
+        query_node = Sa.query_node_in_current_set;
+    }
 
-    // // lca  
-    // tree_node_cpp *lca_lc = find_lca_left_child_cpp(task_A_id,task_B_id);
-    // if(lca_lc->this_node_type != FUTURE && lca_lc->this_node_type != ASYNC){
-    //     return false;
-    // }
+    tree_node_cpp *lca_lc = find_lca_left_child_cpp(query_node,step_b);
+    if(lca_lc->this_node_type != FUTURE && lca_lc->this_node_type != ASYNC){
+        return true;
+    }
 
-    // // if A is blocked or not joined, return False
-    // if(this->all_tasks[task_A_id]->this_task_state == BLOCKED || this->all_tasks[task_A_id]->this_task_state == FINISHED_NOT_JOINED){
-    //     return false;
-    // }
     
-    // // nt joins
-    // for(auto nt_join = nt[task_B_id].begin(); nt_join != nt[task_B_id].end(); nt_join++){
-    //     if(visit(task_A_id,*nt_join,visited)){
-    //         return true;
-    //     }
-    // }
+    // nt joins
+    for(auto nt_join = this->nt[Sb.set_id].begin(); nt_join != this->nt[Sb.set_id].end(); nt_join++){
+        int task_id = (*nt_join).task_id;
+        tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id]->node_in_dpst;
+        tree_node_cpp* last_step_node = task_node->children_list_tail;
+        assert(last_step_node->this_node_type == STEP);
 
-    // // lsa
-    // int lsa_id = this->getlsa(Sb);
-    // while(lsa_id != -1){
-    //     for (auto lsa_nt = nt[lsa_id].begin(); lsa_nt != nt[lsa_id].end(); lsa_nt++)
-    //     {
-    //         if(visit(task_A_id, *lsa_nt, visited)){
-    //             return true;
-    //         }
-    //     }
-    //     lsa_id = this->getlsa(lsa_id);
-    // }
+        if(visit(step_a, last_step_node, task_a, task_id, visited)){
+            return true;
+        }
+    }
 
-    // return false;
+    // lsa
+    lsa_info one_lsa = this->lsa[Sb.set_id];
+    
+    while (one_lsa.task_id != -1)
+    {
+        tree_node_cpp* lsa_deepest_reachable_node = one_lsa.last_node_reachable_in_lsa;
+        assert(lsa_deepest_reachable_node != NULL);
+        
+        for(auto lsa_nt = this->nt[one_lsa.task_id].begin(); lsa_nt != this->nt[one_lsa.task_id].end(); lsa_nt++){
+
+            tree_node_cpp* step_before_this_nt = (*lsa_nt).last_node_before_this_nt;
+
+
+            assert(lsa_deepest_reachable_node != NULL);
+            if(step_before_this_nt->is_parent_nth_child <= lsa_deepest_reachable_node->is_parent_nth_child){
+                int task_id = (*lsa_nt).task_id;
+                tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id]->node_in_dpst;
+                tree_node_cpp* last_step_node = task_node->children_list_tail;
+                assert(last_step_node->this_node_type == STEP);
+
+                if(visit(step_a, last_step_node, task_a, task_id, visited)){
+                    return true;
+                }
+            }
+
+        }
+        one_lsa = this->lsa[Find(one_lsa.task_id)];
+    }
+    
+    return false;
 }

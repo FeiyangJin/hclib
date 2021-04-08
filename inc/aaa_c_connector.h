@@ -8,6 +8,7 @@ extern "C" {
 
 void ds_addSet(int set_index);
 int ds_findSet(int element);
+void* ds_find_set_info(int task_id);
 void ds_merge(int a, int b, void* query_node);
 void ds_addnt(int task, int nt_task_id, void* last_step_before_nt);
 int ds_ntcounts(int task_id);
@@ -34,8 +35,8 @@ void ds_end_finish_merge(int finish_id, void* query_node);
 
 // reachability
 int ds_find_task_node_index(int task_id);
-void* ds_find_lca_left_child(int task_A_id,int task_B_id);
-bool ds_precede(int task_A_id, int task_B_id);
+void* ds_find_lca_left_child(void* node1, void* node2);
+bool ds_precede(void* step_a, void* step_b, int task_a, int task_b);
 
 #ifdef __cplusplus
 }

@@ -123,10 +123,8 @@ public:
 
     set_info find_helper(int k);
 
-    // Peform Union of two subsets where a called get(b)
-    void mergeBtoA(int a, int b, tree_node_cpp* query_node_in_current_set);
-
-    //void Union(int a, int b);
+    // Peform Union of two subsets where A called get(B)
+    void mergeBtoA(int a, int b, tree_node_cpp* query_node_in_A);
 
     // add a set to other's nt
     void addnt(int task, int nt_task_id,tree_node_cpp* last_node_before_nt);
@@ -157,10 +155,11 @@ public:
     // print in table format
     void print_table();
 
-    bool precede(int task_A_id, int task_B_id);
-    bool visit(int task_A_id, int task_B_id, set<int> visited);
+    // reachability queries
+    bool precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b);
+    bool visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b, set<int> visited);
 
-    tree_node_cpp* find_lca_left_child_cpp(int task_A_id,int task_B_id);
+    tree_node_cpp* find_lca_left_child_cpp(tree_node_cpp* node1, tree_node_cpp* node2);
 
     int find_task_node_index(int task_id);
 };
