@@ -424,6 +424,11 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
         return true;
     }
 
+    // optimization 1
+    if(this->all_tasks[Sa.set_id]->this_task_state == ACTIVE){
+        return true;
+    }
+
     // this covers ancestor in DPST
     tree_node_cpp* query_node = step_a;
     if(Sa.query_node_in_current_set != NULL){
@@ -435,6 +440,10 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
         return true;
     }
 
+    // optimization 2
+    if(this->all_tasks[Sa.set_id]->this_task_state == BLOCKED || this->all_tasks[Sa.set_id]->this_task_state == FINISHED_NOT_JOINED){
+        return false;
+    }
     
     // nt joins
     for(auto nt_join = this->nt[Sb.set_id].begin(); nt_join != this->nt[Sb.set_id].end(); nt_join++){

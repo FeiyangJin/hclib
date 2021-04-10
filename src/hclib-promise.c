@@ -230,6 +230,7 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
         int empty_future_id = get_task_id_unique();
         increase_task_id_unique();
 
+        promise_to_be_put->empty_future_id = empty_future_id;
         void* current_step_node = (void*) get_current_step_node();
 
         tree_node *empty_future_node = insert_tree_node(FUTURE,get_current_step_node()->parent);
@@ -239,7 +240,7 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
         ds_addSet(empty_future_id);
         
         ds_addtask(empty_future_id,setter_task->task_id,empty_future_node,NULL,2,current_step_node);
-        promise_to_be_put->empty_future_id = empty_future_id;
+        
     }
 
     /*

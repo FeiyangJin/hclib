@@ -114,8 +114,8 @@ tree_node* find_lca_left_child(tree_node *node1,tree_node *node2);
 tree_node* get_current_step_node();
 tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent);
 tree_node* insert_leaf(tree_node *task_node);
-
-//extern struct dpst DPST;
+int get_current_task_id();
+extern struct dpst DPST;
 
 typedef struct _hclib_worker_state {
     // Global context for this instance of the runtime.

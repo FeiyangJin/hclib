@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
         assert(step7->is_parent_nth_child == 1);
         assert(step7->parent->this_node_type == ASYNC);
 
-        printf("all tests passsed int test 3\n");
+        printf("all tests passed int test 3\n");
         // end of hclib
     });
 

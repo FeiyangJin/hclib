@@ -83,6 +83,12 @@ void increase_task_id_unique(){
     task_id_unique++;
 }
 
+int get_current_task_id(){
+    hclib_worker_state *ws = current_ws();
+    hclib_task_t *task = ws->curr_task;
+    return task->task_id;
+}
+
 tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent){
     tree_node *node = newtreeNode();   
     node->this_node_type = nodeType;
