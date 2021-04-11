@@ -17,3 +17,6 @@ autom4te.cache
 Makefile.in
 aclocal.m4
 yield
+*.so
+*.bc
+*.exe
