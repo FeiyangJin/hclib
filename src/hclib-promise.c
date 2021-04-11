@@ -229,12 +229,18 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
         // which means some tasks will get this promise
         int empty_future_id = get_task_id_unique();
         increase_task_id_unique();
-        tree_node *empty_future_node = insert_tree_node(FUTURE,setter_task->node_in_dpst);
-        insert_leaf(setter_task->node_in_dpst);
+
+        promise_to_be_put->empty_future_id = empty_future_id;
+        void* current_step_node = (void*) get_current_step_node();
+
+        tree_node *empty_future_node = insert_tree_node(FUTURE,get_current_step_node()->parent);
+        insert_leaf(empty_future_node);
+        insert_leaf(empty_future_node->parent);
 
         ds_addSet(empty_future_id);
-        ds_addtask(empty_future_id,setter_task->task_id,empty_future_node,NULL,2);
-        promise_to_be_put->empty_future_id = empty_future_id;
+        
+        ds_addtask(empty_future_id,setter_task->task_id,empty_future_node,NULL,2,current_step_node);
+        
     }
 
     /*
@@ -261,8 +267,6 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
          */
         if (register_on_all_promise_dependencies(curr_task)) {
             try_schedule_async(curr_task, ws);
-            //ds_update_task_state(curr_task->task_id,0);
-            //hclib_yield(NULL);
             counter ++;
         }
 

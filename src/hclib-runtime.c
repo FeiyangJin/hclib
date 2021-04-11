@@ -73,7 +73,7 @@ struct dpst DPST;
 
 char *node_char[5] = {'R','F','A','f','S'};
 static int node_index = 0;
-int task_id_unique = 0;
+static int task_id_unique = 0;
 
 int get_task_id_unique(){
     return task_id_unique;
@@ -83,45 +83,10 @@ void increase_task_id_unique(){
     task_id_unique++;
 }
 
-void dpst_update_parent(tree_node *task_node, tree_node *new_parent){
-    // 1. remove task_node from current parent's children list
-    tree_node *current_parent = task_node->parent;
-    if(task_node->index == current_parent->children_list_head->index){
-        current_parent->children_list_head = task_node->next_sibling;
-    }
-    else{
-        tree_node *sibling = current_parent->children_list_head;
-        while (sibling->next_sibling->index != task_node->index)
-        {
-            sibling = sibling->next_sibling;
-        }
-        // here, sibling, task_node, task_node's next sibling
-        sibling->next_sibling = task_node->next_sibling;
-        if(sibling->next_sibling == NULL){
-            current_parent->children_list_tail = sibling;
-        }
-    }
-
-    // 2. update parent and children depth
-    task_node->parent = new_parent;
-    task_node->depth = new_parent->depth + 1;
-    tree_node *child = task_node->children_list_head;
-    while (child != NULL)
-    {
-        // should be only one child, but we will do this right now
-        child->depth = task_node->depth + 1;
-        child = child->next_sibling;
-    }
-
-    // 3. update new sibling
-    if(new_parent->children_list_head == NULL){
-        new_parent->children_list_head = task_node;
-        new_parent->children_list_tail = task_node;
-    } 
-    else{
-        new_parent->children_list_tail->next_sibling = task_node;
-        new_parent->children_list_tail = task_node;
-    }
+int get_current_task_id(){
+    hclib_worker_state *ws = current_ws();
+    hclib_task_t *task = ws->curr_task;
+    return task->task_id;
 }
 
 tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent){
@@ -135,8 +100,11 @@ tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent){
     }
     else{
         // each task corresponds to an async or a future tree node
+        assert(parent);
         node->parent = parent;
         node->depth = node->parent->depth + 1;
+        node->is_parent_nth_child = parent->number_of_child;
+        parent->number_of_child += 1;
 
         if(node->parent->children_list_head == NULL){
             node->parent->children_list_head = node;
@@ -151,12 +119,14 @@ tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent){
     return node;
 }
 
-void insert_leaf(tree_node *task_node){
+tree_node* insert_leaf(tree_node *task_node){
     HASSERT(task_node);
     tree_node *new_step = newtreeNode();   
     new_step->this_node_type = STEP;
     new_step->parent = task_node;
     new_step->depth = task_node->depth + 1;
+    new_step->is_parent_nth_child = task_node->number_of_child;
+    task_node->number_of_child += 1;
     
     if(task_node->children_list_head == NULL){
         task_node->children_list_head = new_step;
@@ -166,7 +136,7 @@ void insert_leaf(tree_node *task_node){
         task_node->children_list_tail->next_sibling = new_step;
         task_node->children_list_tail = new_step;
     }
-    DPST.current_step_node = new_step;
+    return new_step;
 }
 
 tree_node* find_lca(tree_node *node1,tree_node *node2){
@@ -189,6 +159,60 @@ tree_node* find_lca(tree_node *node1,tree_node *node2){
     return node1;
 }
 
+tree_node* find_lca_left_child(tree_node *node1,tree_node *node2){
+    while (node1->depth != node2->depth)
+    {
+        if (node1->depth > node2->depth)
+        {
+            node1 = node1->parent;
+        }
+        else{
+            node2 = node2->parent;
+        }
+    }
+
+    tree_node* node1_last_node;
+    tree_node* node2_last_node;
+
+    while(node1->index != node2->index){
+        node1_last_node = node1;
+        node2_last_node = node2;
+        node1 = node1->parent;
+        node2 = node2->parent;
+    }; // end
+
+    if(node1_last_node->is_parent_nth_child < node2_last_node->is_parent_nth_child){
+        // node1 is to the left of node 2
+        return node1_last_node;
+    }
+
+    return node2_last_node;
+}
+
+struct tree_node* get_current_step_node(){
+    hclib_worker_state *ws = current_ws();
+    hclib_task_t *task = (hclib_task_t *) ws->curr_task;
+    finish_t *task_finish = task->current_finish;
+    finish_t *ws_finish = ws->current_finish;
+    
+    if(task_finish->node_in_dpst->index == ws_finish->node_in_dpst->index){
+        if(task->task_id == 0){
+            // special case, for main task, the finish is under it in DPST
+            // for other tasks, the finish is above it in DPST
+            HASSERT(task_finish->node_in_dpst->children_list_tail->this_node_type == STEP);
+            return task_finish->node_in_dpst->children_list_tail;
+        }
+        HASSERT(task->node_in_dpst->children_list_tail->this_node_type == STEP);
+        return task->node_in_dpst->children_list_tail;
+    }
+    else{
+        // current task has at least one finish inside it
+        // we are at a subtree of a FINISH node
+        HASSERT(ws_finish->node_in_dpst->children_list_tail->this_node_type == STEP);
+        return ws_finish->node_in_dpst->children_list_tail;
+    }
+}
+
 struct tree_node* newtreeNode()
 {
     // Allocate memory for new node
@@ -197,6 +221,8 @@ struct tree_node* newtreeNode()
     node->children_list_tail = NULL;
     node->next_sibling = NULL;
     node->corresponding_task_id = -2;
+    node->number_of_child = 0;
+    node->is_parent_nth_child = 0;
 
     node->index = node_index;
     node_index ++;
@@ -664,7 +690,6 @@ static inline void execute_task(hclib_task_t *task) {
 #endif
 
     // fj: update task state in ds
-    printf("mark %d task as finished_not_joined \n",task->task_id);
     ds_update_task_state(task->task_id,2);
     free(task);
     
@@ -1221,17 +1246,22 @@ void *hclib_future_wait(hclib_future_t *future) {
 
     HASSERT(future->owner->satisfied);
 
-    // fj: work on disjoint set if the future is an independent task
+    ds_update_task_state(current_task->task_id,0);
+    // fj: insert a new step node in DPST after getting future
+    tree_node* continuation = insert_leaf(get_current_step_node()->parent);
+    
+    // fj: work on disjoint set
     if(future->corresponding_task_id >= 0){
         int future_task_id = future->corresponding_task_id;
         int future_parent_id = ds_parentid(future_task_id);
         if(ds_findSet(current_task->task_id) == ds_findSet(future_parent_id)){
             // merge two sets
-            ds_merge(current_task->task_id,future_task_id);
+            ds_merge(current_task->task_id, future_task_id, (void*)continuation);
         }
         else{
             // add future task to current tasks' nt
-            ds_addnt(current_task->task_id,future_task_id);
+            void* current_step_node = (void*) get_current_step_node();
+            ds_addnt(current_task->task_id,future_task_id,current_step_node);
         }
         // mark the future task joined
         ds_update_task_state(future->corresponding_task_id,3);
@@ -1244,32 +1274,8 @@ void *hclib_future_wait(hclib_future_t *future) {
             assert(future->corresponding_task_id == -1);
             assert(future->owner->empty_future_id >= 0);
             assert(future->owner->setter_task_id >= 0);
-            ds_addnt(current_task->task_id,future->owner->empty_future_id);
-
-
-            // version 1: break task
-            // 0. possibly update parent_id
-            //current_task->parent_id = future->owner->setter_task_id;
-
-            // 1. dpst operation
-            // tree_node *old_dpst_node = current_task->node_in_dpst;
-            // old_dpst_node->corresponding_task_id = task_id_unique;
-
-            // tree_node *dpst_new_parent = (tree_node*) ds_get_dpst_node(future->owner->setter_task_id);
-            // tree_node *new_dpst_node = insert_tree_node(old_dpst_node->this_node_type,dpst_new_parent);
-            // current_task->node_in_dpst = new_dpst_node;
-
-            // HASSERT(dpst_new_parent->index == new_dpst_node->parent->index);
-            // insert_leaf(new_dpst_node->parent);
-            // insert_leaf(new_dpst_node);
-
-            // old_dpst_node->this_node_type = FUTURE;
-
-            // 2. disjoint set operation
-            //ds_break_previous_steps(current_task->task_id, task_id_unique);
-            //task_id_unique ++;
-            //ds_update_task_parent(current_task->task_id,future->owner->setter_task_id);
-            //ds_update_task_dpst_node(current_task->task_id,new_dpst_node);
+            void* current_step_node = (void*) get_current_step_node();
+            ds_addnt(current_task->task_id,future->owner->empty_future_id,current_step_node);
         }
     }
 
@@ -1556,7 +1562,12 @@ void hclib_end_finish() {
 #endif
 
     // fj: ds operation
-    ds_end_finish_merge(current_finish->node_in_dpst->index);
+    if(current_finish->node_in_dpst->index > 1){
+        tree_node* continuation = current_finish->node_in_dpst->next_sibling;
+        HASSERT(continuation->this_node_type == STEP);
+        ds_end_finish_merge(current_finish->node_in_dpst->index, (void*)continuation);
+    }
+
 
     // Don't reuse worker-state! (we might not be on the same worker anymore)
     ws = CURRENT_WS_INTERNAL;

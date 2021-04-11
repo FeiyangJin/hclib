@@ -24,7 +24,6 @@ int main(int argc, char **argv) {
     hclib_print_current_task_info();
 
     hclib::future_t<void> *a = hclib::async_future([=]() {
-      sleep(1);
       printf("A ");
       hclib_print_current_task_info();
       return;
@@ -33,21 +32,24 @@ int main(int argc, char **argv) {
     hclib::future_t<void> *b = hclib::async_future([=]() {
       a->wait();
       printf("B ");
+      assert(ds_ntcounts(b->corresponding_task_id) == 1);
       hclib_print_current_task_info();
+      return;
     });
 
     hclib::future_t<void> *c = hclib::async_future([=]() {
       a->wait();
       printf("C ");
+      assert(ds_ntcounts(c->corresponding_task_id) == 1);
       hclib_print_current_task_info();
       return;
     });
 
     hclib::future_t<void> *d = hclib::async_future([=]() {
-      sleep(1);
       b->wait();
       c->wait();
       printf("D ");
+      assert(ds_ntcounts(c->corresponding_task_id) == 2);
       hclib_print_current_task_info();
 
       hclib::finish([=](){
@@ -97,9 +99,12 @@ int main(int argc, char **argv) {
 
     printf("Terminating\n");
 
-    ds_printdsbyset();
+    ds_print_all_tasks();
+    ds_print_table();
+
+    //ds_printdsbyset();
     //printf("%s \n", DPST.root == NULL ? "true" : "false");
-    printDPST();
+    //printDPST();
   });
   
   return 0;

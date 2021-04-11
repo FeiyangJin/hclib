@@ -189,7 +189,10 @@ int main(int argc, char** argv) {
     argc_ptr = &argc;
     argv_ptr = argv;
     char const *deps[] = { "system" };
-    hclib_launch(entrypoint, NULL, deps, 1);
+    hclib::launch(deps, 1, [&]() {
+        entrypoint(NULL);
+    });
+    //hclib_launch(entrypoint, NULL, deps, 1);
 
 	return 0;
 }

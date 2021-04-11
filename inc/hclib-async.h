@@ -147,7 +147,7 @@ inline hclib_task_t *initialize_task(Function lambda_caller, T1 *lambda_on_heap)
 
         // disjoint set operation
         ds_addSet(task_id_unique);
-        ds_addtask(task_id_unique,-1,the_node,t,0);
+        ds_addtask(task_id_unique,-1,the_node,t,0,NULL);
     }
     else{
         hclib_worker_state *ws = current_ws();
@@ -156,15 +156,6 @@ inline hclib_task_t *initialize_task(Function lambda_caller, T1 *lambda_on_heap)
 
         // disjoint set operation
         ds_addSet(task_id_unique);
-        int parent_id = t->parent_id;
-        int parent_nt_counts = ds_ntcounts(parent_id);
-        if(parent_nt_counts > 0){
-            ds_setlsa(task_id_unique,parent_id);
-        }
-        else{
-            int parent_lsa = ds_getlsa(parent_id);
-            ds_setlsa(task_id_unique,parent_lsa);
-        }
     }
     
     increase_task_id_unique();
@@ -202,6 +193,9 @@ inline void async(T &&lambda) {
     typedef typename std::remove_reference<T>::type U;
     hclib_task_t *task = initialize_task(call_lambda<U>, new U(lambda));
 
+    // get the last step node before this spawn
+    void* current_step_node = (void*) get_current_step_node();
+
     // fj
     hclib_worker_state *ws = current_ws();
     hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
@@ -221,7 +215,7 @@ inline void async(T &&lambda) {
     insert_leaf(task->node_in_dpst->parent);
     insert_leaf(task->node_in_dpst);
 
-    ds_addtask(task->task_id,curr_task->task_id,the_node,task,0);
+    ds_addtask(task->task_id,curr_task->task_id,the_node,task,0,current_step_node);
 
     spawn(task);
 
@@ -456,6 +450,8 @@ auto async_future(T&& lambda) -> hclib::future_t<decltype(lambda())>* {
     typedef decltype(wrapper) U;
 
     hclib_task_t* task = initialize_task(call_lambda<U>, new U(wrapper));
+    // get the last step node before this spawn
+    void* current_step_node = (void*) get_current_step_node();
 
     // fj: insert a FUTURE node to DPST, and a step node as child
     hclib_worker_state *ws = current_ws();
@@ -479,7 +475,7 @@ auto async_future(T&& lambda) -> hclib::future_t<decltype(lambda())>* {
     event->get_future()->corresponding_task_id = task->task_id;
 
     // fj: disjoint set operation
-    ds_addtask(task->task_id,curr_task->task_id,the_node,task,0);
+    ds_addtask(task->task_id,curr_task->task_id,the_node,task,0,current_step_node);
 
     spawn(task);
     hclib_yield(NULL);
