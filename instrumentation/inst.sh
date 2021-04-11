@@ -42,7 +42,7 @@ while [ $# -gt "0" ]; do
             if [ ! -f $1 ]; then
                 report_error "$(readlink -f $1) is not a vaild file"
             fi
-            if [ ${1: -2} != ".c" -a ${1: -4} != ".cpp" ]; then
+            if [ ${1: -2} != ".c" ] && [ ${1: -4} != ".cpp" ]; then
                 report_error "$(readlink -f $1) is not a valid c/cpp source file"
             fi
             SOURCE_FILE=$1
@@ -69,7 +69,7 @@ if [ ! -e ${CLANG} ]; then
 fi
 
 echo "================== Install Instrumentation Pass ==============================="
-cd ${ROOT}
+pushd ${ROOT} > /dev/null 2>&1
 if [ ! -e "${PASS_LIB}" ]; then
     echo "Instrumentation pass is not found, try to install it using install-inst.sh"
     if [ ${USE_SYSTEM_LLVM} == "1" ]; then
@@ -91,6 +91,7 @@ echo "==========================================================================
 echo ""
 echo "================== Instrument Source File ====================================="
 # The check in line 44 guarantees that SOURCE_FILE must end with .c or .cpp
+popd > /dev/null 2>&1
 if [ ${SOURCE_FILE: -2} == ".c" ]; then
     BC=${SOURCE_FILE/%.c/.bc}
     INST_BC=${SOURCE_FILE/%.c/-inst.bc}
