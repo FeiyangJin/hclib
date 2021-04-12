@@ -4,7 +4,7 @@ set -e
 #set -x
 
 usage() {
-    echo "usage: inst.sh [--llvm LLVM_ROOT] SOURCE_FILE"
+    echo "usage: inst.sh [--llvm LLVM_ROOT] SOURCE_FILE [OPTIONS]"
 }
 
 report_error() {
@@ -47,6 +47,7 @@ while [ $# -gt "0" ]; do
             fi
             SOURCE_FILE=$1
             shift
+            OPTIONS=$*
     esac
 done 
 
@@ -96,25 +97,26 @@ if [ ${SOURCE_FILE: -2} == ".c" ]; then
     BC=${SOURCE_FILE/%.c/.bc}
     INST_BC=${SOURCE_FILE/%.c/-inst.bc}
     EXE=${SOURCE_FILE/%.c/.exe}
-    echo "${CLANG} -c -g -emit-llvm -o ${BC} ${SOURCE_FILE}"
-    ${CLANG} -c -g -emit-llvm -o ${BC} ${SOURCE_FILE}
+    echo "${CLANG} -c -g -emit-llvm ${OPTIONS} -o ${BC} ${SOURCE_FILE}"
+    ${CLANG} -c -g -emit-llvm ${OPTIONS} -o ${BC} ${SOURCE_FILE}
     echo "${OPT} -load-pass-plugin ${ROOT}/${PASS_LIB} --passes=\"asap-inst\" -o ${INST_BC} ${BC}"
     ${OPT} -load-pass-plugin ${ROOT}/${PASS_LIB} --passes="asap-inst" -o ${INST_BC} ${BC}
-    echo "${CLANG} ${INST_BC} -L${ROOT} -lasap -o ${EXE}"
-    ${CLANG} ${INST_BC} -L${ROOT} -lasap -o ${EXE}
+    echo "${CLANG} ${INST_BC} -L${ROOT} -lasap ${OPTIONS} -o ${EXE}"
+    ${CLANG} ${INST_BC} -L${ROOT} -lasap ${OPTIONS} -o ${EXE}
 else
     BC=${SOURCE_FILE/%.cpp/.bc}
     INST_BC=${SOURCE_FILE/%.cpp/-inst.bc}
     EXE=${SOURCE_FILE/%.cpp/.exe}
-    echo "${CLANGPP} -c -g -emit-llvm -o ${BC} ${SOURCE_FILE}"
-    ${CLANGPP} -c -g -emit-llvm -o ${BC} ${SOURCE_FILE}
+    echo "${CLANGPP} -c -g -emit-llvm ${OPTIONS} -o ${BC} ${SOURCE_FILE}"
+    ${CLANGPP} -c -g -emit-llvm ${OPTIONS} -o ${BC} ${SOURCE_FILE}
     echo "${OPT} -load-pass-plugin ${ROOT}/${PASS_LIB} --passes=\"asap-inst\" -o ${INST_BC} ${BC}"
     ${OPT} -load-pass-plugin ${ROOT}/${PASS_LIB} --passes="asap-inst" -o ${INST_BC} ${BC}
-    echo "${CLANGPP} ${INST_BC} -L${ROOT} -lasap -o ${EXE}"
-    ${CLANGPP} ${INST_BC} -L${ROOT} -lasap -o ${EXE}
+    echo "${CLANGPP} ${INST_BC} -L${ROOT} -lasap ${OPTIONS} -o ${EXE}"
+    ${CLANGPP} ${INST_BC} -L${ROOT} -lasap ${OPTIONS} -o ${EXE}
 fi
 
 echo "==============================================================================="
 echo ""
 echo "Instrument successfully. The instrumented execuable is ${ROOT}/${EXE}"
-echo "To execute the executable, use following command: LD_LIBRARY_PATH=\"${ROOT}:"'${LD_LIBRARY_PATH}" '"${EXE}"
+echo "To execute the executable, use following command:" 
+echo "    LD_LIBRARY_PATH=\"${ROOT}:"'${LD_LIBRARY_PATH}" ' "./${EXE}" 
