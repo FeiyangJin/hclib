@@ -1,6 +1,7 @@
 #include "instrumentation.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/IR/Attributes.h"
+#include "llvm/IR/DataLayout.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IRBuilder.h"
@@ -20,6 +21,7 @@ class RaceDetector{
   FunctionCallee checkWrite;
   Function *fptr;
   void instrumentLoadAndStore();
+  int getMemoryAccessSize(Value *Addr, const DataLayout &DL);
 };
 
 RaceDetector::RaceDetector(Function &f) : fptr(&f) {
@@ -30,8 +32,12 @@ RaceDetector::RaceDetector(Function &f) : fptr(&f) {
                            Attribute::NoUnwind);
   SmallString<32> readFuncName("asap_check_read");
   SmallString<32> writeFuncName("asap_check_write");
-  checkRead = m->getOrInsertFunction(readFuncName, attr, irb.getVoidTy(), irb.getInt8PtrTy());
-  checkWrite = m->getOrInsertFunction(writeFuncName, attr, irb.getVoidTy(), irb.getInt8PtrTy());
+  checkRead = m->getOrInsertFunction(readFuncName, attr, 
+                                     irb.getVoidTy(), irb.getInt8PtrTy(),
+                                     irb.getInt32Ty());
+  checkWrite = m->getOrInsertFunction(writeFuncName, attr, 
+                                      irb.getVoidTy(), irb.getInt8PtrTy(), 
+                                      irb.getInt32Ty());
 }
 
 void RaceDetector::sanitizeFunction() {
@@ -39,6 +45,7 @@ void RaceDetector::sanitizeFunction() {
 }
 
 void RaceDetector::instrumentLoadAndStore() {
+  const DataLayout &dl = fptr->getParent()->getDataLayout();
   for (auto &bb : *fptr) {
     for (auto &inst : bb) {
       if (isa<LoadInst>(inst) || isa<StoreInst>(inst)) {
@@ -47,10 +54,27 @@ void RaceDetector::instrumentLoadAndStore() {
         Value *addr = isWrite ? cast<StoreInst>(&inst)->getPointerOperand()
                               : cast<LoadInst>(&inst)->getPointerOperand();
         FunctionCallee func = isWrite ? checkWrite : checkRead;
-        irb.CreateCall(func, irb.CreatePointerCast(addr, irb.getInt8PtrTy()));
+        int size = getMemoryAccessSize(addr, dl);
+        assert(size > 0);
+        irb.CreateCall(func, 
+                       {irb.CreatePointerCast(addr, irb.getInt8PtrTy()), 
+                        irb.getInt32(size)});
       }
     }
   }
+}
+
+int RaceDetector::getMemoryAccessSize(Value *addr, const DataLayout &dl) {
+  Type *origPtrTy = addr->getType();
+  Type *origTy = cast<PointerType>(origPtrTy)->getElementType();
+  assert(origTy->isSized());
+  uint32_t typeSize = dl.getTypeStoreSizeInBits(origTy);
+  if (typeSize != 8  && typeSize != 16 &&
+      typeSize != 32 && typeSize != 64 && typeSize != 128) {
+    // Ignore all unusual sizes.
+    return -1;
+  }
+  return typeSize / 8;
 }
 
 } // namespace
