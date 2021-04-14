@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-
+__attribute__((weak)) void ds_print();
 void ds_addSet(int set_index);
 int ds_findSet(int element);
 void* ds_find_set_info(int task_id);

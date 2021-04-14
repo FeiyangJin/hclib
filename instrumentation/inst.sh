@@ -48,6 +48,7 @@ while [ $# -gt "0" ]; do
             SOURCE_FILE=$1
             shift
             OPTIONS=$*
+            shift $#
     esac
 done 
 

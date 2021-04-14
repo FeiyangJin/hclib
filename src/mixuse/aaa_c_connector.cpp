@@ -133,6 +133,10 @@ bool ds_precede(void* step_a, void* step_b, int task_a, int task_b){
     return ds->precede(step_a_tree,step_b_tree,task_a,task_b);
 }
 
+__attribute__((weak)) void ds_print(){
+    printf("hello from hclib \n");
+}
+
 #ifdef __cplusplus
 }
 #endif

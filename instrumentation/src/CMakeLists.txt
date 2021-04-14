@@ -28,7 +28,7 @@ add_library(${PASS} SHARED ${PASS_SOURCE})
 target_include_directories(${PASS} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(DETECTOR "asap")
-set(DETECTOR_SOURCE "check.cpp")
+set(DETECTOR_SOURCE "shadow_memory.h" "check.cpp" "shadow_memory.cpp")
 add_library(${DETECTOR} SHARED ${DETECTOR_SOURCE})
 target_include_directories(${DETECTOR} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
