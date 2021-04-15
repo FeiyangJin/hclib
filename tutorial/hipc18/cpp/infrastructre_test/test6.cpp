@@ -8,6 +8,8 @@ int main(int argc, char **argv) {
     std::string const nodeTypes[5] = {"Root","Finish","Async","Future","Step"};
 
     hclib::launch(deps, 1, [&]() {
+        //ds_print_table();
+
         // test reachability
         // lsa's nt changes during blocking
         hclib::promise_t<int> *p = new hclib::promise_t<int>();
@@ -71,7 +73,7 @@ int main(int argc, char **argv) {
 
         p->put(5);
         fc->wait();
-        //ds_print_table();
+        
 
         printf("all tests passed in test 6 \n");
         // end of hclib
