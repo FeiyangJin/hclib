@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
     assert(fc_set_info->query_node_in_current_set->this_node_type == STEP);
     assert(fc_set_info->query_node_in_current_set->parent->index == 1);
 
-    printf("all tests passsed int updated test\n");
+    printf("all tests passsed in updated test\n");
     // end of hclib
   });
   

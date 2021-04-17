@@ -7,6 +7,14 @@ extern "C" {
 #endif
 
 extern DisjointSet *ds;
+extern bool hclib_ready;
+extern access_info current_task_and_step;
+
+typedef int (*hclib_function)(void); 
+extern hclib_function hclib_current_task_id; 
+
+typedef void* (*hclib_function_dpst)(void);
+extern hclib_function_dpst hclib_current_step_node;
 
 #ifdef __cplusplus
 }

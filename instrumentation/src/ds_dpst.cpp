@@ -325,6 +325,7 @@ void DisjointSet::printdsbyset(){
 }
 
 void DisjointSet::print_table(){
+    printf("hello here");
     unordered_map<int, vector<int>> all_sets;
 
     for (std::pair<int, set_info> element: parent_aka_setnowin) {

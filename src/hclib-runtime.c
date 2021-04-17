@@ -199,16 +199,16 @@ struct tree_node* get_current_step_node(){
         if(task->task_id == 0){
             // special case, for main task, the finish is under it in DPST
             // for other tasks, the finish is above it in DPST
-            HASSERT(task_finish->node_in_dpst->children_list_tail->this_node_type == STEP);
+            //HASSERT(task_finish->node_in_dpst->children_list_tail->this_node_type == STEP);
             return task_finish->node_in_dpst->children_list_tail;
         }
-        HASSERT(task->node_in_dpst->children_list_tail->this_node_type == STEP);
+        //HASSERT(task->node_in_dpst->children_list_tail->this_node_type == STEP);
         return task->node_in_dpst->children_list_tail;
     }
     else{
         // current task has at least one finish inside it
         // we are at a subtree of a FINISH node
-        HASSERT(ws_finish->node_in_dpst->children_list_tail->this_node_type == STEP);
+        //HASSERT(ws_finish->node_in_dpst->children_list_tail->this_node_type == STEP);
         return ws_finish->node_in_dpst->children_list_tail;
     }
 }
@@ -531,6 +531,10 @@ static void hclib_entrypoint(const char **module_dependencies,
      */
     HASSERT(sizeof(worker_done_t) == 64);
 
+    // fj: send function pointer to shadow memory
+    ds_set_task_id_pointer(&get_current_task_id);
+    ds_set_step_node_pointer(&get_current_step_node);
+
     load_dependencies(module_dependencies, n_module_dependencies);
 
     hclib_call_module_pre_init_functions();
@@ -654,8 +658,8 @@ static inline void check_out_finish(finish_t *finish) {
 
 static inline void execute_task(hclib_task_t *task) {
     // fj: check if we are at a step node, and mark the task as active
-    if(task->node_in_dpst != NULL && task->node_in_dpst->index > 1){
-        HASSERT(task->node_in_dpst->children_list_tail->this_node_type == STEP);
+    if(task->node_in_dpst != NULL){
+        HASSERT(get_current_step_node()->this_node_type == STEP);
     }
     ds_update_task_state(task->task_id,0);
 
@@ -1216,9 +1220,9 @@ void *hclib_future_wait(hclib_future_t *future) {
 
         hclib_task_t *need_to_swap_ctx = NULL;
         while (future->owner->satisfied == 0 &&
-                need_to_swap_ctx == NULL) {
+         need_to_swap_ctx == NULL) {
             need_to_swap_ctx = find_and_run_task(ws, 0,
-                    &(future->owner->satisfied), 1, NULL);
+             &(future->owner->satisfied), 1, NULL);
         }
 
         // yield: pop the top task in queue, create a continuation for current task and goes into scheduling queue
@@ -1229,7 +1233,7 @@ void *hclib_future_wait(hclib_future_t *future) {
             LiteCtx *newCtx = LiteCtx_create(_help_wait);
             newCtx->arg1 = future;
             newCtx->arg2 = need_to_swap_ctx;
-
+            
     #ifdef HCLIB_STATS
             worker_stats[CURRENT_WS_INTERNAL->id].count_ctx_creates++;
     #endif
@@ -1511,7 +1515,12 @@ void hclib_start_finish() {
 
     // ds operation
     ds_addFinish(finish->node_in_dpst->index, finish->belong_to_task_id, finish->node_in_dpst, finish);
-    
+
+    // tell shadow memory we are ready
+    if(finish->node_in_dpst->index == 1){
+        ds_hclib_ready(true);
+    }
+
     /*
      * Set finish counter to 1 initially to emulate the main thread inside the
      * finish being a task registered on the finish. When we reach the

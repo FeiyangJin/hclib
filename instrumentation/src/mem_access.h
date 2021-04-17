@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <cstdio>
+#include <vector>
 #include "struct_def.h"
 
 using addr_t = uint64_t;
@@ -44,7 +45,8 @@ class MemAccessList_t {
 public:
   addr_t start_addr;
   // XXX: Can we store the actual object here instead of a pointer to it?
-  MemAccess_t* readers[NUM_SLOTS] = {};
+  // MemAccess_t* readers[NUM_SLOTS] = {};
+  std::vector<MemAccess_t*>* readers[NUM_SLOTS] = {};
   MemAccess_t* writers[NUM_SLOTS] = {};
 
 public:

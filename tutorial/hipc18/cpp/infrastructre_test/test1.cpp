@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     assert(ds_ntcounts(task_id) == 1);
     assert(ds_getlsa(task_id) == -1);
     
-    printf("all tests passed int test 1\n");
+    printf("all tests passed in test 1\n");
     // end of hclib
   });
   

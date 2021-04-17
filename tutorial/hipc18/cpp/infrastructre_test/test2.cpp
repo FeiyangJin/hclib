@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
     }
     
     
-    printf("all tests passed int test 2\n");
+    printf("all tests passed in test 2\n");
     // end of hclib
   });
   

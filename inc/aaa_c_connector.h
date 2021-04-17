@@ -38,6 +38,11 @@ __attribute__((weak)) int ds_find_task_node_index(int task_id);
 __attribute__((weak)) void* ds_find_lca_left_child(void* node1, void* node2);
 __attribute__((weak)) bool ds_precede(void* step_a, void* step_b, int task_a, int task_b);
 
+
+__attribute__((weak)) void ds_hclib_ready(bool state);
+__attribute__((weak)) void ds_set_task_id_pointer(void* function_p);
+__attribute__((weak)) void ds_set_step_node_pointer(void* function_p);
+
 #ifdef __cplusplus
 }
 #endif

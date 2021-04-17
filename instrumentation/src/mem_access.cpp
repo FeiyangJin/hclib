@@ -11,12 +11,20 @@ MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read,
   const int grains = SIZE_TO_NUM_GRAINS(mem_size);
   assert(start >= 0 && start < NUM_SLOTS && (start + grains) <= NUM_SLOTS);
 
-  if (is_read)
-    for (int i{start}; i < (start + grains); ++i)
-      readers[i] = new MemAccess_t{task_and_node, rip};
-  else
-    for (int i{start}; i < (start + grains); ++i)
+  if (is_read){
+    for (int i{start}; i < (start + grains); ++i){
+      std::vector<MemAccess_t*>* all_readers = new std::vector<MemAccess_t*>();
+      all_readers->push_back(new MemAccess_t{task_and_node, rip});
+      readers[i] = all_readers;
+      //readers[i] = new MemAccess_t{task_and_node, rip};
+    }
+  }
+  else{
+    for (int i{start}; i < (start + grains); ++i){
       writers[i] = new MemAccess_t{task_and_node, rip};
+    }
+  }
+
 
 //   pthread_spin_init(&readers_lock, PTHREAD_PROCESS_PRIVATE);
 //   pthread_spin_init(&writers_lock, PTHREAD_PROCESS_PRIVATE);

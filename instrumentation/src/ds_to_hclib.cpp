@@ -9,6 +9,25 @@ extern "C" {
 #endif
 
 DisjointSet *ds = new DisjointSet();
+bool hclib_ready = false;
+access_info current_task_and_step = {
+    .task_id = -1,
+    .node_in_dpst = NULL
+};
+hclib_function hclib_current_task_id = NULL;
+hclib_function_dpst hclib_current_step_node = NULL;
+
+__attribute__((weak)) void ds_hclib_ready(bool state){
+    hclib_ready = state;
+}
+
+__attribute__((weak)) void ds_set_step_node_pointer(void* function_p){
+    hclib_current_step_node = (hclib_function_dpst) function_p;
+}
+
+__attribute__((weak)) void ds_set_task_id_pointer(void* function_p){
+    hclib_current_task_id = (hclib_function) function_p;
+}
 
 __attribute__((weak)) void ds_end_finish_merge(int finish_id, void* query_node){
     tree_node_cpp* query_node_cpp = (tree_node_cpp*) query_node;

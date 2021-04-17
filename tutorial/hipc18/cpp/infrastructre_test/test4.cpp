@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
         p->put(5);
 
         fc->wait();
-        printf("all tests passed int test 4 \n");
+        printf("all tests passed in test 4 \n");
 
         // end of hclib
     });

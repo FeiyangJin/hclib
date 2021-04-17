@@ -1,13 +1,15 @@
-HCLIB_WORKERS=1 ./test1
+# LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./test1.exe
 
-HCLIB_WORKERS=1 ./test2
+# LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./test2.exe
 
-HCLIB_WORKERS=1 ./test3
+# LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./test3.exe
 
-HCLIB_WORKERS=1 ./update_test
+# LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./update_test.exe
 
-HCLIB_WORKERS=1 ./test4
+# LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./test4.exe
 
-HCLIB_WORKERS=1 ./test5
+# LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./test5.exe
 
-HCLIB_WORKERS=1 ./test6
+# LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./test6.exe
+
+LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./test7.exe
