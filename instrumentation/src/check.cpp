@@ -121,10 +121,11 @@ void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, size_t mem_siz
 int write_print_count = 0;
 extern "C" void asap_check_write(int *addr, int bytes) {
 
-  // printf("pointer is %xl, size: %d \n",addr, sizeof(addr));
-  // addr_t address = (addr_t)(addr);
-  // printf("address is %xl, size: %d \n",address,sizeof(address));
-  //auto slot = shadow_mem.find(ADDR_TO_KEY(address));
+  printf("pointer is %xl, size: %d \n",addr, sizeof(addr));
+  addr_t address = (addr_t)(addr);
+  printf("address is %xl, size: %d \n",address,sizeof(address));
+  //this following line will always fail
+  auto slot = shadow_mem.find(ADDR_TO_KEY(address));
   
   // if(slot == nullptr){
   //   MemAccessList_t *mem_list  = new MemAccessList_t(*addr, false, current_task_and_step, NULL, bytes);
