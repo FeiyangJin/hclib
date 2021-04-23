@@ -9,7 +9,8 @@ MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read,
 
   const int start = ADDR_TO_MEM_INDEX(addr);
   const int grains = SIZE_TO_NUM_GRAINS(mem_size);
-  assert(start >= 0 && start < NUM_SLOTS && (start + grains) <= NUM_SLOTS);
+  printf("start is %d, grains is %d \n",start,grains);
+  //assert(start >= 0 && start < NUM_SLOTS && (start + grains) <= NUM_SLOTS);
 
   if (is_read){
     for (int i{start}; i < (start + grains); ++i){

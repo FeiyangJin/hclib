@@ -10,10 +10,7 @@ extern "C" {
 
 DisjointSet *ds = new DisjointSet();
 bool hclib_ready = false;
-access_info current_task_and_step = {
-    .task_id = -1,
-    .node_in_dpst = NULL
-};
+
 hclib_function hclib_current_task_id = NULL;
 hclib_function_dpst hclib_current_step_node = NULL;
 
