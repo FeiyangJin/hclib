@@ -194,7 +194,9 @@ struct tree_node* get_current_step_node(){
     hclib_task_t *task = (hclib_task_t *) ws->curr_task;
     finish_t *task_finish = task->current_finish;
     finish_t *ws_finish = ws->current_finish;
-    
+
+    //printDPST();
+
     if(task_finish->node_in_dpst->index == ws_finish->node_in_dpst->index){
         if(task->task_id == 0){
             // special case, for main task, the finish is under it in DPST

@@ -2,6 +2,12 @@
 
 #include "mem_access.h"
 
+MemAccess_t::MemAccess_t(access_info t_a_n, addr_t r){
+  this->task_and_node.node_in_dpst = t_a_n.node_in_dpst;
+  this->task_and_node.task_id = t_a_n.task_id;
+  this->rip = r;
+}
+
 MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read, 
                                  access_info task_and_node,
                                  addr_t rip, std::size_t mem_size) 
@@ -9,26 +15,23 @@ MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read,
 
   const int start = ADDR_TO_MEM_INDEX(addr);
   const int grains = SIZE_TO_NUM_GRAINS(mem_size);
-  printf("start is %d, grains is %d \n",start,grains);
+  //printf("start is %d, grains is %d \n",start,grains);
   //assert(start >= 0 && start < NUM_SLOTS && (start + grains) <= NUM_SLOTS);
 
   if (is_read){
-    for (int i{start}; i < (start + grains); ++i){
+    for (int i=start; i < (start + grains); ++i){
       std::vector<MemAccess_t*>* all_readers = new std::vector<MemAccess_t*>();
-      all_readers->push_back(new MemAccess_t{task_and_node, rip});
+      all_readers->push_back(new MemAccess_t(task_and_node, rip));
       readers[i] = all_readers;
       //readers[i] = new MemAccess_t{task_and_node, rip};
     }
   }
   else{
     for (int i{start}; i < (start + grains); ++i){
-      writers[i] = new MemAccess_t{task_and_node, rip};
+      writers[i] = new MemAccess_t(task_and_node, rip);
     }
   }
 
-
-//   pthread_spin_init(&readers_lock, PTHREAD_PROCESS_PRIVATE);
-//   pthread_spin_init(&writers_lock, PTHREAD_PROCESS_PRIVATE);
 }
 
 MemAccessList_t::~MemAccessList_t() {
@@ -46,6 +49,4 @@ MemAccessList_t::~MemAccessList_t() {
     }
   }
 
-//   pthread_spin_destroy(&readers_lock);
-//   pthread_spin_destroy(&writers_lock);
 }

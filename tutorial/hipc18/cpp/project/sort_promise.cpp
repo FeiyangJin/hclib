@@ -261,7 +261,7 @@ void cilkmerge(ELM *low1, ELM *high1,
   *(lowdest + lowsize + 1) = *split1;
 
   hclib::promise_t<void> *p1 = new hclib::promise_t<void>();
-  hclib::async([=](){
+  hclib::async([&](){
     cilkmerge(low1, split1 - 1, low2, split2, lowdest);
     p1->put();
   });
@@ -304,17 +304,17 @@ void cilksort(ELM *low, ELM *tmp, long size) {
   hclib::promise_t<void> *p2 = new hclib::promise_t<void>();
   hclib::promise_t<void> *p3 = new hclib::promise_t<void>();
 
-  hclib::async([=](){
+  hclib::async([&](){
     cilksort(A, tmpA, quarter);
     p1->put();
   });
 
-  hclib::async([=](){
+  hclib::async([&](){
     cilksort(B, tmpB, quarter);
     p2->put();
   });
 
-  hclib::async([=](){
+  hclib::async([&](){
     cilksort(C, tmpC, quarter);
     p3->put();
   });
@@ -325,7 +325,7 @@ void cilksort(ELM *low, ELM *tmp, long size) {
   p3->get_future()->wait();
 
   hclib::promise_t<void> *p4 = new hclib::promise_t<void>();
-  hclib::async([=](){
+  hclib::async([&](){
     cilkmerge(A, A + quarter - 1, B, B + quarter - 1, tmpA);
     p4->put();
   });
@@ -433,18 +433,18 @@ int main(int argc, char* argv[]){
 
 
 		//seq sort
-		fill_array(array,size);
-		zero(tmp,size);
+		// fill_array(array,size);
+		// zero(tmp,size);
 
-		start = hclib_current_time_ms();
+		// start = hclib_current_time_ms();
 
-		seqquick(array, array + size - 1);
+		// seqquick(array, array + size - 1);
 
-		end = hclib_current_time_ms();
-		dur = ((double)(end-start))/1000;
+		// end = hclib_current_time_ms();
+		// dur = ((double)(end-start))/1000;
 
-		check_result(array,size);
-		printf("sort time in sequential: %.3f for array of size %ld \n",dur,size);
+		// check_result(array,size);
+		// printf("sort time in sequential: %.3f for array of size %ld \n",dur,size);
 
 		free(array);
 		free(tmp);

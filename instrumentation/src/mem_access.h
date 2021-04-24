@@ -37,20 +37,18 @@ class MemAccess_t {
 public:
   access_info task_and_node;
   addr_t rip;
-  MemAccess_t(access_info t_a_n, addr_t r): task_and_node(t_a_n), rip(r) {}
+  MemAccess_t(access_info t_a_n, addr_t r);
+  //MemAccess_t(access_info t_a_n, addr_t r): task_and_node(t_a_n), rip(r) {}
 };
 
 class MemAccessList_t {
-  //private:
 public:
   addr_t start_addr;
-  // XXX: Can we store the actual object here instead of a pointer to it?
   // MemAccess_t* readers[NUM_SLOTS] = {};
   std::vector<MemAccess_t*>* readers[NUM_SLOTS] = {};
   MemAccess_t* writers[NUM_SLOTS] = {};
 
-public:
   MemAccessList_t(addr_t addr, bool is_read, access_info task_and_node, addr_t rip, std::size_t mem_size);
   ~MemAccessList_t();
   
-}; // enc class MemAccessList_t
+}; // end class MemAccessList_t
