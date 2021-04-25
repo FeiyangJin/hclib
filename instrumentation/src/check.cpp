@@ -156,8 +156,7 @@ void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, size_t mem_siz
 int write_print_count = 0;
 extern "C" void asap_check_write(int *addr, int bytes) {
   //printf("asap check write, address %p \n",addr);
-
-  if(shadow_initialized == true && hclib_ready == true){
+  if(hclib_ready == true){
     //printf("asap check write, current node is %d, address %p \n",((tree_node_cpp*)hclib_current_step_node())->index ,addr);
     auto slot = shadow_mem->find(ADDR_TO_KEY(addr));
 
@@ -184,7 +183,7 @@ extern "C" void asap_check_write(int *addr, int bytes) {
 
 int read_print_count = 0;
 extern "C" void asap_check_read(int *addr, int bytes) {
-  if(shadow_initialized == true && hclib_ready == true){
+  if(hclib_ready == true){
     //printf("asap check read, address %p \n",addr);
     auto slot = shadow_mem->find(ADDR_TO_KEY(addr));
 

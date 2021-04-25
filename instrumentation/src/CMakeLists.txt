@@ -28,7 +28,7 @@ add_library(${PASS} SHARED ${PASS_SOURCE})
 target_include_directories(${PASS} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(DETECTOR "asap")
-set(DETECTOR_SOURCE "struct_def.h" "ds_dpst.h" "ds_to_hclib.h" "shadow_memory.h" "mem_access.h" "ds_dpst.cpp" "ds_to_hclib.cpp" "mem_access.cpp" "check.cpp" )
+set(DETECTOR_SOURCE "check.cpp" "ds_dpst.cpp" "ds_to_hclib.cpp" "mem_access.cpp")
 add_library(${DETECTOR} SHARED ${DETECTOR_SOURCE})
 target_include_directories(${DETECTOR} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 

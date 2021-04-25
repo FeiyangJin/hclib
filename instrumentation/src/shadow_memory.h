@@ -7,7 +7,6 @@
 #define LOG_KEY_SIZE  4
 #define LOG_TBL_SIZE 20
 
-bool shadow_initialized = false;
 // macro for address manipulation for shadow mem
 #define ADDR_TO_KEY(addr) ((uint64_t) ((uint64_t)addr >> LOG_KEY_SIZE))
 
@@ -43,7 +42,6 @@ private:
 public:
   ShadowMem() {
     shadow_dir = new struct shadow_tbl *[1<<(48 - LOG_TBL_SIZE - LOG_KEY_SIZE)]();
-    shadow_initialized = true;
   }
 
   inline T* find(uint64_t key) {
