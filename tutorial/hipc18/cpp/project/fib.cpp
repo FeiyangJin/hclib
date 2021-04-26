@@ -33,17 +33,23 @@ uint64_t fib_async_finish(uint64_t n) {
   //uint64_t x, y;
   hclib::promise_t<uint64_t> *x = new hclib::promise_t<uint64_t>();
   hclib::promise_t<uint64_t> *y = new hclib::promise_t<uint64_t>();
+  printf("n = %ld, x = %p - > %p, y = %p->%p\n", n, &x, x, &y, y);
+    // hclib::future_t<void> *fa = hclib::async_future([&x,n]() {   
+    //   uint64_t value = fib_async_finish(n-1);
+    //   x->put(value);
+    //   return;
+    // });
 
-    hclib::async([&x, n]() {
+    hclib::async([&x,n]() {   
       uint64_t value = fib_async_finish(n-1);
       x->put(value);
+      return;
     });
 
-    hclib::async([&y,n]() {
-      uint64_t value = fib_async_finish(n-2);
-      y->put(value);
-    });
     
+    uint64_t value2 = fib_async_finish(n-2);
+    y->put(value2);
+
   return (x->get_future()->wait() + y->get_future()->wait());
 }
 
@@ -54,17 +60,6 @@ int main(int argc, char** argv) {
 
   char const *deps[] = { "system" }; 
   hclib::launch(deps, 1, [&]() {
-    // long start = hclib_current_time_ms();
-
-    // uint64_t result = fib(n);
-
-    // long end = hclib_current_time_ms();
-    // double dur = ((double)(end-start))/1000;
-
-    // printf("Fibonacci of %" PRIu64 " is %" PRIu64 ".\n", n, result);
-    // printf("Futures Time = %f \n \n",dur);
-
-
     // sequential execution
     long start = hclib_current_time_ms();
 

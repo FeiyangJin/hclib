@@ -14,6 +14,7 @@ extern hclib_function hclib_current_task_id;
 
 typedef void* (*hclib_function_dpst)(void);
 extern hclib_function_dpst hclib_current_step_node;
+extern hclib_function_dpst hclib_print_dpst;
 
 #ifdef __cplusplus
 }

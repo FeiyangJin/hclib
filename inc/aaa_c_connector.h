@@ -42,6 +42,7 @@ __attribute__((weak)) bool ds_precede(void* step_a, void* step_b, int task_a, in
 __attribute__((weak)) void ds_hclib_ready(bool state);
 __attribute__((weak)) void ds_set_task_id_pointer(void* function_p);
 __attribute__((weak)) void ds_set_step_node_pointer(void* function_p);
+__attribute__((weak)) void ds_set_print_dpst_pointer(void* function_p);
 
 #ifdef __cplusplus
 }

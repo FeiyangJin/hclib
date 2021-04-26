@@ -4,6 +4,7 @@ include $(HCLIB_ROOT)/../modules/system/inc/hclib_system.post.mak
 
 CXX=clang++
 EXE=non_serial_project non_serial_project2 failed_case fib sort matmul_promise
+TSAN_OPTIONS=-fsanitize=thread
 
 all: $(EXE)
 
@@ -17,7 +18,7 @@ failed_case: failed_case.cpp
 	$(CXX) -O3 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
 
 fib: fib.cpp
-	$(CXX) -O3 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
+	$(CXX) -O3 $(TSAN_OPTIONS) $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
 
 sort: sort_promise.cpp
 	$(CXX) -O3 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)

@@ -232,8 +232,8 @@ struct tree_node* newtreeNode()
 }
 
 void printDPST(){
-    tree_node *node_array[20] = {NULL};
-    tree_node *tmp_array[20] = {NULL};
+    tree_node *node_array[50] = {NULL};
+    tree_node *tmp_array[50] = {NULL};
     node_array[0] = DPST.root;
     int depth = 0;
 
@@ -242,16 +242,16 @@ void printDPST(){
         printf("depth %d:   ",depth);
         int tmp_index = 0;
         int i = 0;
-        while (i < 20)
+        while (i < 50)
         {
             tree_node *node = node_array[i];
             if(node == NULL){
-                printf("   ");
+                //printf("   ");
             }
             else{
-                printf("%c (index:%d) ",node_char[node->this_node_type],node->index);
+                printf("%c (i:%d) ",node_char[node->this_node_type],node->index);
                 if(node->parent != NULL){
-                    printf("(parent:%d)    ",node->parent->index);
+                    printf("(p:%d)    ",node->parent->index);
                 }
                 tree_node *child = node->children_list_head;
                 while (child != NULL)
@@ -269,7 +269,7 @@ void printDPST(){
 
         depth++;
         int j = 0;
-        while(j < 20){
+        while(j < 50){
             node_array[j] = tmp_array[j];
             tmp_array[j] = NULL;
             j++;
@@ -536,6 +536,7 @@ static void hclib_entrypoint(const char **module_dependencies,
     // fj: send function pointer to shadow memory
     ds_set_task_id_pointer(&get_current_task_id);
     ds_set_step_node_pointer(&get_current_step_node);
+    ds_set_print_dpst_pointer(&printDPST);
 
     load_dependencies(module_dependencies, n_module_dependencies);
 

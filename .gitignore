@@ -7,6 +7,10 @@
 # Unignore all dirs
 !*/
 
+*.txt
+*.bc
+*.exe
+*.ll
 ### Above combination will ignore all files without extension ###
 build
 hclib-install

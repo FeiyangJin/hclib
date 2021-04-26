@@ -13,9 +13,14 @@ bool hclib_ready = false;
 
 hclib_function hclib_current_task_id = NULL;
 hclib_function_dpst hclib_current_step_node = NULL;
+hclib_function_dpst hclib_print_dpst = NULL;
 
 __attribute__((weak)) void ds_hclib_ready(bool state){
     hclib_ready = state;
+}
+
+__attribute__((weak)) void ds_set_print_dpst_pointer(void* function_p){
+    hclib_print_dpst = (hclib_function_dpst) function_p;
 }
 
 __attribute__((weak)) void ds_set_step_node_pointer(void* function_p){

@@ -106,8 +106,8 @@ void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, size_t mem_siz
     .task_id = hclib_current_task_id(),
     .node_in_dpst = hclib_current_step_node()
   };
+  assert(((tree_node_cpp*)hclib_current_step_node())->this_node_type == STEP);
 
-  //printf("    handle write, current node is %d, address %p \n",((tree_node_cpp*)hclib_current_step_node())->index ,addr);
   for (int i=start; i < (start + grains); ++i) {
     MemAccess_t *writer = slot->writers[i];
     if(writer == NULL) {
@@ -121,6 +121,15 @@ void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, size_t mem_siz
     race = !precede(writer->task_and_node, current_task_and_step); 
     if(race){
       printf("we find a race !!!!!!!!!! \n");
+      tree_node_cpp* p_node = (tree_node_cpp*)writer->task_and_node.node_in_dpst;
+      tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
+      //printf("p_node precedes c_node: %s \n", ds->precede(p_node, c_node, writer->task_and_node.task_id, current_task_and_step.task_id) ? "true":"false");
+      printf("previous step index: %d, current step index: %d \n", p_node->index, c_node->index);
+      printf("addr %lx, mem_size %zu \n",addr,mem_size);
+      printf("previous op is %lx, current op is %lx\n", writer->rip, rip);
+      //hclib_print_dpst();
+      //ds->print_all_tasks();
+      //ds->print_table();
       assert(0);
     }
 
@@ -131,22 +140,28 @@ void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, size_t mem_siz
     assert(writer->task_and_node.node_in_dpst != nullptr);
   } // end of checking writers
 
+
   for(int i = start; i < (start + grains); i++) {
     std::vector<MemAccess_t*> *readers = slot->readers[i];
     if (readers == NULL) continue;
     bool race = false;
+
     for(auto reader = readers->begin(); reader != readers->end(); reader ++){
       race = !precede((*reader)->task_and_node, current_task_and_step);
+      if(race){
+        printf("we find a race \n");
+        tree_node_cpp* p_node = (tree_node_cpp*)(*reader)->task_and_node.node_in_dpst;
+        tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
+        printf("p_node precedes c_node: %s \n", ds->precede(p_node, c_node, (*reader)->task_and_node.task_id, current_task_and_step.task_id) ? "true":"false");
+        printf("previous step index: %d, current step index: %d \n", p_node->index, c_node->index);
+        //hclib_print_dpst();
+        assert(0);
+      }
     }
 
-    if(race){
-      printf("we find a race \n");
-      assert(0);
-    }
-    else{
-      // clear all readers if no race
-      slot->readers[i]->clear();
-    }
+    // clear all readers if no race
+    slot->readers[i]->clear();
+    
 
   }
   
@@ -158,24 +173,27 @@ extern "C" void asap_check_write(int *addr, int bytes) {
   //printf("asap check write, address %p \n",addr);
   if(hclib_ready == true){
     //printf("asap check write, current node is %d, address %p \n",((tree_node_cpp*)hclib_current_step_node())->index ,addr);
+    void *pc = __builtin_return_address(0);
     auto slot = shadow_mem->find(ADDR_TO_KEY(addr));
-
+    
     access_info current_task_and_step = {
       .task_id = hclib_current_task_id(),
       .node_in_dpst = hclib_current_step_node()
     };
+
+    printf("asap check write, address %p, slot is %p, current node is %d \n",addr, slot, ((tree_node_cpp*)current_task_and_step.node_in_dpst)->index);
 
     if(((tree_node_cpp*)current_task_and_step.node_in_dpst)->this_node_type != STEP){
       return;
     }
 
     if(slot == nullptr){
-      MemAccessList_t *mem_list  = new MemAccessList_t(*addr, false, current_task_and_step, 0, bytes);
+      MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, false, current_task_and_step, (addr_t)pc, bytes);
       slot = shadow_mem->insert(ADDR_TO_KEY(addr), mem_list);
       return;
     }
 
-    handle_write(slot, 0, (addr_t)addr, bytes);
+    handle_write(slot, (addr_t)pc, (addr_t)addr, bytes);
   }
 
 }
@@ -183,32 +201,26 @@ extern "C" void asap_check_write(int *addr, int bytes) {
 
 int read_print_count = 0;
 extern "C" void asap_check_read(int *addr, int bytes) {
-  if(hclib_ready == true){
-    //printf("asap check read, address %p \n",addr);
-    auto slot = shadow_mem->find(ADDR_TO_KEY(addr));
+  // if(shadow_initialized == true && hclib_ready == true){
+  //   //printf("asap check read, address %p \n",addr);
+  //   auto slot = shadow_mem->find(ADDR_TO_KEY(addr));
 
-    access_info current_task_and_step = {
-      .task_id = hclib_current_task_id(),
-      .node_in_dpst = hclib_current_step_node()
-    };
+  //   access_info current_task_and_step = {
+  //     .task_id = hclib_current_task_id(),
+  //     .node_in_dpst = hclib_current_step_node()
+  //   };
 
-    if(((tree_node_cpp*)current_task_and_step.node_in_dpst)->this_node_type != STEP){
-      return;
-    }
+  //   // if(((tree_node_cpp*)current_task_and_step.node_in_dpst)->this_node_type != STEP){
+  //   //   return;
+  //   // }
 
-    if(slot == nullptr){
-      MemAccessList_t *mem_list  = new MemAccessList_t(*addr, true, current_task_and_step, 0, bytes);
-      slot = shadow_mem->insert(ADDR_TO_KEY(addr), mem_list);
-      return;
-    }
+  //   if(slot == nullptr){
+  //     MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, true, current_task_and_step, 0, bytes);
+  //     slot = shadow_mem->insert(ADDR_TO_KEY(addr), mem_list);
+  //     return;
+  //   }
 
-    handle_read(slot,0,(addr_t)addr,bytes);
-
-    //printf("\nasap_check_read: %p, bytes: %d\n", addr, bytes);
-    //printf("called in check.cpp, hclib current task id is: %d \n", hclib_current_task_id());
-    //tree_node_cpp* curr_tree_node = (tree_node_cpp*) hclib_current_step_node();
-    //printf("current step node index: %d \n",curr_tree_node->index);
-    
-  }
+  //   handle_read(slot,0,(addr_t)addr,bytes);
+  // }
     
 }

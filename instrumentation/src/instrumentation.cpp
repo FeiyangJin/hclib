@@ -47,6 +47,7 @@ void RaceDetector::sanitizeFunction() {
 void RaceDetector::instrumentLoadAndStore() {
   const DataLayout &dl = fptr->getParent()->getDataLayout();
   for (auto &bb : *fptr) {
+    errs() << fptr->getName() << "\n";
     for (auto &inst : bb) {
       if (isa<LoadInst>(inst) || isa<StoreInst>(inst)) {
         IRBuilder<> irb(&inst);
