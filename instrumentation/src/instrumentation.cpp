@@ -1,5 +1,6 @@
 #include "instrumentation.h"
 #include "llvm/ADT/SmallString.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/IR/Attributes.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/Function.h"
@@ -7,6 +8,8 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
+#include "llvm/Demangle/Demangle.h"
+#include <cstdlib>
 
 using namespace llvm;
 
@@ -20,11 +23,13 @@ class RaceDetector{
   FunctionCallee checkRead;
   FunctionCallee checkWrite;
   Function *fptr;
+  ItaniumPartialDemangler demangler;
+  SmallVector<StringRef> blackList;
   void instrumentLoadAndStore();
   int getMemoryAccessSize(Value *Addr, const DataLayout &DL);
 };
 
-RaceDetector::RaceDetector(Function &f) : fptr(&f) {
+RaceDetector::RaceDetector(Function &f) : fptr(&f), demangler(), blackList() {
   Module *m = f.getParent();
   IRBuilder<> irb(m->getContext());
   AttributeList attr;
@@ -38,6 +43,7 @@ RaceDetector::RaceDetector(Function &f) : fptr(&f) {
   checkWrite = m->getOrInsertFunction(writeFuncName, attr, 
                                       irb.getVoidTy(), irb.getInt8PtrTy(), 
                                       irb.getInt32Ty());
+  blackList.append({"hclib"});
 }
 
 void RaceDetector::sanitizeFunction() {
@@ -46,6 +52,17 @@ void RaceDetector::sanitizeFunction() {
 
 void RaceDetector::instrumentLoadAndStore() {
   const DataLayout &dl = fptr->getParent()->getDataLayout();
+  size_t size = 1;
+  char *buf = static_cast<char *>(std::malloc(size));
+  if (!demangler.partialDemangle(fptr->getName().data())) {
+    StringRef contextName = demangler.getFunctionDeclContextName(buf, &size);
+    for (auto &item : blackList) {
+      if (contextName.startswith(item)) {
+        return;
+      }
+    }
+  }
+  errs() << "Instrument " << fptr->getName() << "\n";
   for (auto &bb : *fptr) {
     for (auto &inst : bb) {
       if (isa<LoadInst>(inst) || isa<StoreInst>(inst)) {
