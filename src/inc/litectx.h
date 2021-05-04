@@ -209,8 +209,10 @@ static __inline__ LiteCtx *LiteCtx_swap(LiteCtx *current, LiteCtx *next,
             (void *)pthread_self());
 #endif
     next->prev = current;
+    //printf("            at litectx line 212 \n");
     LiteCtx *new_current = (LiteCtx *)jump_fcontext(&current->_fctx,
             next->_fctx, next, true);
+    //printf("            at litectx line 215 \n");
 #ifdef VERBOSE
     fprintf(stderr, "LiteCtx_swap: swapped in %p(%p) on pthread %p\n",
             new_current, new_current->_fctx.sp, (void *)pthread_self());

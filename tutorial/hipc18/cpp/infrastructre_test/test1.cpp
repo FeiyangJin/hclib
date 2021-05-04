@@ -93,9 +93,9 @@ int main(int argc, char **argv) {
     b->wait();
 
     assert(task_id == 0);
-    assert(ds_findSet(a->corresponding_task_id) == ds_findSet(b->corresponding_task_id));
-    assert(ds_findSet(task_id) == ds_findSet(a->corresponding_task_id));
-    assert(ds_ntcounts(task_id) == 1);
+    assert(ds_findSet(a->corresponding_task_id) != ds_findSet(b->corresponding_task_id));
+    assert(ds_findSet(task_id) != ds_findSet(a->corresponding_task_id));
+    assert(ds_ntcounts(task_id) > 1);
     assert(ds_getlsa(task_id) == -1);
     
     printf("all tests passed in test 1\n");

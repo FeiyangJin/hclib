@@ -40,10 +40,10 @@ void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size_t mem_size
 
     bool race = false;
     race = !precede(writer->task_and_node, current_task_and_step);
-    if(race){
-      printf("we find a race \n");
-      assert(0);
-    }
+    // if(race){
+    //   // printf("we find a race \n");
+    //   // assert(0);
+    // }
   } // end of all grains writer
 
   
@@ -56,37 +56,26 @@ void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size_t mem_size
       slot->readers[i]->push_back(new_reader);
     }
     else{
-      bool update = false;
+      bool update = true;
       auto reader = readers->begin();
-
-      while(reader != readers->end()){
-        if(precede((*reader)->task_and_node,current_task_and_step)){
-          update = true;
-          reader = readers->erase(reader);
-        }
-        else{
-          tree_node_cpp* current_task_dpst_node = (tree_node_cpp*)(ds->get_task_info(current_task_and_step.task_id)->node_in_dpst);
-          tree_node_cpp* reader_task_dpst_node = (tree_node_cpp*)(ds->get_task_info((*reader)->task_and_node.task_id)->node_in_dpst);
-          if(current_task_dpst_node->this_node_type == FUTURE || reader_task_dpst_node->this_node_type == FUTURE){
+      //printf("reader size is: %lu \n",readers->size());
+      //if(readers->size() > 1000){
+        while(reader != readers->end()){
+          if(precede((*reader)->task_and_node,current_task_and_step)){
             update = true;
+            reader = readers->erase(reader);
           }
-          ++reader;
-        }
-      } // remove reader happened-before us while iterating the reader list
+          else{
+            tree_node_cpp* current_task_dpst_node = (tree_node_cpp*)(ds->get_task_info(current_task_and_step.task_id)->node_in_dpst);
+            tree_node_cpp* reader_task_dpst_node = (tree_node_cpp*)(ds->get_task_info((*reader)->task_and_node.task_id)->node_in_dpst);
+            if(current_task_dpst_node->this_node_type == FUTURE || reader_task_dpst_node->this_node_type == FUTURE){
+              update = true;
+            }
+            ++reader;
+          }
+        } // remove reader happened-before us while iterating the reader list
+      //}
 
-      // for(auto reader = readers->begin(); reader != readers->end(); reader++){
-      //   if(precede((*reader)->task_and_node,current_task_and_step)){
-      //     update = true;
-      //     // TODO: how to remove reader from this vector ?
-      //   }
-      //   else{
-      //     tree_node_cpp* current_task_dpst_node = (tree_node_cpp*)(ds->get_task_info(current_task_and_step.task_id)->node_in_dpst);
-      //     tree_node_cpp* reader_task_dpst_node = (tree_node_cpp*)(ds->get_task_info((*reader)->task_and_node.task_id)->node_in_dpst);
-      //     if(current_task_dpst_node->this_node_type == FUTURE || reader_task_dpst_node->this_node_type == FUTURE){
-      //       update = true;
-      //     }
-      //   }
-      // } // end of checking all readers in a single grain
 
       if(update == true){
         MemAccess_t* new_reader = new MemAccess_t(current_task_and_step, rip);
@@ -123,13 +112,12 @@ void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, size_t mem_siz
       printf("we find a race !!!!!!!!!! \n");
       tree_node_cpp* p_node = (tree_node_cpp*)writer->task_and_node.node_in_dpst;
       tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
-      //printf("p_node precedes c_node: %s \n", ds->precede(p_node, c_node, writer->task_and_node.task_id, current_task_and_step.task_id) ? "true":"false");
-      printf("previous step index: %d, current step index: %d \n", p_node->index, c_node->index);
-      printf("addr %lx, mem_size %zu \n",addr,mem_size);
-      printf("previous op is %lx, current op is %lx\n", writer->rip, rip);
-      //hclib_print_dpst();
-      //ds->print_all_tasks();
-      //ds->print_table();
+      printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, writer->task_and_node.task_id, current_task_and_step.task_id);
+      // printf("addr %lx, mem_size %zu \n",addr,mem_size);
+      // printf("previous op is %lx, current op is %lx\n", writer->rip, rip);
+      // hclib_print_dpst();
+      // //ds->print_all_tasks();
+      // //ds->print_table();
       assert(0);
     }
 
@@ -148,21 +136,20 @@ void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, size_t mem_siz
 
     for(auto reader = readers->begin(); reader != readers->end(); reader ++){
       race = !precede((*reader)->task_and_node, current_task_and_step);
-      if(race){
-        printf("we find a race \n");
-        tree_node_cpp* p_node = (tree_node_cpp*)(*reader)->task_and_node.node_in_dpst;
-        tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
-        printf("p_node precedes c_node: %s \n", ds->precede(p_node, c_node, (*reader)->task_and_node.task_id, current_task_and_step.task_id) ? "true":"false");
-        printf("previous step index: %d, current step index: %d \n", p_node->index, c_node->index);
-        //hclib_print_dpst();
-        assert(0);
-      }
+      // if(race){
+      //   // printf("we find a race \n");
+      //   // tree_node_cpp* p_node = (tree_node_cpp*)(*reader)->task_and_node.node_in_dpst;
+      //   // tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
+      //   // printf("p_node precedes c_node: %s \n", ds->precede(p_node, c_node, (*reader)->task_and_node.task_id, current_task_and_step.task_id) ? "true":"false");
+      //   // printf("previous step index: %d, current step index: %d \n", p_node->index, c_node->index);
+      //   // //hclib_print_dpst();
+      //   // assert(0);
+      // }
     }
 
     // clear all readers if no race
     slot->readers[i]->clear();
     
-
   }
   
 }
@@ -170,9 +157,8 @@ void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, size_t mem_siz
 
 int write_print_count = 0;
 extern "C" void asap_check_write(int *addr, int bytes) {
-  //printf("asap check write, address %p \n",addr);
+
   if(hclib_ready == true){
-    //printf("asap check write, current node is %d, address %p \n",((tree_node_cpp*)hclib_current_step_node())->index ,addr);
     void *pc = __builtin_return_address(0);
     auto slot = shadow_mem->find(ADDR_TO_KEY(addr));
     
@@ -181,7 +167,7 @@ extern "C" void asap_check_write(int *addr, int bytes) {
       .node_in_dpst = hclib_current_step_node()
     };
 
-    printf("asap check write, address %p, slot is %p, current node is %d \n",addr, slot, ((tree_node_cpp*)current_task_and_step.node_in_dpst)->index);
+    //printf("asap check write, address %p, slot is %p, current node is %d \n",addr, slot, ((tree_node_cpp*)current_task_and_step.node_in_dpst)->index);
 
     if(((tree_node_cpp*)current_task_and_step.node_in_dpst)->this_node_type != STEP){
       return;
@@ -201,26 +187,27 @@ extern "C" void asap_check_write(int *addr, int bytes) {
 
 int read_print_count = 0;
 extern "C" void asap_check_read(int *addr, int bytes) {
-  // if(shadow_initialized == true && hclib_ready == true){
-  //   //printf("asap check read, address %p \n",addr);
-  //   auto slot = shadow_mem->find(ADDR_TO_KEY(addr));
 
-  //   access_info current_task_and_step = {
-  //     .task_id = hclib_current_task_id(),
-  //     .node_in_dpst = hclib_current_step_node()
-  //   };
+  if(hclib_ready == true){
+    void *pc = __builtin_return_address(0);
+    auto slot = shadow_mem->find(ADDR_TO_KEY(addr));
 
-  //   // if(((tree_node_cpp*)current_task_and_step.node_in_dpst)->this_node_type != STEP){
-  //   //   return;
-  //   // }
+    access_info current_task_and_step = {
+      .task_id = hclib_current_task_id(),
+      .node_in_dpst = hclib_current_step_node()
+    };
 
-  //   if(slot == nullptr){
-  //     MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, true, current_task_and_step, 0, bytes);
-  //     slot = shadow_mem->insert(ADDR_TO_KEY(addr), mem_list);
-  //     return;
-  //   }
+    if(((tree_node_cpp*)current_task_and_step.node_in_dpst)->this_node_type != STEP){
+      return;
+    }
 
-  //   handle_read(slot,0,(addr_t)addr,bytes);
-  // }
+    if(slot == nullptr){
+      MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, true, current_task_and_step, (addr_t)pc, bytes);
+      slot = shadow_mem->insert(ADDR_TO_KEY(addr), mem_list);
+      return;
+    }
+
+    handle_read(slot,0,(addr_t)addr,bytes);
+  }
     
 }

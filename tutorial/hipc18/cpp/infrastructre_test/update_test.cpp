@@ -1,16 +1,6 @@
 #include "hclib_cpp.h"
 #include <unistd.h>
 
-typedef struct nt_info{
-    int task_id;
-    tree_node* last_node_before_this_nt;
-} nt_info;
-
-typedef struct set_info{
-    int set_id;
-    tree_node* query_node_in_current_set;
-} set_info;
-
 int main(int argc, char **argv) {
   char const *deps[] = { "system" }; 
   
@@ -43,54 +33,37 @@ int main(int argc, char **argv) {
 
     // test merge
     fb->wait();
-    assert(ds_findSet(0) == ds_findSet(fb->corresponding_task_id));
+    assert(ds_findSet(0) != ds_findSet(fb->corresponding_task_id));
     assert(ds_findSet(0) != ds_findSet(fa->corresponding_task_id));
     
-    //printDPST();
-    set_info* b_set_info = (set_info*) ds_find_set_info(fb->corresponding_task_id);
-    tree_node* b_query_node = b_set_info->query_node_in_current_set;
-    assert(b_query_node->this_node_type == STEP);
-    assert(b_query_node->parent->index == 1);
-    assert(b_query_node->parent->this_node_type == FINISH);
+    assert(ds_findSet(fb->corresponding_task_id) == 2);
 
     // test merge part 2
     int inner_task_id;
-    set_info* fc_set_info;
-    set_info* inner_task_set_info;
+    void* inner_step_node;
+    void* inner_step_node2;
     hclib::future_t<void> *fc = hclib::async_future([&](){
         hclib_worker_state *ws = current_ws();
         hclib_task_t *fc_task = (hclib_task_t *) ws->curr_task;
-        fc_set_info = (set_info*) ds_find_set_info(fc_task->task_id);
-        assert(fc_set_info->set_id == fc_task->task_id);
-        assert(fc_set_info->query_node_in_current_set == NULL);
 
         hclib::finish([&](){
-
           hclib::async([&](){
             ws = current_ws();
             hclib_task_t *inner_task = (hclib_task_t *) ws->curr_task;
             inner_task_id = inner_task->task_id;
+            inner_step_node = (void*) get_current_step_node();
           });
+          inner_step_node2 = (void*) get_current_step_node();
         });
 
-        inner_task_set_info = (set_info*) ds_find_set_info(inner_task_id);
-        assert(inner_task_set_info->set_id == ds_findSet(fc_task->task_id));
-        assert(inner_task_set_info->query_node_in_current_set != NULL);
-        assert(inner_task_set_info->query_node_in_current_set->parent->index == fc_task->node_in_dpst->index);
+        void* cstep = (void*) get_current_step_node();
+        assert(ds_precede(inner_step_node,cstep,inner_task_id,fc_task->task_id));
+        assert(ds_precede(inner_step_node2,cstep,inner_task_id,fc_task->task_id));
+
         return;
     });
 
     fc->wait();
-    
-    fc_set_info = (set_info*) ds_find_set_info(fc->corresponding_task_id);
-    inner_task_set_info = (set_info*) ds_find_set_info(inner_task_id);
-    assert(fc_set_info->set_id == inner_task_set_info->set_id);
-    assert(fc_set_info->set_id == ds_findSet(0));
-    assert(fc_set_info->query_node_in_current_set != NULL);
-    assert(inner_task_set_info->query_node_in_current_set != NULL);
-    assert(fc_set_info->query_node_in_current_set->index == inner_task_set_info->query_node_in_current_set->index);
-    assert(fc_set_info->query_node_in_current_set->this_node_type == STEP);
-    assert(fc_set_info->query_node_in_current_set->parent->index == 1);
 
     printf("all tests passsed in updated test\n");
     // end of hclib

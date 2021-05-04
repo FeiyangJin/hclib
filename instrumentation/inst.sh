@@ -118,6 +118,6 @@ fi
 
 echo "==============================================================================="
 echo ""
-echo "Instrument successfully. The instrumented execuable is ${ROOT}/${EXE}"
+echo "Instrument successfully. The instrumented execuable is $(pwd)/${EXE}"
 echo "To execute the executable, use following command:" 
-echo "    LD_LIBRARY_PATH=\"${ROOT}:"'${LD_LIBRARY_PATH}" ' "./${EXE}" 
+echo "    LD_LIBRARY_PATH=\"${ROOT}:"'${LD_LIBRARY_PATH}" ' "./${EXE}"

@@ -62,6 +62,7 @@ void hclib_promise_init(hclib_promise_t *promise) {
     promise->future.owner = promise;
     promise->future.corresponding_task_id = -1;
     promise->setter_task_id = -1;
+    promise->setter_node = NULL;
     promise->empty_future_id = -1;
 }
 
@@ -206,11 +207,9 @@ int register_on_all_promise_dependencies(hclib_task_t *wrapper_task) {
 void hclib_promise_put(hclib_promise_t *promise_to_be_put,
         void *datum_to_be_put) {
     HASSERT(promise_to_be_put != NULL && "can not put into NULL promise");
-    HASSERT(promise_to_be_put->satisfied == 0 &&
-             "violated single assignment property for promises");
+    HASSERT(promise_to_be_put->satisfied == 0 && "violated single assignment property for promises");
 
-    hclib_task_t *wait_list_of_promise =
-        promise_to_be_put->wait_list_head;
+    hclib_task_t *wait_list_of_promise = promise_to_be_put->wait_list_head;
 
     promise_to_be_put->datum = datum_to_be_put;
     promise_to_be_put->satisfied = 1;
@@ -218,10 +217,10 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
     // fj: set the promise's setter
     hclib_worker_state *ws = CURRENT_WS_INTERNAL;
     hclib_task_t *curr_task = wait_list_of_promise;
-    hclib_task_t *next_task = NULL;
-
     hclib_task_t *setter_task = (hclib_task_t*) ws->curr_task;
+
     promise_to_be_put->setter_task_id = setter_task->task_id;
+    promise_to_be_put->setter_node = setter_task->node_in_dpst->children_list_tail;
 
     // fj: create an empty future just for happened-before relationship
     if(promise_to_be_put->future.corresponding_task_id == -1){
@@ -231,18 +230,17 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
         increase_task_id_unique();
 
         promise_to_be_put->empty_future_id = empty_future_id;
-        void* current_step_node = (void*) get_current_step_node();
+        tree_node* current_step_node = get_current_step_node();
 
-        tree_node *empty_future_node = insert_tree_node(FUTURE,get_current_step_node()->parent);
+        tree_node *empty_future_node = insert_tree_node(FUTURE,current_step_node->parent);
         insert_leaf(empty_future_node);
         insert_leaf(empty_future_node->parent);
 
         ds_addSet(empty_future_id);
-        
-        ds_addtask(empty_future_id,setter_task->task_id,empty_future_node,NULL,2,current_step_node);
-        
+        ds_addtask(empty_future_id,setter_task->task_id,empty_future_node,NULL,2,(void*)current_step_node);
     }
 
+    hclib_task_t *next_task = NULL;
     /*
      * Loop while this CAS fails, trying to atomically grab the list of tasks
      * dependent on the future of this promise. Anyone else who comes along will

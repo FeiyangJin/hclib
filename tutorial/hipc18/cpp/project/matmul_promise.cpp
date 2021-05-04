@@ -157,44 +157,47 @@ void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n){
     hclib::promise_t<void> *p2 = new hclib::promise_t<void>();
     hclib::promise_t<void> *p3 = new hclib::promise_t<void>();
 
-    hclib::async([=](){
-        mat_mul_par(A1,B1,C1,n>>1);
-        p1->put();
+    hclib::finish([&](){
+
+        hclib::async([&](){
+            mat_mul_par(A1,B1,C1,n>>1);
+            //p1->put();
+        });
+
+        hclib::async([&](){
+            mat_mul_par(A1,B2,C2,n>>1);
+            //p2->put();
+        });
+
+        hclib::async([&](){
+            mat_mul_par(A3,B1,C3,n>>1);
+            //p3->put();
+        });
+
+        mat_mul_par(A3,B2,C4,n>>1);
+
     });
+    // p1->get_future()->wait();
+    // p2->get_future()->wait();
+    // p3->get_future()->wait();
 
-    hclib::async([=](){
-        mat_mul_par(A1,B2,C2,n>>1);
-        p2->put();
-    });
+    hclib::promise_t<int> *p4 = new hclib::promise_t<int>();
+    hclib::promise_t<int> *p5 = new hclib::promise_t<int>();
+    hclib::promise_t<int> *p6 = new hclib::promise_t<int>();
 
-    hclib::async([=](){
-        mat_mul_par(A3,B1,C3,n>>1);
-        p3->put();
-    });
-
-    mat_mul_par(A3,B2,C4,n>>1);
-
-    p1->get_future()->wait();
-    p2->get_future()->wait();
-    p3->get_future()->wait();
-
-    hclib::promise_t<void> *p4 = new hclib::promise_t<void>();
-    hclib::promise_t<void> *p5 = new hclib::promise_t<void>();
-    hclib::promise_t<void> *p6 = new hclib::promise_t<void>();
-
-    hclib::async([=](){
+    hclib::async([&](){
         mat_mul_par(A2,B3,C1,n>>1);
-        p4->put();
+        p4->put(4);
     });
 
-    hclib::async([=](){
+    hclib::async([&](){
         mat_mul_par(A2,B4,C2,n>>1);
-        p5->put();
+        p5->put(5);
     });
 
-    hclib::async([=](){
+    hclib::async([&](){
         mat_mul_par(A4,B3,C3,n>>1);
-        p6->put();
+        p6->put(6);
     });
 
     mat_mul_par(A4,B4,C4,n>>1);
@@ -231,6 +234,7 @@ void compare_matrix(REAL *C, REAL *D, int n){
 
 
 int main(int argc, char *argv[]){
+    // 2048 takes time up to 206.479 seconds
   int n = argc>1?atoi(argv[1]) : 2048; // default n value is 2048
   printf("multiplying two matrices of size %d * %d \n", n, n);
 
@@ -245,22 +249,22 @@ int main(int argc, char *argv[]){
   C = (REAL *) malloc(n * n * sizeof(REAL)); //result matrix sequential
   D = (REAL *) malloc(n * n * sizeof(REAL)); //result matrix parallel
 
-  char const *deps[] = { "system" };
-  hclib::launch(deps, 1, [&]() {
     /* initialize */
     init_rm(A, n);
     init_rm(B, n);
     zero(C, n);
-    
+
+  char const *deps[] = { "system" };
+  hclib::launch(deps, 1, [&]() {
     // sequential calculation
     long start = hclib_current_time_ms();
     
-    iter_matmul(A,B,C,n);
+    //iter_matmul(A,B,C,n);
     
     long end = hclib_current_time_ms();
     double dur = ((double)(end-start))/1000;
     
-    printf("Sequential Matrix Multiplication Time = %.3f\n", dur);
+    //printf("Sequential Matrix Multiplication Time = %.3f\n", dur);
 
     start = hclib_current_time_ms();
     mat_mul_par(A,B,D,n);
@@ -270,7 +274,7 @@ int main(int argc, char *argv[]){
     printf("parallel Matrix Multiplication Time = %.3f\n", dur);
 
     //compare two results
-    compare_matrix(C,D,n);
+    //compare_matrix(C,D,n);
 
     /* release memory */
     free(A);

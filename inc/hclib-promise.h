@@ -79,6 +79,7 @@ typedef struct hclib_promise_st {
     volatile int satisfied;
     void *volatile datum;
     int setter_task_id;
+    tree_node* setter_node;
     int empty_future_id;
     /*
      * List of tasks that are awaiting the satisfaction of this promise.

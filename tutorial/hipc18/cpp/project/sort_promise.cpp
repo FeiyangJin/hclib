@@ -428,7 +428,7 @@ int main(int argc, char* argv[]){
 		long end = hclib_current_time_ms();
 		double dur = ((double)(end-start))/1000;
 
-		check_result(array,size);
+		//check_result(array,size);
 		printf("sort time in parallel: %.3f for array of size %ld \n",dur,size);
 
 

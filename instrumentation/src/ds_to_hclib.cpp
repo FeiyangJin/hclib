@@ -15,6 +15,10 @@ hclib_function hclib_current_task_id = NULL;
 hclib_function_dpst hclib_current_step_node = NULL;
 hclib_function_dpst hclib_print_dpst = NULL;
 
+__attribute__((weak)) bool ds_dpst_precede(void* node1, void* node2){
+    return ds->precede_dpst((tree_node_cpp*)node1,(tree_node_cpp*)node2);
+}
+
 __attribute__((weak)) void ds_hclib_ready(bool state){
     hclib_ready = state;
 }
@@ -79,15 +83,6 @@ __attribute__((weak)) void ds_addSet(int set_index){
 
 __attribute__((weak)) int ds_findSet(int element){
     return ds->Find(element);
-}
-
-__attribute__((weak)) void* ds_find_set_info(int task_id){
-    set_info si = ds->find_helper(task_id);
-    set_info *sip = new set_info();
-    sip->set_id = si.set_id;
-    sip->query_node_in_current_set = si.query_node_in_current_set;
-    void* result = (void*) sip;
-    return result;
 }
 
 __attribute__((weak)) void ds_merge(int a, int b, void* query_node){

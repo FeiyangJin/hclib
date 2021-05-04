@@ -18,7 +18,7 @@ class DisjointSet
     unordered_map<int, hclib_task*> all_tasks;
 
     // a map from task_index to set, aka which set the task is currently in
-    unordered_map<int, set_info> parent_aka_setnowin;
+    unordered_map<int, int> parent_aka_setnowin;
 
     // rank for each set
     unordered_map<int, int> rank;
@@ -96,6 +96,8 @@ public:
     tree_node_cpp* find_lca_left_child_cpp(tree_node_cpp* node1, tree_node_cpp* node2);
 
     int find_task_node_index(int task_id);
+
+    bool precede_dpst(tree_node_cpp* node1, tree_node_cpp* node2);
 };
 
 #endif

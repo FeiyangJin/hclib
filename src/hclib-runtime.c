@@ -232,8 +232,8 @@ struct tree_node* newtreeNode()
 }
 
 void printDPST(){
-    tree_node *node_array[50] = {NULL};
-    tree_node *tmp_array[50] = {NULL};
+    tree_node *node_array[100] = {NULL};
+    tree_node *tmp_array[100] = {NULL};
     node_array[0] = DPST.root;
     int depth = 0;
 
@@ -242,7 +242,7 @@ void printDPST(){
         printf("depth %d:   ",depth);
         int tmp_index = 0;
         int i = 0;
-        while (i < 50)
+        while (i < 100)
         {
             tree_node *node = node_array[i];
             if(node == NULL){
@@ -269,7 +269,7 @@ void printDPST(){
 
         depth++;
         int j = 0;
-        while(j < 50){
+        while(j < 100){
             node_array[j] = tmp_array[j];
             tmp_array[j] = NULL;
             j++;
@@ -424,6 +424,7 @@ static __inline__ void ctx_swap(LiteCtx *current, LiteCtx *next,
     // switching to new context
     set_curr_lite_ctx(next);
 
+    //printf("        at hclib-runtime line 427 \n");
     LiteCtx_swap(current, next, lbl);
 
     // switched back to this context
@@ -1261,22 +1262,25 @@ void *hclib_future_wait(hclib_future_t *future) {
     if(future->corresponding_task_id >= 0){
         int future_task_id = future->corresponding_task_id;
         int future_parent_id = ds_parentid(future_task_id);
-        if(ds_findSet(current_task->task_id) == ds_findSet(future_parent_id)){
-            // merge two sets
-            ds_merge(current_task->task_id, future_task_id, (void*)continuation);
-        }
-        else{
+        // if(ds_findSet(current_task->task_id) == ds_findSet(future_parent_id)){
+        //     // merge two sets
+        //     ds_merge(current_task->task_id, future_task_id, (void*)continuation);
+        // }
+        // else{
             // add future task to current tasks' nt
             void* current_step_node = (void*) get_current_step_node();
             ds_addnt(current_task->task_id,future_task_id,current_step_node);
-        }
+        //}
         // mark the future task joined
         ds_update_task_state(future->corresponding_task_id,3);
     }
     else{
-        // otherwise the future is just an access to a promise, we do promise operations on disjoint 
-        if(future->owner->setter_task_id != current_task->task_id){
-            // version 2: add a empty future
+        // otherwise the future is just an access to a promise, we do promise operations on disjoint
+        if(ds_dpst_precede((void*)future->owner->setter_node,(void*)get_current_step_node())){
+
+        } 
+        else if(future->owner->setter_task_id != current_task->task_id){
+            // version 2: add an empty future
             // see promise_put in hclib-promise.c for details
             assert(future->corresponding_task_id == -1);
             assert(future->owner->empty_future_id >= 0);
@@ -1422,7 +1426,6 @@ void hclib_yield(hclib_locale_t *locale) {
 #ifdef HCLIB_STATS
         worker_stats[ws->id].count_yield_iterations++;
 #endif
-
         // Try to pop a task created by this thread from our pop path
         task = locale_pop_task(ws);
         if (!task) {
@@ -1452,6 +1455,7 @@ void hclib_yield(hclib_locale_t *locale) {
             if (task->non_blocking) {
                 execute_task(task);
             } else {
+                //printf("    at hclib-runtime line 1457 \n");
                 LiteCtx *currentCtx = get_curr_lite_ctx();
                 HASSERT(currentCtx);
                 LiteCtx *newCtx = LiteCtx_create(yield_helper);
@@ -1461,7 +1465,6 @@ void hclib_yield(hclib_locale_t *locale) {
                 worker_stats[ws->id].count_ctx_creates++;
 #endif
                 ctx_swap(currentCtx, newCtx, __func__);
-
                 LiteCtx_destroy(currentCtx->prev);
 
                 /*

@@ -5,7 +5,6 @@ hclib_finish::hclib_finish(int finish_id, int belong_to_task_id, void *node_in_d
     this->belong_to_task_id = belong_to_task_id;
     this->node_in_dpst = node_in_dpst;
     this->finish_address = finish_address;
-    //this->task_in_this_finish = new vector<int>();
 }
 
 void DisjointSet::add_task_to_finish(int finish_id, int task_id){
@@ -42,7 +41,7 @@ hclib_task::hclib_task(int task_id, int parent_id, void *node_in_dpst, void *tas
  * @retval None
  */
 void DisjointSet::addTask(int task_id, hclib_task *task, tree_node_cpp *last_node_reachable_in_parent){
-    all_tasks[task_id] = task;
+    this->all_tasks[task_id] = task;
 
     if(task_id == 0){
         lsa_info null_lsa = {
@@ -128,15 +127,11 @@ DisjointSet::DisjointSet(){
 // }
 
 void DisjointSet::addSet(int set_index){
-    set_info new_set = {
-        .set_id = set_index,
-        .query_node_in_current_set = NULL
-    };
-    this->parent_aka_setnowin[set_index] = new_set;
+    this->parent_aka_setnowin[set_index] = set_index;
     this->rank[set_index] = 0;
 
-    vector<nt_info> nontreejoins;
-    this->nt[set_index] = nontreejoins;
+    vector<nt_info> *nontreejoins = new vector<nt_info>();
+    this->nt[set_index] = *nontreejoins;
 
     lsa_info null_lsa = {
         .task_id = -1,
@@ -145,29 +140,13 @@ void DisjointSet::addSet(int set_index){
     this->lsa[set_index] = null_lsa;
 }
 
-
-set_info DisjointSet::find_helper(int k){
-    assert(k != -1);
-    if (parent_aka_setnowin[k].set_id != k)
-    {
-        set_info result = find_helper(parent_aka_setnowin[k].set_id);
-
-        // the first returned recursion will go into this if
-        // because the immediately returned set is the previous parent
-        if(result.query_node_in_current_set == NULL && parent_aka_setnowin[k].query_node_in_current_set != NULL){
-            parent_aka_setnowin[k].set_id = result.set_id;
-        }
-        else{
-            parent_aka_setnowin[k] = result;
-        }
-        
-    }
-
-    return parent_aka_setnowin[k];
-}
-
 int DisjointSet::Find(int k){
-    return find_helper(k).set_id;
+    assert(k != -1);
+    if (parent_aka_setnowin[k] != k)
+    {
+        parent_aka_setnowin[k] = Find(parent_aka_setnowin[k]);
+    }
+    return parent_aka_setnowin[k];
 }
 
 /**
@@ -175,12 +154,9 @@ int DisjointSet::Find(int k){
  * @note   the new set could be a_set or b_set, depends on rank
  * @param  a: task a task_id
  * @param  b: task b task_id
- * @param query_node: the step node in DPST that we should query on
  * @retval None
  */
 void DisjointSet::mergeBtoA(int a, int b, tree_node_cpp* query_node){
-    assert(query_node->this_node_type == STEP);
-
     int a_set = Find(a);
     int b_set = Find(b);
 
@@ -203,8 +179,7 @@ void DisjointSet::mergeBtoA(int a, int b, tree_node_cpp* query_node){
 
     // now just join B to A
     int new_set = a_set;
-    this->parent_aka_setnowin[b_set].set_id = a_set;
-    this->parent_aka_setnowin[b_set].query_node_in_current_set = query_node;
+    this->parent_aka_setnowin[b_set] = a_set;
     // union two sets
     // int new_set = -1;
     // if(rank[a_set] > rank[b_set]){
@@ -271,7 +246,7 @@ void DisjointSet::setlsa(int task_id, lsa_info new_lsa){
 }
 
 void DisjointSet::printds(){
-    for (std::pair<int, set_info> element: parent_aka_setnowin) {
+    for (std::pair<int, int> element: parent_aka_setnowin) {
         printf("%d is in set: %d \n", element.first, Find(element.first));
     };
 
@@ -294,7 +269,7 @@ void DisjointSet::printds(){
 void DisjointSet::printdsbyset(){
     unordered_map<int, vector<int>> all_sets;
 
-    for (std::pair<int, set_info> element: parent_aka_setnowin) {
+    for (std::pair<int, int> element: parent_aka_setnowin) {
         int the_parent = Find(element.first);
         if(all_sets.count(the_parent) > 0){
             all_sets[the_parent].push_back(element.first);
@@ -326,7 +301,7 @@ void DisjointSet::printdsbyset(){
 void DisjointSet::print_table(){
     unordered_map<int, vector<int>> all_sets;
 
-    for (std::pair<int, set_info> element: parent_aka_setnowin) {
+    for (std::pair<int, int> element: parent_aka_setnowin) {
         int the_parent = Find(element.first);
         if(all_sets.count(the_parent) > 0){
             all_sets[the_parent].push_back(element.first);
@@ -374,11 +349,13 @@ int DisjointSet::find_task_node_index(int task_id){
 }
 
 tree_node_cpp* DisjointSet::find_lca_left_child_cpp(tree_node_cpp* node1, tree_node_cpp* node2){
-    assert(node1->this_node_type == STEP);
-    assert(node2->this_node_type == STEP);
+    tree_node_cpp* node1_last_node = node1;
+    tree_node_cpp* node2_last_node = node2;
 
     while (node1->depth != node2->depth)
     {
+        node1_last_node = node1;
+        node2_last_node = node2;
         if (node1->depth > node2->depth)
         {
             node1 = node1->parent;
@@ -387,14 +364,6 @@ tree_node_cpp* DisjointSet::find_lca_left_child_cpp(tree_node_cpp* node1, tree_n
             node2 = node2->parent;
         }
     }
-
-    // special case: node1 or node2 is direct ancestor 
-    if(node1->index == node2->index){
-        printf("special case in dpst \n");
-    }
-
-    tree_node_cpp* node1_last_node;
-    tree_node_cpp* node2_last_node;
 
     while(node1->index != node2->index){
         node1_last_node = node1;
@@ -411,6 +380,57 @@ tree_node_cpp* DisjointSet::find_lca_left_child_cpp(tree_node_cpp* node1, tree_n
     return node2_last_node;
 }
 
+bool DisjointSet::precede_dpst(tree_node_cpp* node1, tree_node_cpp* node2){
+    if(node1->index == node2->index){
+        return true;
+    }
+    else if(node1->parent->index == node2->parent->index){
+        if(node1->is_parent_nth_child <= node2->is_parent_nth_child){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+    
+    // need to guarantee prev_node is to the left of current_node
+    tree_node_cpp* node1_last_node = node1;
+    tree_node_cpp* node2_last_node = node2;
+
+    while (node1->depth != node2->depth)
+    {
+        node1_last_node = node1;
+        node2_last_node = node2;
+        if (node1->depth > node2->depth)
+        {
+            node1 = node1->parent;
+        }
+        else{
+            node2 = node2->parent;
+        }
+    }
+
+    while(node1->index != node2->index){
+        node1_last_node = node1;
+        node2_last_node = node2;
+        node1 = node1->parent;
+        node2 = node2->parent;
+    }; // end
+
+    if(node1_last_node->is_parent_nth_child < node2_last_node->is_parent_nth_child){
+        // node1 is to the left of node 2
+        if(node1_last_node->this_node_type == FUTURE || node1_last_node->this_node_type == ASYNC){
+            return false;
+        }
+        else{
+            return true;
+        }
+
+    }
+
+    return false;
+}
+
 bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b){
     //printf("precede \n");
     set<int> visited;
@@ -418,60 +438,50 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task
 }
 
 bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b, set<int> visited){
+    if(task_a == task_b){
+        if(step_a->is_parent_nth_child <= step_b->is_parent_nth_child){
+            return true;
+        }
+        return false;
+    };
+
     const bool b_in_visited = visited.find(task_b) != visited.end();
     if(b_in_visited){
-        printf("    return in visited \n");
         return false;
     }
 
     visited.insert(task_b);
 
-    set_info Sa = this->find_helper(task_a);
-    set_info Sb = this->find_helper(task_b);
-
-    if(Sa.set_id == Sb.set_id){
-        printf("    return in set id \n");
-        return true;
-    }
+    int Sa = this->Find(task_a);
+    int Sb = this->Find(task_b);
 
     // optimization 1
-    if(this->all_tasks[Sa.set_id]->this_task_state == ACTIVE){
-        printf("    return in optimiaztion 1 \n");
+    if(this->all_tasks[Sa]->this_task_state == ACTIVE){
+        //printf("    return in optimiaztion 1 \n");
         return true;
     }
 
     // this covers ancestor in DPST
-    tree_node_cpp* query_node = step_a;
-
-    tree_node_cpp *lca_lc = find_lca_left_child_cpp(query_node,step_b);
-    if(lca_lc->this_node_type != FUTURE && lca_lc->this_node_type != ASYNC){
-        printf("    return in dpst ancestor \n");
+    if(precede_dpst(step_a,step_b) == true){
+        //printf("    return in precede_dpst with step_a: %d step_b: %d \n",step_a->index,step_b->index);
         return true;
     }
 
-    // optimization 2
-    // if(this->all_tasks[Sa.set_id]->this_task_state == BLOCKED || this->all_tasks[Sa.set_id]->this_task_state == FINISHED_NOT_JOINED){
-    //     printf("    return in optimization 2 with previous id %d, current id %d \n",Sa.set_id,Sb.set_id);
-    //     this->print_table();
-    //     this->print_all_tasks();
-    //     return false;
-    // }
-    
     // nt joins
-    for(auto nt_join = this->nt[Sb.set_id].begin(); nt_join != this->nt[Sb.set_id].end(); nt_join++){
+    for(auto nt_join = this->nt[Sb].begin(); nt_join != this->nt[Sb].end(); nt_join++){
         int task_id = (*nt_join).task_id;
         tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id]->node_in_dpst;
         tree_node_cpp* last_step_node = task_node->children_list_tail;
         assert(last_step_node->this_node_type == STEP);
 
         if(visit(step_a, last_step_node, task_a, task_id, visited)){
-            printf("    return in nt joins \n");
+            //printf("    return in nt joins \n");
             return true;
         }
     }
 
     // lsa
-    lsa_info one_lsa = this->lsa[Sb.set_id];
+    lsa_info one_lsa = this->lsa[Sb];
     
     while (one_lsa.task_id != -1)
     {
@@ -482,16 +492,15 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
 
             tree_node_cpp* step_before_this_nt = (*lsa_nt).last_node_before_this_nt;
 
-
             assert(lsa_deepest_reachable_node != NULL);
-            if(step_before_this_nt->is_parent_nth_child <= lsa_deepest_reachable_node->is_parent_nth_child){
+            if(precede_dpst(step_before_this_nt,lsa_deepest_reachable_node)){
+            //if(this->precede(step_before_this_nt,lsa_deepest_reachable_node,(*lsa_nt).task_id,one_lsa.task_id)){
                 int task_id = (*lsa_nt).task_id;
                 tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id]->node_in_dpst;
                 tree_node_cpp* last_step_node = task_node->children_list_tail;
                 assert(last_step_node->this_node_type == STEP);
 
                 if(visit(step_a, last_step_node, task_a, task_id, visited)){
-                    printf("    return in lsa \n");
                     return true;
                 }
             }
@@ -500,9 +509,5 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
         one_lsa = this->lsa[Find(one_lsa.task_id)];
     }
     
-
-    printf("    return finally with previous id %d, current id %d \n",Sa.set_id,Sb.set_id);
-    //this->print_table();
-    //this->print_all_tasks();
     return false;
 }
