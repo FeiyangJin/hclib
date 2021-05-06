@@ -62,7 +62,7 @@ void RaceDetector::instrumentLoadAndStore() {
       }
     }
   }
-  errs() << "Instrument " << fptr->getName() << "\n";
+  //errs() << "Instrument " << fptr->getName() << "\n";
   for (auto &bb : *fptr) {
     for (auto &inst : bb) {
       if (isa<LoadInst>(inst) || isa<StoreInst>(inst)) {

@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <vector>
+#include <list>
 #include "struct_def.h"
 
 using addr_t = uint64_t;
@@ -37,6 +38,8 @@ class MemAccess_t {
 public:
   access_info task_and_node;
   addr_t rip;
+  MemAccess_t* next;
+  MemAccess_t* prev;
   MemAccess_t(access_info t_a_n, addr_t r);
   //MemAccess_t(access_info t_a_n, addr_t r): task_and_node(t_a_n), rip(r) {}
 };
@@ -44,8 +47,10 @@ public:
 class MemAccessList_t {
 public:
   addr_t start_addr;
-  // MemAccess_t* readers[NUM_SLOTS] = {};
-  std::vector<MemAccess_t*>* readers[NUM_SLOTS] = {};
+  MemAccess_t* readers[NUM_SLOTS] = {};
+  //std::vector<MemAccess_t>* readers[NUM_SLOTS] = {};
+  // MemAccess_t** readers[NUM_SLOTS] = {};
+  // std::list<MemAccess_t*>* readers[NUM_SLOTS] = {};
   MemAccess_t* writers[NUM_SLOTS] = {};
 
   MemAccessList_t(addr_t addr, bool is_read, access_info task_and_node, addr_t rip, std::size_t mem_size);

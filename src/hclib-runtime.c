@@ -687,6 +687,7 @@ static inline void execute_task(hclib_task_t *task) {
     worker_stats[ws->id].executed_tasks++;
 #endif
 
+    ds_hclib_ready(true);
     // task->_fp is of type 'void (*generic_frame_ptr)(void*)'
     (task->_fp)(task->args);
     check_out_finish(current_finish);

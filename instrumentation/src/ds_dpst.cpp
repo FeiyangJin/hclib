@@ -72,30 +72,6 @@ hclib_task* DisjointSet::get_task_info(int task_id){
     return this->all_tasks[task_id];
 }
 
-
-
-string state_string[4] = {"Active", "Blocked", "Finished_not_Joined", "Joined"};
-
-void DisjointSet::print_all_tasks(){
-    for (std::pair<int, hclib_task*> element: this->all_tasks) {
-        hclib_task *task = element.second;
-        int task_id = element.first;
-        printf("task %d, parent is %d, has %d nt joins, lsa is %d, now in set: %d, task state is: ", 
-            task_id, task->parent_id, this->nt[task_id].size(), this->lsa[task_id].task_id, Find(task_id));
-
-        int state = static_cast<int>(this->all_tasks[task_id]->this_task_state);
-        std::cout << state_string[state];
-
-        if(this->lsa[task_id].task_id != -1){
-            assert(this->lsa[task_id].last_node_reachable_in_lsa != NULL);
-            printf("    lsa last reachable node index is %d \n",this->lsa[task_id].last_node_reachable_in_lsa->index);
-        }
-        else{
-            printf("\n");
-        }
-    }
-}
-
 void DisjointSet::update_task_dpst_node(int task_id, void *new_node){
     this->all_tasks[task_id]->node_in_dpst = new_node;
 }
@@ -168,38 +144,44 @@ void DisjointSet::mergeBtoA(int a, int b, tree_node_cpp* query_node){
     }
 
     // union nt
+    set<nt_info> unique_nt;
     vector<nt_info> a_nt = nt.at(a_set);
     vector<nt_info> b_nt = nt.at(b_set);
-    for(auto i = b_nt.begin(); i != b_nt.end(); ++i){
-        a_nt.push_back(*i);
+
+    for(auto i=a_nt.begin(); i != a_nt.end(); ++i){
+        unique_nt.insert(*i);
     }
 
+    for(auto i = b_nt.begin(); i != b_nt.end(); ++i){
+        unique_nt.insert(*i);
+    }
+
+    std::vector<nt_info>().swap(nt.at(a_set));
+    std::vector<nt_info>().swap(nt.at(b_set));
+    std::vector<nt_info> new_nt(unique_nt.begin(), unique_nt.end());
     // set new lsa
     lsa_info new_lsa = this->lsa[a_set];
 
     // now just join B to A
-    int new_set = a_set;
-    this->parent_aka_setnowin[b_set] = a_set;
+    // int new_set = a_set;
+    // this->parent_aka_setnowin[b_set] = a_set;
     // union two sets
-    // int new_set = -1;
-    // if(rank[a_set] > rank[b_set]){
-    //     parent_aka_setnowin[b_set].set_id = a_set;
-    //     parent_aka_setnowin[b_set].query_node_in_current_set = query_node;
-    //     new_set = a_set;
-    // }
-    // else if(rank[a_set] < rank[b_set]){
-    //     parent_aka_setnowin[a_set].set_id = b_set;
-    //     parent_aka_setnowin[a_set].query_node_in_current_set = query_node;
-    //     new_set = b_set;
-    // }
-    // else{
-    //     parent_aka_setnowin[b_set].set_id = a_set;
-    //     parent_aka_setnowin[b_set].query_node_in_current_set = query_node;
-    //     rank[a_set] ++;
-    //     new_set = a_set;
-    // }
-
-    this->nt[new_set] = a_nt;
+    int new_set = -1;
+    if(rank[a_set] > rank[b_set]){
+        parent_aka_setnowin[b_set] = a_set;
+        new_set = a_set;
+    }
+    else if(rank[a_set] < rank[b_set]){
+        parent_aka_setnowin[a_set] = b_set;
+        new_set = b_set;
+    }
+    else{
+        parent_aka_setnowin[b_set] = a_set;
+        rank[a_set] ++;
+        new_set = a_set;
+    }
+ 
+    this->nt[new_set] = new_nt;
     this->lsa[new_set] = new_lsa;
 }
 
@@ -210,9 +192,9 @@ void DisjointSet::addnt(int task, int nt_task_id, tree_node_cpp* last_node_befor
         .last_node_before_this_nt = last_node_before_nt
     };
     nt[task_set].push_back(new_nt);
-    if(this->all_tasks[nt_task_id]->this_task_state != JOINED){
-        this->all_tasks[nt_task_id]->this_task_state = JOINED;
-    }
+    // if(this->all_tasks[nt_task_id]->this_task_state != JOINED){
+    //     this->all_tasks[nt_task_id]->this_task_state = JOINED;
+    // }
 }
 
 int DisjointSet::ntcounts(int task_id){
@@ -221,14 +203,6 @@ int DisjointSet::ntcounts(int task_id){
 
 int DisjointSet::ntcounts_task(int task_id){
     return this->nt[task_id].size();
-}
-
-void DisjointSet::print_nt(int set_id){
-    vector<nt_info> ntjoins = this->nt[set_id];
-    printf("set %d has non-tree joins: \n",set_id);
-    for(auto join = ntjoins.begin(); join != ntjoins.end(); join++){
-        printf("task %d, DPST index of last node before this join %d \n",(*join).task_id,(*join).last_node_before_this_nt->index);
-    }
 }
 
 int DisjointSet::getlsa(int task_id){
@@ -240,9 +214,37 @@ int DisjointSet::getlsa_task(int task_id){
 }
 
 void DisjointSet::setlsa(int task_id, lsa_info new_lsa){
-    int task_set = Find(task_id);
+    this->lsa[Find(task_id)] = new_lsa;
+}
 
-    this->lsa[task_set] = new_lsa;
+string state_string[4] = {"Active", "Blocked", "Finished_not_Joined", "Joined"};
+
+void DisjointSet::print_all_tasks(){
+    for (std::pair<int, hclib_task*> element: this->all_tasks) {
+        hclib_task *task = element.second;
+        int task_id = element.first;
+        printf("task %d, parent is %d, has %d nt joins, lsa is %d, now in set: %d, task state is: ", 
+            task_id, task->parent_id, this->nt[task_id].size(), this->lsa[task_id].task_id, Find(task_id));
+
+        int state = static_cast<int>(this->all_tasks[task_id]->this_task_state);
+        std::cout << state_string[state];
+
+        if(this->lsa[task_id].task_id != -1){
+            assert(this->lsa[task_id].last_node_reachable_in_lsa != NULL);
+            printf("    lsa last reachable node index is %d \n",this->lsa[task_id].last_node_reachable_in_lsa->index);
+        }
+        else{
+            printf("\n");
+        }
+    }
+}
+
+void DisjointSet::print_nt(int set_id){
+    vector<nt_info> ntjoins = this->nt[set_id];
+    printf("set %d has non-tree joins: \n",set_id);
+    for(auto join = ntjoins.begin(); join != ntjoins.end(); join++){
+        printf("task %d, DPST index of last node before this join %d \n",(*join).task_id,(*join).last_node_before_this_nt->index);
+    }
 }
 
 void DisjointSet::printds(){
@@ -432,7 +434,8 @@ bool DisjointSet::precede_dpst(tree_node_cpp* node1, tree_node_cpp* node2){
 }
 
 bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b){
-    //printf("precede \n");
+    //return true;
+    //printf("    precede \n");
     set<int> visited;
     return this->visit(step_a,step_b,task_a,task_b,visited);
 }
@@ -469,6 +472,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
 
     // nt joins
     for(auto nt_join = this->nt[Sb].begin(); nt_join != this->nt[Sb].end(); nt_join++){
+        //printf("inside nt check \n");
         int task_id = (*nt_join).task_id;
         tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id]->node_in_dpst;
         tree_node_cpp* last_step_node = task_node->children_list_tail;
@@ -485,6 +489,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
     
     while (one_lsa.task_id != -1)
     {
+        //printf("inside lsa check \n");
         tree_node_cpp* lsa_deepest_reachable_node = one_lsa.last_node_reachable_in_lsa;
         assert(lsa_deepest_reachable_node != NULL);
         
@@ -501,6 +506,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
                 assert(last_step_node->this_node_type == STEP);
 
                 if(visit(step_a, last_step_node, task_a, task_id, visited)){
+                    //printf("    return in lsa nt \n");
                     return true;
                 }
             }

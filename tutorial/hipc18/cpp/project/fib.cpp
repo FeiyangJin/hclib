@@ -14,21 +14,37 @@ uint64_t fib_async_finish(uint64_t n) {
   }
 
   //uint64_t x, y;
-  hclib::promise_t<uint64_t> *x = new hclib::promise_t<uint64_t>();
-  hclib::promise_t<uint64_t> *y = new hclib::promise_t<uint64_t>();
+  // hclib::promise_t<uint64_t> *x = new hclib::promise_t<uint64_t>();
+  // hclib::promise_t<uint64_t> *y = new hclib::promise_t<uint64_t>();
 
     //printf("before async \n");
-    hclib::async([&]() {
+    //hclib::async([&]() {
       //printf("  first line of async \n"); 
-      uint64_t value1 = fib_async_finish(n-1);
-      x->put(value1);
-    });
+      //uint64_t value1 = fib_async_finish(n-1);
+      //x->put(value1);
+    //});
     
-    uint64_t value2 = fib_async_finish(n-2);
-    y->put(value2);
+    uint64_t value1;
+    uint64_t value2;
 
-  //return (value1 + value2);
-  return (x->get_future()->wait() + y->get_future()->wait());
+    ds_hclib_ready(false);
+
+    hclib::finish([&](){
+      hclib::async([&](){
+        ds_hclib_ready(true);
+        value1 = fib_async_finish(n-1);
+        ds_hclib_ready(false);
+      });
+      
+      ds_hclib_ready(true);
+      value2 = fib_async_finish(n-2);
+      ds_hclib_ready(false);
+    });
+
+    //y->put(value2);
+
+  return (value1 + value2);
+  //return (x->get_future()->wait() + y->get_future()->wait());
 }
 
 
@@ -54,10 +70,12 @@ int main(int argc, char** argv) {
 
     uint64_t result = fib_async_finish(n);
 
+    ds_hclib_ready(false);
     end = hclib_current_time_ms();
     dur = ((double)(end-start))/1000;
     printf("Fibonacci of %" PRIu64 " is %" PRIu64 ".\n", n, result);
     printf("Async finish Time = %f \n \n",dur);
   });
+
   return 0;
 }

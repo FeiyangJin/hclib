@@ -189,6 +189,7 @@ inline void async_await_at_helper(T&& lambda, hclib_future_t **futures,
 
 template <typename T>
 inline void async(T &&lambda) {
+    ds_hclib_ready(false);
 	MARK_OVH(current_ws()->id);
     typedef typename std::remove_reference<T>::type U;
     hclib_task_t *task = initialize_task(call_lambda<U>, new U(lambda));

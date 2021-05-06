@@ -119,6 +119,7 @@ void iter_matmul_rm(REAL *A, REAL *B, REAL *C, int n){
 
 //recursive parallel solution to matrix multiplication
 void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n){
+    ds_hclib_ready(true);
     //BASE CASE: here computation is switched to itterative matrix multiplication
     //At the base case A, B, and C point to row order matrices of n x n
     if(n == BASE_CASE) {
@@ -153,58 +154,88 @@ void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n){
     REAL *C3 = &C[block_convert(n >> 1,0)];
     REAL *C4 = &C[block_convert(n >> 1, n >> 1)];
 
-    hclib::promise_t<void> *p1 = new hclib::promise_t<void>();
-    hclib::promise_t<void> *p2 = new hclib::promise_t<void>();
-    hclib::promise_t<void> *p3 = new hclib::promise_t<void>();
+    // hclib::promise_t<void> *p1 = new hclib::promise_t<void>();
+    // hclib::promise_t<void> *p2 = new hclib::promise_t<void>();
+    // hclib::promise_t<void> *p3 = new hclib::promise_t<void>();
 
-    hclib::finish([&](){
-
+    ds_hclib_ready(false);
+    hclib::finish([&](){    
         hclib::async([&](){
+            ds_hclib_ready(true);
             mat_mul_par(A1,B1,C1,n>>1);
-            //p1->put();
+            ds_hclib_ready(false);
         });
 
         hclib::async([&](){
+            ds_hclib_ready(true);
             mat_mul_par(A1,B2,C2,n>>1);
-            //p2->put();
+            ds_hclib_ready(false);
         });
 
         hclib::async([&](){
+            ds_hclib_ready(true);
             mat_mul_par(A3,B1,C3,n>>1);
-            //p3->put();
+            ds_hclib_ready(false);
         });
 
+        ds_hclib_ready(true);
         mat_mul_par(A3,B2,C4,n>>1);
+        ds_hclib_ready(false);
 
     });
     // p1->get_future()->wait();
     // p2->get_future()->wait();
     // p3->get_future()->wait();
 
-    hclib::promise_t<int> *p4 = new hclib::promise_t<int>();
-    hclib::promise_t<int> *p5 = new hclib::promise_t<int>();
-    hclib::promise_t<int> *p6 = new hclib::promise_t<int>();
+    // hclib::promise_t<int> *p4 = new hclib::promise_t<int>();
+    // hclib::promise_t<int> *p5 = new hclib::promise_t<int>();
+    // hclib::promise_t<int> *p6 = new hclib::promise_t<int>();
 
-    hclib::async([&](){
-        mat_mul_par(A2,B3,C1,n>>1);
-        p4->put(4);
+    ds_hclib_ready(false);
+    hclib::finish([&](){
+        hclib::async([&](){
+            ds_hclib_ready(true);
+            mat_mul_par(A2,B3,C1,n>>1);
+            ds_hclib_ready(false);
+        });
+
+        hclib::async([&](){
+            ds_hclib_ready(true);
+            mat_mul_par(A2,B4,C2,n>>1);
+            ds_hclib_ready(false);
+        });
+
+        hclib::async([&](){
+            ds_hclib_ready(true);
+            mat_mul_par(A4,B3,C3,n>>1);
+            ds_hclib_ready(false);
+        });
+
+        ds_hclib_ready(true);
+        mat_mul_par(A4,B4,C4,n>>1);
+        ds_hclib_ready(false);
     });
 
-    hclib::async([&](){
-        mat_mul_par(A2,B4,C2,n>>1);
-        p5->put(5);
-    });
+    // hclib::async([&](){
+    //     mat_mul_par(A2,B3,C1,n>>1);
+    //     p4->put(4);
+    // });
 
-    hclib::async([&](){
-        mat_mul_par(A4,B3,C3,n>>1);
-        p6->put(6);
-    });
+    // hclib::async([&](){
+    //     mat_mul_par(A2,B4,C2,n>>1);
+    //     p5->put(5);
+    // });
 
-    mat_mul_par(A4,B4,C4,n>>1);
+    // hclib::async([&](){
+    //     mat_mul_par(A4,B3,C3,n>>1);
+    //     p6->put(6);
+    // });
 
-    p4->get_future()->wait();
-    p5->get_future()->wait();
-    p6->get_future()->wait();
+    // mat_mul_par(A4,B4,C4,n>>1);
+
+    // p4->get_future()->wait();
+    // p5->get_future()->wait();
+    // p6->get_future()->wait();
 }
 
 
@@ -256,6 +287,8 @@ int main(int argc, char *argv[]){
 
   char const *deps[] = { "system" };
   hclib::launch(deps, 1, [&]() {
+    ds_hclib_ready(true);
+    
     // sequential calculation
     long start = hclib_current_time_ms();
     
@@ -272,15 +305,16 @@ int main(int argc, char *argv[]){
     dur = ((double)(end-start))/1000;
 
     printf("parallel Matrix Multiplication Time = %.3f\n", dur);
-
+    
     //compare two results
     //compare_matrix(C,D,n);
+    ds_hclib_ready(false);
+  });
 
     /* release memory */
     free(A);
     free(B);
     free(C);
-  });
 
   return 0;
 }

@@ -65,6 +65,11 @@ typedef struct nt_info{
     tree_node_cpp *last_node_before_this_nt;
 } nt_info;
 
+inline bool operator<(const nt_info& lhs, const nt_info& rhs)
+{
+  return lhs.task_id < rhs.task_id;
+}
+
 typedef struct lsa_info{
     int task_id;
     tree_node_cpp *last_node_reachable_in_lsa;

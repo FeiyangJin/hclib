@@ -8,51 +8,16 @@
 #include "hclib_cpp.h"
 
 
-int N = 2000;
-int P = 4000; //number of promise
+int N = 1000;
+int P = 2000; //number of promise
 int T = 3; // branching factor
-double W = 0.7; // probability to wait for a promise
+double W = 0.5; // probability to wait for a promise
 unsigned long R = 1234567;
 
 std::vector<hclib::promise_t<void>*> *allPromises = new std::vector<hclib::promise_t<void>*>();
 double *data;
 
 int task_count = 0;
-
-class PromiseCollection{
-    public:
-        std::vector<hclib::promise_t<void>*> *promiseList;
-        PromiseCollection(std::vector<hclib::promise_t<void>*> *list);
-        PromiseCollection* split();
-        std::vector<hclib::promise_t<void>*>* getPromises();
-};
-
-PromiseCollection::PromiseCollection(std::vector<hclib::promise_t<void>*> *list){
-    this->promiseList = list;
-}
-
-std::vector<hclib::promise_t<void>*>* PromiseCollection::getPromises(){
-    return this->promiseList;
-}
-
-PromiseCollection* PromiseCollection::split(){
-    std::vector<hclib::promise_t<void>*>* splitOff = new std::vector<hclib::promise_t<void>*>();
-    int list_size = this->promiseList->size();
-
-    for(int i = list_size/2; i < list_size; i++){
-        splitOff->push_back(this->promiseList->at(i));
-    }
-
-    std::vector<hclib::promise_t<void>*>* newpromiseList = new std::vector<hclib::promise_t<void>*>();
-    for(int i=0; i<list_size/2; i++){
-        newpromiseList->push_back(this->promiseList->at(i));
-    }
-    this->promiseList = newpromiseList;
-    //this->promiseList.erase(this->promiseList.begin()+list_size/2, this->promiseList.begin()+list_size);
-
-    PromiseCollection *result = new PromiseCollection(splitOff);
-    return result;
-}
 
 void printArgument(){
     printf(" N: %d \n P: %d \n T: %d \n W: %f \n", N, P, T, W);
@@ -74,7 +39,7 @@ double nextdouble(unsigned long seed){
 
 
 void fulfill(int start, int end,long seed){
-    //printf("start %d, end %d \n",start,end);
+    // printf("start %d, end %d \n",start,end);
     //srand(time(NULL));
     srand(seed);
 
@@ -86,7 +51,9 @@ void fulfill(int start, int end,long seed){
     for (int t = 0; t < T && (end - start > 1); t++) {
         int mid = (int)((end + start) / 2);
         long newSeed = nextlong(seed);
+        ds_hclib_ready(false);
         hclib::future_t<void>* single_task = hclib::async_future([&]() {
+            ds_hclib_ready(true);
             fulfill(mid,end,newSeed);
             return;
         });
@@ -112,9 +79,9 @@ void fulfill(int start, int end,long seed){
         allPromises->at(i)->get_future()->wait();
     }
 
-    // do some work by adding data
-    for(int i = 0; i < N; i++){
-        for(int j = 0; j < N; j++){
+    // waiting
+    for(int i = 0; i < 500; i++){
+        for(int j = 0; j < 500; j++){
             data[i] += data[j];
         }
     }
@@ -130,71 +97,6 @@ void fulfill(int start, int end,long seed){
         cf->wait();
     }
 }
-
-
-// void fulfill(PromiseCollection* promises,unsigned long seed){
-//     //srand(time(NULL));
-//     printf("promise size is: %lu, seed is %lu \n",promises->getPromises()->size(),seed);
-//     //srand(seed);
-
-//     std::vector<hclib::future_t<void>*> tasks;
-//     for(int t = 0; t < T && promises->getPromises()->size() > 1; t++){
-//         PromiseCollection* pc = promises->split();
-//         long newSeed = seed;
-
-//         hclib::future_t<void>* single_task = hclib::async_future([&]() {
-//             fulfill(pc,newSeed);
-//             return;
-//         });
-        
-//         tasks.push_back(single_task);
-//     }
-
-//     double lower_bound = 0;
-//     double upper_bound = 1;
-//     std::uniform_real_distribution<double> unif(lower_bound,upper_bound);
-//     std::default_random_engine re;
-//     double a_random_double = unif(re);
-
-//     // wait for a promise with probability W
-//     if(a_random_double < W){
-//         int i = 0 + ( std::rand() % ( P - 0 + 1 ) );
-//         // lower_bound = 0;
-//         // upper_bound = P - 1;
-//         // std::uniform_real_distribution<double> unif(lower_bound,upper_bound);
-//         // std::default_random_engine re;
-//         // int i = (int)unif(re);
-//         // int i = (int) (seed % P);
-//         // if (i < 0) i += P;
-        
-//         int satisfy_count = 0;
-//         for(int j=0; j<allPromises->size(); j++){
-//             if(allPromises->at(j)->satisfied == true){
-//                 satisfy_count++;
-//             }
-//         }
-//         printf("    wait on promise %d, total %d satisfied \n",i,satisfy_count);
-//         allPromises->at(i)->get_future()->wait();
-//     }
-
-//     // do some work by adding data
-//     for(int i = 0; i < N; i++){
-//         for(int j = 0; j < N; j++){
-//             data[i] += data[j];
-//         }
-//     }
-
-//     // complete promises and wait all tasks
-//     for(auto p : *(promises->getPromises())){
-//         if(!p->satisfied){
-//             p->put();
-//         }
-//     }
-
-//     for(auto cf : tasks){
-//         cf->wait();
-//     }
-// }
 
 
 int main(int argc, char ** argv) {
@@ -214,15 +116,15 @@ int main(int argc, char ** argv) {
         allPromises->push_back(new hclib::promise_t<void>());
     }
 
-    PromiseCollection* promises = new PromiseCollection(allPromises);
-
     char const *deps[] = { "system" };
     printf("start tasks \n");
     long start = hclib_current_time_ms();
 
     hclib::launch(deps, 1, [&]() {
         fulfill(0,P-1,R);
+        ds_hclib_ready(false);
     });
+
     long end = hclib_current_time_ms();
     double dur = ((double)(end-start))/1000;
     printf("end tasks, duration is: %f \n",dur);

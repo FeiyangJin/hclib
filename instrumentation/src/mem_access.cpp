@@ -6,6 +6,8 @@ MemAccess_t::MemAccess_t(access_info t_a_n, addr_t r){
   this->task_and_node.node_in_dpst = t_a_n.node_in_dpst;
   this->task_and_node.task_id = t_a_n.task_id;
   this->rip = r;
+  this->next = nullptr;
+  this->prev = nullptr;
 }
 
 MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read, 
@@ -18,14 +20,22 @@ MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read,
 
   if (is_read){
     for (int i=start; i < (start + grains); ++i){
-      std::vector<MemAccess_t*>* all_readers = new std::vector<MemAccess_t*>();
-      all_readers->push_back(new MemAccess_t(task_and_node, rip));
-      readers[i] = all_readers;
+      // this->readers[i] = new std::vector<MemAccess_t>();
+      // this->readers[i]->push_back(MemAccess_t(task_and_node,rip));
+
+      this->readers[i] = new MemAccess_t(task_and_node, rip);
+      // this->readers[i] = new std::list<MemAccess_t*>();
+      // this->readers[i]->push_front(new MemAccess_t(task_and_node, rip));
+      //this->readers[i] = new MemAccess_t*[5];
+      //this->readers[i][0] = new MemAccess_t(task_and_node, rip);
+      // std::vector<MemAccess_t*>* all_readers = new std::vector<MemAccess_t*>();
+      // all_readers->push_back(new MemAccess_t(task_and_node, rip));
+      // readers[i] = all_readers;
     }
   }
   else{
     for (int i=start; i < (start + grains); ++i){
-      writers[i] = new MemAccess_t(task_and_node, rip);
+      this->writers[i] = new MemAccess_t(task_and_node, rip);
     }
   }
 
@@ -34,7 +44,10 @@ MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read,
 MemAccessList_t::~MemAccessList_t() {
   for(int i=0; i < NUM_SLOTS; i++) {
     if(readers[i]) {
+      //std::list<MemAccess_t*>().swap(*readers[i]);
+      //readers[i]->clear();
       delete readers[i];
+      //std::vector<MemAccess_t>().swap(*readers[i]);
       readers[i] = nullptr;
     }
   }
