@@ -34,6 +34,8 @@ if [ "$SIZE" == "large" ]; then
         TILE_HEIGHT=2400
         INNER_TILE_WIDTH=232
         INNER_TILE_HEIGHT=240
+        # INNER_TILE_WIDTH=116
+        # INNER_TILE_HEIGHT=120
         EXPECTED_RESULT=36472
 else
 if [ "$SIZE" == "huge" ]; then
@@ -47,5 +49,5 @@ fi
 fi
 fi
 
-echo "./smith_waterman ${INPUT_FILE_1} ${INPUT_FILE_2} ${TILE_WIDTH} ${TILE_HEIGHT} ${INNER_TILE_WIDTH} ${INNER_TILE_HEIGHT}"
+echo "./smith_waterman.exe ${INPUT_FILE_1} ${INPUT_FILE_2} ${TILE_WIDTH} ${TILE_HEIGHT} ${INNER_TILE_WIDTH} ${INNER_TILE_HEIGHT}"
 LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" ./smith_waterman.exe ${INPUT_FILE_1} ${INPUT_FILE_2} ${TILE_WIDTH} ${TILE_HEIGHT} ${INNER_TILE_WIDTH} ${INNER_TILE_HEIGHT}

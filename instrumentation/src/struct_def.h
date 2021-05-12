@@ -6,6 +6,12 @@
 typedef struct access_info{
     int task_id;
     void* node_in_dpst;
+
+    inline access_info operator=(access_info t){
+        this->task_id = t.task_id;
+        this->node_in_dpst = t.node_in_dpst;
+        return t;
+    };
 } access_info;
 
 enum node_type_cpp{
@@ -43,9 +49,21 @@ class hclib_task
         int parent_id;
         void *node_in_dpst;
         void *task_address; // could be null if the task is freed or is empty
+        int belong_to_finish_id;
         task_state this_task_state;
 
-        hclib_task(int task_id, int parent_id, void *node_in_dpst, void *task_address, task_state state);
+        hclib_task(){
+
+        };
+        
+        hclib_task(int task_id, int parent_id, void *node_in_dpst, void *task_address, int belong_to_finish_id, task_state state){
+            this->task_id = task_id;
+            this->parent_id = parent_id;
+            this->node_in_dpst = node_in_dpst;
+            this->task_address = task_address;
+            this->belong_to_finish_id = belong_to_finish_id;
+            this->this_task_state = state;
+        }
 };
 
 class hclib_finish
@@ -73,11 +91,34 @@ inline bool operator<(const nt_info& lhs, const nt_info& rhs)
 typedef struct lsa_info{
     int task_id;
     tree_node_cpp *last_node_reachable_in_lsa;
+
+    inline lsa_info operator=(lsa_info a){
+        task_id = a.task_id;
+        last_node_reachable_in_lsa = a.last_node_reachable_in_lsa;
+        return a;
+    };
 } lsa_info;
 
 typedef struct set_info{
     int set_id;
-    tree_node_cpp *query_node_in_current_set;
+    int rank;
+    lsa_info lsa;
+    std::vector<nt_info>* nt;
+
+    set_info(int id, int rank, lsa_info li, std::vector<nt_info>* nontree){
+        this->set_id = id;
+        this->rank = rank;
+        this->lsa = li;
+        this->nt = nontree;
+    };
+
+    inline set_info operator=(set_info a) {
+        set_id = a.set_id;
+        rank = a.rank;
+        lsa = a.lsa;
+        nt = a.nt;
+        return a;
+    };
 } set_info;
 
 #endif

@@ -205,8 +205,6 @@ ELM *binsplit(ELM val, ELM *low, ELM *high) {
 
 
 void cilkmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest) {
-  ds_hclib_ready(true);
-
   /*
    * Cilkmerge: Merges range [low1, high1] with range [low2, high2] 
    * into the range [lowdest, ...]  
@@ -228,6 +226,7 @@ void cilkmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest) {
                                  * ranges - 2 
                                  */
 
+  ds_hclib_ready(true);
   if (high2 - low2 > high1 - low1) {
     swap_indices(low1, low2);
     swap_indices(high1, high2);
@@ -249,7 +248,6 @@ void cilkmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest) {
    * (indexed by split 2). Then merge the two lower halves and the two
    * upper halves. 
    */
-
   split1 = ((high1 - low1 + 1) / 2) + low1;
   split2 = binsplit(*split1, low2, high2);
   lowsize = split1 - low1 + split2 - low2;
@@ -263,12 +261,10 @@ void cilkmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest) {
   ds_hclib_ready(false);
   hclib::finish([&](){
     hclib::async([&](){
-      ds_hclib_ready(true);
       cilkmerge(low1, split1 - 1, low2, split2, lowdest);
       ds_hclib_ready(false);
     });
 
-    ds_hclib_ready(true);
     cilkmerge(split1 + 1, high1, split2 + 1, high2, lowdest + lowsize + 2);
     ds_hclib_ready(false);
   });
@@ -287,7 +283,7 @@ void cilkmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest) {
 
 
 void cilksort(ELM *low, ELM *tmp, long size) {
-  ds_hclib_ready(true);
+  
   /*
    * divide the input in four parts of the same size (A, B, C, D)
    * Then:
@@ -299,6 +295,7 @@ void cilksort(ELM *low, ELM *tmp, long size) {
   long quarter = size / 4;
   ELM *A, *B, *C, *D, *tmpA, *tmpB, *tmpC, *tmpD;
 
+  ds_hclib_ready(true);
   if (size < QUICKSIZE) {
     seqquick(low, low + size - 1);
     return;
@@ -313,6 +310,7 @@ void cilksort(ELM *low, ELM *tmp, long size) {
   D = C + quarter;
   tmpD = tmpC + quarter;
 
+  // ds_hclib_ready(false);
   // hclib::promise_t<void> *p1 = new hclib::promise_t<void>();
   // hclib::promise_t<void> *p2 = new hclib::promise_t<void>();
   // hclib::promise_t<void> *p3 = new hclib::promise_t<void>();
@@ -320,45 +318,49 @@ void cilksort(ELM *low, ELM *tmp, long size) {
   ds_hclib_ready(false);
   hclib::finish([&](){
     hclib::async([&](){
-      ds_hclib_ready(true);
+      ds_hclib_ready(false);
       cilksort(A, tmpA, quarter);
       ds_hclib_ready(false);
     });
 
     hclib::async([&](){
-      ds_hclib_ready(true);
+      ds_hclib_ready(false);
       cilksort(B, tmpB, quarter);
       ds_hclib_ready(false);
     });
 
     hclib::async([&](){
-      ds_hclib_ready(true);
+      ds_hclib_ready(false);
       cilksort(C, tmpC, quarter);
       ds_hclib_ready(false);
     });
 
-    ds_hclib_ready(true);
+    ds_hclib_ready(false);
     cilksort(D, tmpD, size - 3 * quarter);
     ds_hclib_ready(false);
   });
 
   // hclib::async([&](){
-  //   cilksort(A, tmpA, quarter);
-  //   p1->put();
-  // });
-
-  // hclib::async([&](){
   //   cilksort(B, tmpB, quarter);
+  //   ds_hclib_ready(true);
   //   p2->put();
+  //   ds_hclib_ready(false);
   // });
 
   // hclib::async([&](){
   //   cilksort(C, tmpC, quarter);
+  //   ds_hclib_ready(true);
   //   p3->put();
+  //   ds_hclib_ready(false);
   // });
 
-  //cilksort(D, tmpD, size - 3 * quarter);
-  
+  // cilksort(D, tmpD, size - 3 * quarter);
+  // hclib::async([&](){
+  //   cilksort(A, tmpA, quarter);
+  //   ds_hclib_ready(true);
+  //   p1->put();
+  //   ds_hclib_ready(false);
+  // });
   // p1->get_future()->wait();
   // p2->get_future()->wait();
   // p3->get_future()->wait();
@@ -366,12 +368,12 @@ void cilksort(ELM *low, ELM *tmp, long size) {
   ds_hclib_ready(false);
   hclib::finish([&](){
     hclib::async([&](){
-      ds_hclib_ready(true);
+      ds_hclib_ready(false);
       cilkmerge(A, A + quarter - 1, B, B + quarter - 1, tmpA);
       ds_hclib_ready(false);
     });
 
-    ds_hclib_ready(true);
+    ds_hclib_ready(false);
     cilkmerge(C, C + quarter - 1, D, low + size - 1, tmpC);
     ds_hclib_ready(false);
   });
@@ -385,7 +387,7 @@ void cilksort(ELM *low, ELM *tmp, long size) {
   // cilkmerge(C, C + quarter - 1, D, low + size - 1, tmpC);
   // p4->get_future()->wait();
 
-  ds_hclib_ready(true);
+  ds_hclib_ready(false);
   cilkmerge(tmpA, tmpC - 1, tmpC, tmpA + size - 1, A);
   ds_hclib_ready(false);
 
@@ -482,7 +484,7 @@ int main(int argc, char* argv[]){
 		double dur = ((double)(end-start))/1000;
 
 		printf("sort time in parallel: %.3f for array of size %ld \n",dur,size);
-
+    printf("DPST height is: %d \n", get_dpst_height());
 		//seq sort
 		// fill_array(array,size);
 		// zero(tmp,size);
@@ -497,6 +499,9 @@ int main(int argc, char* argv[]){
 		// printf("sort time in sequential: %.3f for array of size %ld \n",dur,size);
 
     ds_hclib_ready(false);
+    printf("cache size is %d \n",ds_get_cache_size());
+    printf("number of task is %d \n",get_task_id_unique());
+    printf("number of nt join %d \n", get_nt_count());
 	});
 
   check_result(array,size);

@@ -75,6 +75,41 @@ char *node_char[5] = {'R','F','A','f','S'};
 static int node_index = 0;
 static int task_id_unique = 0;
 
+int nt_count = 0;
+
+__attribute__((weak)) void* hclib_get_current_task_info(int* task_id, int* current_finish_id, bool* is_step, bool* is_future){
+    hclib_worker_state *ws = current_ws();
+    hclib_task_t *task = ws->curr_task;
+
+    *task_id = task->task_id;
+    *current_finish_id = task->current_finish->node_in_dpst->index;
+    tree_node* the_node = get_current_step_node();
+    *is_step = (the_node->this_node_type == STEP);
+    *is_future = (task->node_in_dpst->this_node_type == FUTURE);
+
+    return (void*)the_node;
+}
+
+__attribute__((weak)) bool ds_current_is_future(){
+    hclib_worker_state *ws = current_ws();
+    hclib_task_t *task = ws->curr_task;
+    return (task->node_in_dpst->this_node_type == FUTURE);
+}
+
+__attribute__((weak)) int ds_get_current_finish(){
+    hclib_worker_state *ws = current_ws();
+    hclib_task_t *task = ws->curr_task;
+    return task->current_finish->node_in_dpst->index;
+}
+
+int get_dpst_height(){
+    return DPST.height;
+}
+
+int get_nt_count(){
+    return nt_count;
+}
+
 int get_task_id_unique(){
     return task_id_unique;
 }
@@ -116,6 +151,9 @@ tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent){
         }   
     }
 
+    if(node->depth > DPST.height){
+        DPST.height = node->depth;
+    }
     return node;
 }
 
@@ -135,6 +173,10 @@ tree_node* insert_leaf(tree_node *task_node){
     else{
         task_node->children_list_tail->next_sibling = new_step;
         task_node->children_list_tail = new_step;
+    }
+
+    if(new_step->depth > DPST.height){
+        DPST.height = new_step->depth;
     }
     return new_step;
 }
@@ -662,9 +704,9 @@ static inline void check_out_finish(finish_t *finish) {
 
 static inline void execute_task(hclib_task_t *task) {
     // fj: check if we are at a step node, and mark the task as active
-    if(task->node_in_dpst != NULL){
-        HASSERT(get_current_step_node()->this_node_type == STEP);
-    }
+    // if(task->node_in_dpst != NULL){
+    //     HASSERT(get_current_step_node()->this_node_type == STEP);
+    // }
     ds_update_task_state(task->task_id,0);
 
     finish_t *current_finish = task->current_finish;
@@ -687,7 +729,6 @@ static inline void execute_task(hclib_task_t *task) {
     worker_stats[ws->id].executed_tasks++;
 #endif
 
-    ds_hclib_ready(true);
     // task->_fp is of type 'void (*generic_frame_ptr)(void*)'
     (task->_fp)(task->args);
     check_out_finish(current_finish);
@@ -1271,6 +1312,7 @@ void *hclib_future_wait(hclib_future_t *future) {
             // add future task to current tasks' nt
             void* current_step_node = (void*) get_current_step_node();
             ds_addnt(current_task->task_id,future_task_id,current_step_node);
+            nt_count++;
         //}
         // mark the future task joined
         ds_update_task_state(future->corresponding_task_id,3);
@@ -1278,9 +1320,11 @@ void *hclib_future_wait(hclib_future_t *future) {
     else{
         // otherwise the future is just an access to a promise, we do promise operations on disjoint
         if(ds_dpst_precede((void*)future->owner->setter_node,(void*)get_current_step_node())){
-
-        } 
+            // printf("not adding nt edge, current task %d, setter index %d, current step index %d \n",get_current_task_id(),
+            // future->owner->setter_node->index,get_current_step_node()->index);
+        }
         else if(future->owner->setter_task_id != current_task->task_id){
+            // printf("add promise nt \n");
             // version 2: add an empty future
             // see promise_put in hclib-promise.c for details
             assert(future->corresponding_task_id == -1);
@@ -1288,6 +1332,7 @@ void *hclib_future_wait(hclib_future_t *future) {
             assert(future->owner->setter_task_id >= 0);
             void* current_step_node = (void*) get_current_step_node();
             ds_addnt(current_task->task_id,future->owner->empty_future_id,current_step_node);
+            nt_count++;
         }
     }
 
@@ -1524,9 +1569,9 @@ void hclib_start_finish() {
     ds_addFinish(finish->node_in_dpst->index, finish->belong_to_task_id, finish->node_in_dpst, finish);
 
     // tell shadow memory we are ready
-    if(finish->node_in_dpst->index == 1){
-        ds_hclib_ready(true);
-    }
+    // if(finish->node_in_dpst->index == 1){
+    //     ds_hclib_ready(true);
+    // }
 
     /*
      * Set finish counter to 1 initially to emulate the main thread inside the

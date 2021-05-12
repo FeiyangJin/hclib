@@ -56,6 +56,12 @@ struct promise_t: public hclib_promise_t {
         hclib_promise_put(this, tmp);
     }
 
+    void end_put(T datum){
+        void *tmp;
+        *reinterpret_cast<T*>(&tmp) = datum;
+        hclib_promise_end_task_put(this, tmp);
+    }
+
     future_t<T> *get_future() {
         // this is the simplest expression I could come up with
         // that makes the compiler happy, since accessing the shadowed
@@ -77,6 +83,10 @@ struct promise_t<T*>: public hclib_promise_t {
         hclib_promise_put(this, datum);
     }
 
+    void end_put(T *datum){
+        hclib_promise_end_task_put(this, datum);
+    }
+
     future_t<T*> *get_future() {
         return static_cast<future_t<T*>*>(
                 &static_cast<hclib_promise_t*>(this)->future);
@@ -94,6 +104,10 @@ struct promise_t<T&>: public hclib_promise_t {
         hclib_promise_put(this, &datum);
     }
 
+    void end_put(T &datum) {
+        hclib_promise_end_task_put(this, &datum);
+    }
+
     future_t<T&> *get_future() {
         return static_cast<future_t<T&>*>(
                 &static_cast<hclib_promise_t*>(this)->future);
@@ -109,6 +123,10 @@ struct promise_t<void>: public hclib_promise_t {
 
     void put() {
         hclib_promise_put(this, nullptr);
+    }
+
+    void end_put() {
+        hclib_promise_end_task_put(this, nullptr);
     }
 
     future_t<void> *get_future() {

@@ -154,39 +154,37 @@ void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n){
     REAL *C3 = &C[block_convert(n >> 1,0)];
     REAL *C4 = &C[block_convert(n >> 1, n >> 1)];
 
-    // hclib::promise_t<void> *p1 = new hclib::promise_t<void>();
+    ds_hclib_ready(false);
+    hclib::promise_t<void> *p1 = new hclib::promise_t<void>();
     // hclib::promise_t<void> *p2 = new hclib::promise_t<void>();
     // hclib::promise_t<void> *p3 = new hclib::promise_t<void>();
-
-    ds_hclib_ready(false);
+    hclib::async([&](){
+        mat_mul_par(A1,B1,C1,n>>1);
+        ds_hclib_ready(true);
+        p1->put();
+        ds_hclib_ready(false);
+    });
+    
     hclib::finish([&](){    
         hclib::async([&](){
-            ds_hclib_ready(true);
-            mat_mul_par(A1,B1,C1,n>>1);
-            ds_hclib_ready(false);
-        });
-
-        hclib::async([&](){
-            ds_hclib_ready(true);
             mat_mul_par(A1,B2,C2,n>>1);
             ds_hclib_ready(false);
         });
 
         hclib::async([&](){
-            ds_hclib_ready(true);
             mat_mul_par(A3,B1,C3,n>>1);
             ds_hclib_ready(false);
         });
 
-        ds_hclib_ready(true);
-        mat_mul_par(A3,B2,C4,n>>1);
-        ds_hclib_ready(false);
-
+            mat_mul_par(A3,B2,C4,n>>1);
+            ds_hclib_ready(false);
     });
-    // p1->get_future()->wait();
+    ds_hclib_ready(true);
+    p1->get_future()->wait();
     // p2->get_future()->wait();
     // p3->get_future()->wait();
 
+    
     // hclib::promise_t<int> *p4 = new hclib::promise_t<int>();
     // hclib::promise_t<int> *p5 = new hclib::promise_t<int>();
     // hclib::promise_t<int> *p6 = new hclib::promise_t<int>();
@@ -194,45 +192,46 @@ void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n){
     ds_hclib_ready(false);
     hclib::finish([&](){
         hclib::async([&](){
-            ds_hclib_ready(true);
             mat_mul_par(A2,B3,C1,n>>1);
             ds_hclib_ready(false);
         });
 
         hclib::async([&](){
-            ds_hclib_ready(true);
             mat_mul_par(A2,B4,C2,n>>1);
             ds_hclib_ready(false);
         });
 
         hclib::async([&](){
-            ds_hclib_ready(true);
             mat_mul_par(A4,B3,C3,n>>1);
             ds_hclib_ready(false);
         });
 
-        ds_hclib_ready(true);
-        mat_mul_par(A4,B4,C4,n>>1);
-        ds_hclib_ready(false);
+            mat_mul_par(A4,B4,C4,n>>1);
+            ds_hclib_ready(false);
     });
 
     // hclib::async([&](){
     //     mat_mul_par(A2,B3,C1,n>>1);
     //     p4->put(4);
+    //     ds_hclib_ready(false);
     // });
 
     // hclib::async([&](){
     //     mat_mul_par(A2,B4,C2,n>>1);
     //     p5->put(5);
+    //     ds_hclib_ready(false);
     // });
 
     // hclib::async([&](){
     //     mat_mul_par(A4,B3,C3,n>>1);
     //     p6->put(6);
+    //     ds_hclib_ready(false);
     // });
 
+    // ds_hclib_ready(false);
     // mat_mul_par(A4,B4,C4,n>>1);
 
+    // ds_hclib_ready(true);
     // p4->get_future()->wait();
     // p5->get_future()->wait();
     // p6->get_future()->wait();
@@ -269,7 +268,7 @@ int main(int argc, char *argv[]){
   int n = argc>1?atoi(argv[1]) : 2048; // default n value is 2048
   printf("multiplying two matrices of size %d * %d \n", n, n);
 
-  POWER = 6; //default k value
+  POWER = 8; //default k value
   BASE_CASE = (int) pow(2.0, (double) POWER);
 
 
@@ -309,6 +308,9 @@ int main(int argc, char *argv[]){
     //compare two results
     //compare_matrix(C,D,n);
     ds_hclib_ready(false);
+    printf("cache size is %d \n",ds_get_cache_size());
+    printf("number of task is %d \n",get_task_id_unique());
+    printf("number of nt join %d \n", get_nt_count());
   });
 
     /* release memory */

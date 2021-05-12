@@ -1,7 +1,10 @@
 #include "hclib_cpp.h"
 #include <inttypes.h>
-
+#include <unordered_map>
 #define THRESHOLD 10
+
+using namespace std;
+// unordered_map<int,int> memorization;
 
 uint64_t fib_serial(uint64_t n) {
     if (n < 2) return n;
@@ -9,42 +12,39 @@ uint64_t fib_serial(uint64_t n) {
 }
 
 uint64_t fib_async_finish(uint64_t n) {
-  if (n < THRESHOLD) { 
-    return fib_serial(n);
+  ds_hclib_ready(true);
+  // bool in_memo = memorization.find(n) != memorization.end();
+  // if(in_memo){
+  //   return memorization.at(n);
+  // }
+  if (n < THRESHOLD) {
+    int result = fib_serial(n);
+    return result;
   }
 
   //uint64_t x, y;
-  // hclib::promise_t<uint64_t> *x = new hclib::promise_t<uint64_t>();
-  // hclib::promise_t<uint64_t> *y = new hclib::promise_t<uint64_t>();
-
-    //printf("before async \n");
-    //hclib::async([&]() {
-      //printf("  first line of async \n"); 
-      //uint64_t value1 = fib_async_finish(n-1);
-      //x->put(value1);
-    //});
-    
-    uint64_t value1;
-    uint64_t value2;
+  ds_hclib_ready(false);
+  hclib::promise_t<uint64_t> *x = new hclib::promise_t<uint64_t>();
+  hclib::promise_t<uint64_t> *y = new hclib::promise_t<uint64_t>();
 
     ds_hclib_ready(false);
-
-    hclib::finish([&](){
-      hclib::async([&](){
-        ds_hclib_ready(true);
-        value1 = fib_async_finish(n-1);
-        ds_hclib_ready(false);
-      });
-      
-      ds_hclib_ready(true);
-      value2 = fib_async_finish(n-2);
+    hclib::async([&]() {
+      uint64_t value1 = fib_async_finish(n-1);
+      ds_hclib_ready(true); 
+      x->put(value1);
       ds_hclib_ready(false);
     });
+    
+      
+    ds_hclib_ready(false);
+    uint64_t value2 = fib_async_finish(n-2);
+    ds_hclib_ready(true);
+    y->put(value2);
 
-    //y->put(value2);
 
-  return (value1 + value2);
-  //return (x->get_future()->wait() + y->get_future()->wait());
+  int value = x->get_future()->wait() + y->get_future()->wait();
+  // memorization.insert(std::pair<int,int>(n,value));
+  return value;
 }
 
 
@@ -71,10 +71,15 @@ int main(int argc, char** argv) {
     uint64_t result = fib_async_finish(n);
 
     ds_hclib_ready(false);
+    
     end = hclib_current_time_ms();
     dur = ((double)(end-start))/1000;
     printf("Fibonacci of %" PRIu64 " is %" PRIu64 ".\n", n, result);
-    printf("Async finish Time = %f \n \n",dur);
+    printf("Async finish Time = %f \n",dur);
+    printf("DPST height is: %d \n", get_dpst_height());
+    printf("cache size is %d \n",ds_get_cache_size());
+    printf("number of task is %d \n",get_task_id_unique());
+    printf("number of nt join %d \n", get_nt_count());
   });
 
   return 0;

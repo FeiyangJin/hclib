@@ -42,6 +42,8 @@ int main(int argc, char **argv) {
                 assert(ds_precede(a_step,d_step,fa->corresponding_task_id,cid));
                 assert(ds_precede(b_step,d_step,fb->corresponding_task_id,cid) == false);
                 for(int i=0; i<useless_steps.size(); i++){
+                    // printDPST();
+                    // ds_print_table();
                     assert(ds_precede(useful_steps.at(i),d_step,useful_tasks.at(i),cid));
                     assert(ds_precede(useless_steps.at(i),d_step,useless_tasks.at(i),cid) == false);
                 }
@@ -49,7 +51,7 @@ int main(int argc, char **argv) {
             });
 
             hclib::finish([&](){
-                for(int i=0; i<100; i++){
+                for(int i=0; i<10; i++){
                     hclib::async([&](){
                         useless_steps.push_back((void*)get_current_step_node());
                         useless_tasks.push_back(get_current_task_id());
@@ -61,7 +63,7 @@ int main(int argc, char **argv) {
         });
 
         hclib::finish([&](){
-            for(int i=0; i<100; i++){
+            for(int i=0; i<10; i++){
                 hclib::async([&](){
                     useful_steps.push_back((void*)get_current_step_node());
                     useful_tasks.push_back(get_current_task_id());

@@ -81,6 +81,7 @@ typedef struct hclib_promise_st {
     int setter_task_id;
     tree_node* setter_node;
     int empty_future_id;
+    bool end_task_put;
     /*
      * List of tasks that are awaiting the satisfaction of this promise.
      * wait_list_head is initialized to SENTINEL_FUTURE_WAITLIST_PTR when
@@ -147,6 +148,8 @@ void *hclib_future_get(hclib_future_t *future);
  * @param[in] datum 			The datum to be put in the promise
  */
 void hclib_promise_put(hclib_promise_t *promise, void *datum);
+
+void hclib_promise_end_task_put(hclib_promise_t *promise, void *datum);
 
 /*
  * Block the currently executing task on the provided promise. Returns the datum

@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+__attribute__((weak)) int ds_get_cache_size();
 __attribute__((weak)) void ds_print();
 __attribute__((weak)) void ds_addSet(int set_index);
 __attribute__((weak)) int ds_findSet(int element);
@@ -19,7 +20,7 @@ __attribute__((weak)) void ds_printAll();
 __attribute__((weak)) void ds_printdsbyset();
 __attribute__((weak)) void ds_print_table();
 
-__attribute__((weak)) void ds_addtask(int task_id, int parent_id, void *node_in_dpst, void *task_address, int state, void *last_node_reachable_in_parent);
+__attribute__((weak)) void ds_addtask(int task_id, int parent_id, void *node_in_dpst, void *task_address, int state, int belong_to_finish_id, void *last_node_reachable_in_parent);
 __attribute__((weak)) int ds_parentid(int task_id);
 __attribute__((weak)) int ds_taskState(int task_id);
 __attribute__((weak)) void ds_print_all_tasks();

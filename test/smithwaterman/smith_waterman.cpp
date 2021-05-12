@@ -83,6 +83,7 @@ typedef struct {
 int main ( int argc, char* argv[] ) {
     char const *deps[] = { "system" };
     hclib::launch(deps, 1, [&]() {
+        ds_hclib_ready(true);
         int i, j;
 
         int tile_width = (int) atoi (argv[3]);
@@ -169,18 +170,17 @@ int main ( int argc, char* argv[] ) {
         struct timeval begin,end;
         gettimeofday(&begin,0);
 
+        // ds_hclib_ready(false);
         hclib::finish([=]() {
+            ds_hclib_ready(true);
             for (int i = 1; i < n_tiles_height+1; ++i ) {
                 for (int j = 1; j < n_tiles_width+1; ++j ) {
-
-                    tile_matrix[i][j-1].right_column->get_future()->wait();
-                    tile_matrix[i-1][j].bottom_row->get_future()->wait();
-                    tile_matrix[i-1][j-1].bottom_right->get_future()->wait();
-                //hclib::async_await([=]() {
+                    hclib::async([=](){
+                        ds_hclib_ready(true);
                         int index, ii, jj;
-                        int* above_tile_bottom_row = (int *)tile_matrix[i-1][j  ].bottom_row->get_future()->get();
-                        int* left_tile_right_column = (int *)tile_matrix[  i][j-1].right_column->get_future()->get(); 
-                        int* diagonal_tile_bottom_right = (int *)tile_matrix[i-1][j-1].bottom_right->get_future()->get();
+                        int* above_tile_bottom_row = (int *)tile_matrix[i-1][j  ].bottom_row->get_future()->wait();
+                        int* left_tile_right_column = (int *)tile_matrix[  i][j-1].right_column->get_future()->wait(); 
+                        int* diagonal_tile_bottom_right = (int *)tile_matrix[i-1][j-1].bottom_right->get_future()->wait();
 
                         int  * curr_tile_tmp = (int*) malloc(sizeof(int)*(1+tile_width)*(1+tile_height));
                         int ** curr_tile = (int**) malloc(sizeof(int*)*(1+tile_height));
@@ -229,7 +229,7 @@ int main ( int argc, char* argv[] ) {
 
                         free(curr_tile);
                         free(curr_tile_tmp);
-                    // }, 
+                    });
                     // tile_matrix[i][j-1].right_column->get_future(),
                     // tile_matrix[i-1][j].bottom_row->get_future(),
                     // tile_matrix[i-1][j-1].bottom_right->get_future());
@@ -237,6 +237,11 @@ int main ( int argc, char* argv[] ) {
             }
         });
 
+        ds_hclib_ready(false);
+        printf("cache size is %d \n",ds_get_cache_size());
+        printf("number of task is %d \n",get_task_id_unique());
+        printf("number of nt join %d \n", get_nt_count());
+        
         gettimeofday(&end,0);
         fprintf(stdout, "The computation took %f seconds\n",((end.tv_sec - begin.tv_sec)*1000000+(end.tv_usec - begin.tv_usec))*1.0/1000000);
 

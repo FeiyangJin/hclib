@@ -64,6 +64,7 @@ void hclib_promise_init(hclib_promise_t *promise) {
     promise->setter_task_id = -1;
     promise->setter_node = NULL;
     promise->empty_future_id = -1;
+    promise->end_task_put = false;
 }
 
 /**
@@ -198,14 +199,18 @@ int register_on_all_promise_dependencies(hclib_task_t *wrapper_task) {
     return 1;
 }
 
+void hclib_promise_end_task_put(hclib_promise_t *promise_to_be_put, void *datum_to_be_put){
+    promise_to_be_put->end_task_put = true;
+    hclib_promise_put(promise_to_be_put, datum_to_be_put);
+}
+
 /**
  * Put datum in the promise.
  * Close down registration of triggered tasks on this promise and iterate over
  * the promise's frontier to try to advance tasks that were waiting on this
  * promise.
  */
-void hclib_promise_put(hclib_promise_t *promise_to_be_put,
-        void *datum_to_be_put) {
+void hclib_promise_put(hclib_promise_t *promise_to_be_put, void *datum_to_be_put) {
     HASSERT(promise_to_be_put != NULL && "can not put into NULL promise");
     HASSERT(promise_to_be_put->satisfied == 0 && "violated single assignment property for promises");
 
@@ -220,7 +225,7 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
     hclib_task_t *setter_task = (hclib_task_t*) ws->curr_task;
 
     promise_to_be_put->setter_task_id = setter_task->task_id;
-    promise_to_be_put->setter_node = setter_task->node_in_dpst->children_list_tail;
+    promise_to_be_put->setter_node = get_current_step_node();
 
     // fj: create an empty future just for happened-before relationship
     if(promise_to_be_put->future.corresponding_task_id == -1){
@@ -237,7 +242,7 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put,
         insert_leaf(empty_future_node->parent);
 
         ds_addSet(empty_future_id);
-        ds_addtask(empty_future_id,setter_task->task_id,empty_future_node,NULL,2,(void*)current_step_node);
+        ds_addtask(empty_future_id,setter_task->task_id,empty_future_node,NULL,2,-1, (void*)current_step_node);
     }
 
     hclib_task_t *next_task = NULL;

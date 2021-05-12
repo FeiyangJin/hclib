@@ -48,15 +48,16 @@ void fulfill(int start, int end,long seed){
     std::vector<hclib::future_t<void>*> tasks;
 
     //while(end - start > 1){
+    ds_hclib_ready(false);
     for (int t = 0; t < T && (end - start > 1); t++) {
         int mid = (int)((end + start) / 2);
         long newSeed = nextlong(seed);
-        ds_hclib_ready(false);
         hclib::future_t<void>* single_task = hclib::async_future([&]() {
-            ds_hclib_ready(true);
+            ds_hclib_ready(false);
             fulfill(mid,end,newSeed);
             return;
         });
+        ds_hclib_ready(false);
         end = mid;
         
         tasks.push_back(single_task);
@@ -76,16 +77,26 @@ void fulfill(int start, int end,long seed){
         //     }
         // }
         // printf("    wait on promise %d, total %d satisfied \n",i,satisfy_count);
+        ds_hclib_ready(true);
         allPromises->at(i)->get_future()->wait();
+        ds_hclib_ready(false);
     }
 
     // waiting
-    for(int i = 0; i < 500; i++){
-        for(int j = 0; j < 500; j++){
-            data[i] += data[j];
+    ds_hclib_ready(true);
+    for(int i = 0; i < 50; i++){
+        for(int j = 0; j < 50; j++){
+            // if(((double) rand() / (RAND_MAX)) < 0.2){
+                data[i] += data[j];
+            // }
+            // else{
+                // int u = data[i];
+                // int v = data[j];
+            // }
+            
         }
     }
-
+    
     // complete promises and wait all tasks
     for(int i = start; i <= end; i++){
         if(allPromises->at(i)->satisfied == false){
@@ -96,6 +107,7 @@ void fulfill(int start, int end,long seed){
     for(auto cf : tasks){
         cf->wait();
     }
+    ds_hclib_ready(false);
 }
 
 
@@ -133,6 +145,9 @@ int main(int argc, char ** argv) {
         assert((*p)->satisfied);
     }
     printf("all promise satisfied \n");
+    printf("cache size is %d \n",ds_get_cache_size());
+    printf("number of task is %d \n",get_task_id_unique());
+    printf("number of nt join %d \n", get_nt_count());
 
     return 0;
 }

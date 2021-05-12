@@ -13,33 +13,37 @@
 
 template < typename T >
 class ShadowMem {
-private:
+public:
+  // 1 << 20 = 1048576 = 2 ^ 20
+  // shadow_entries is an array of size 1048576
   struct shadow_tbl { T *shadow_entries[1<<LOG_TBL_SIZE]; };
 
   struct shadow_tbl **shadow_dir;
 
   inline T** find_slot(uint64_t key, bool alloc) {
-    /* I think this volatile is necessary and sufficient ... */
+    // dest = key >> 20
     shadow_tbl *volatile *dest = &(shadow_dir[key>>LOG_TBL_SIZE]);
     shadow_tbl *tbl = *dest;
 
     if (!alloc && !tbl) {
       return NULL;
-    } else if (tbl == NULL) {
+    } 
+    else if (tbl == NULL) {
       struct shadow_tbl *new_tbl = new struct shadow_tbl();
-      do {
-        tbl = __sync_val_compare_and_swap(dest, tbl, new_tbl);
-      } while(tbl == NULL);
-
-      if(tbl != new_tbl) { // someone got to the allocation first
-        delete new_tbl; 
-      }
+      *dest = new_tbl;
+      tbl = new_tbl;
+      // do {
+      //   tbl = __sync_val_compare_and_swap(dest, tbl, new_tbl);
+      // } while(tbl == NULL);
+      // if(tbl != new_tbl) { // someone got to the allocation first
+      //   delete new_tbl; 
+      // }
     }
     T** slot =  &tbl->shadow_entries[key&((1<<LOG_TBL_SIZE) - 1)];
     return slot;
   }
 
-public:
+// public:
   ShadowMem() {
     shadow_dir = new struct shadow_tbl *[1<<(48 - LOG_TBL_SIZE - LOG_KEY_SIZE)]();
   }
@@ -51,6 +55,11 @@ public:
     return *slot;
   }
 
+
+void insert_to_slot(T *volatile *slot, T *val) { 
+    *slot = val;
+}
+
   //  clear()
   //  return the value at the memory location when insert occurs
   //  If the value returned != val, insertion failed because someone
@@ -58,13 +67,7 @@ public:
   inline T * insert(uint64_t key, T *val) {
     T *volatile *slot = find_slot(key, true);
     T *old_val = *slot;
-    
-    while(old_val == NULL) {
-      // retry as long as the old_val is still NULL
-      old_val = __sync_val_compare_and_swap(slot, old_val,val);
-      /* *slot = val; */
-      /* old_val = val; */
-    }
+    *slot = val;
    
     // Note that old_val may not be val if someone else got to insert first
     return old_val;

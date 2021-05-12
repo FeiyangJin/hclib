@@ -15,6 +15,10 @@ hclib_function hclib_current_task_id = NULL;
 hclib_function_dpst hclib_current_step_node = NULL;
 hclib_function_dpst hclib_print_dpst = NULL;
 
+hclib_task test_get_task_info(int task_id){
+    return ds->get_task_info(task_id);
+}
+
 __attribute__((weak)) bool ds_dpst_precede(void* node1, void* node2){
     return ds->precede_dpst((tree_node_cpp*)node1,(tree_node_cpp*)node2);
 }
@@ -57,24 +61,24 @@ __attribute__((weak)) void ds_addFinish(int finish_id, int belong_to_task_id, vo
     ds->addFinish(finish_id, new_finish);
 }
 
-__attribute__((weak)) void ds_addtask(int task_id, int parent_id, void *node_in_dpst, void *task_address, int state, void *last_node_reachable_in_parent){
+__attribute__((weak)) void ds_addtask(int task_id, int parent_id, void *node_in_dpst, void *task_address, int belong_to_finish_id, int state, void *last_node_reachable_in_parent){
     task_state val = static_cast<task_state>(state);
-    hclib_task *new_task = new hclib_task(task_id, parent_id, node_in_dpst, task_address, val);
+    hclib_task new_task(task_id, parent_id, node_in_dpst, task_address, belong_to_finish_id, val);
     tree_node_cpp* node = (tree_node_cpp*) last_node_reachable_in_parent;
     ds->addTask(task_id,new_task,node);
 }
 
 __attribute__((weak)) int ds_parentid(int task_id){
-    return ds->get_task_info(task_id)->parent_id;
+    return ds->get_task_info(task_id).parent_id;
 }
 
 __attribute__((weak)) int ds_taskState(int task_id){
-    int val = static_cast<int>(ds->get_task_info(task_id)->this_task_state);
+    int val = static_cast<int>(ds->get_task_info(task_id).this_task_state);
     return val;
 }
 
 __attribute__((weak)) void* ds_get_dpst_node(int task_id){
-    return ds->get_task_info(task_id)->node_in_dpst;
+    return ds->get_task_info(task_id).node_in_dpst;
 }
 
 __attribute__((weak)) void ds_addSet(int set_index){
@@ -151,6 +155,10 @@ __attribute__((weak)) bool ds_precede(void* step_a, void* step_b, int task_a, in
 
 __attribute__((weak)) void ds_print(){
     printf("hello from hclib \n");
+}
+
+__attribute__((weak)) int ds_get_cache_size(){
+    return ds->get_cache_size();
 }
 
 #ifdef __cplusplus

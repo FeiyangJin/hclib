@@ -2,7 +2,8 @@
 #include <cstdint>
 #include <cstdio>
 #include <vector>
-#include <list>
+#include <unordered_set>
+#include <unordered_map>
 #include "struct_def.h"
 
 using addr_t = uint64_t;
@@ -10,13 +11,18 @@ using addr_t = uint64_t;
 #define LOG_KEY_SIZE  4
 #define LOG_TBL_SIZE 20
 
-// macro for address manipulation for shadow mem
+// #define LOOP_READERS
+#define LINK_READER
+
+#ifndef ADDR_TO_KEY
 #define ADDR_TO_KEY(addr) ((addr_t) ((addr_t)addr >> LOG_KEY_SIZE))
+#endif
 
 #define GRAIN_SIZE 4
 #define LOG_GRAIN_SIZE 2
-#define MAX_GRAIN_SIZE (1 << LOG_KEY_SIZE)
-#define NUM_SLOTS (MAX_GRAIN_SIZE / GRAIN_SIZE)
+
+#define MAX_GRAIN_SIZE (1 << LOG_KEY_SIZE) // 1 << 4 = 2^4 = 16
+#define NUM_SLOTS (MAX_GRAIN_SIZE / GRAIN_SIZE) // 16 / 4 = 4
  
 // a mask that keeps all the bits set except for the least significant bits
 // that represent the max grain size
@@ -38,22 +44,30 @@ class MemAccess_t {
 public:
   access_info task_and_node;
   addr_t rip;
+#ifdef LINK_READER
   MemAccess_t* next;
   MemAccess_t* prev;
+#endif
   MemAccess_t(access_info t_a_n, addr_t r);
-  //MemAccess_t(access_info t_a_n, addr_t r): task_and_node(t_a_n), rip(r) {}
 };
 
 class MemAccessList_t {
 public:
   addr_t start_addr;
+#ifdef LINK_READER
   MemAccess_t* readers[NUM_SLOTS] = {};
-  //std::vector<MemAccess_t>* readers[NUM_SLOTS] = {};
-  // MemAccess_t** readers[NUM_SLOTS] = {};
-  // std::list<MemAccess_t*>* readers[NUM_SLOTS] = {};
+  MemAccess_t* readers_tail[NUM_SLOTS] = {};
+#else
+  std::vector<MemAccess_t>* readers[NUM_SLOTS] = {};
+#endif
+
+  #ifndef LOOP_READERS
+    std::unordered_set<int>* readers_finish_id[NUM_SLOTS] = {};
+  #endif
+
   MemAccess_t* writers[NUM_SLOTS] = {};
 
-  MemAccessList_t(addr_t addr, bool is_read, access_info task_and_node, addr_t rip, std::size_t mem_size);
+  MemAccessList_t(addr_t addr, bool is_read, access_info task_and_node, addr_t rip, std::size_t mem_size, int first_finish_id);
   ~MemAccessList_t();
   
 }; // end class MemAccessList_t

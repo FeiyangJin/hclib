@@ -128,15 +128,19 @@ int main(int argc, char **argv)
 
     char const *deps[] = { "system" }; 
     hclib::launch(deps, 1, [&]() {
+        ds_hclib_ready(true);
         /* VII.  Initialize the grid (each cell gets a random state) */
         for(our_current_row = 1; our_current_row <= OUR_NUMBER_OF_ROWS; our_current_row++)
         {
 
+            ds_hclib_ready(false);
             hclib::finish([&](){
                 for(my_current_column = 1; my_current_column <= NUMBER_OF_COLUMNS; my_current_column++)
                 {   
                     hclib::async([&](){
+                        ds_hclib_ready(true);
                         our_current_grid[our_current_row][my_current_column] = random() % (ALIVE + 1);
+                        ds_hclib_ready(false);
                     });
                 }
             });
@@ -146,6 +150,7 @@ int main(int argc, char **argv)
             //     our_current_grid[our_current_row][my_current_column] = random() % (ALIVE + 1);
             // }
         }
+        ds_hclib_ready(true);
 
         /* VIII.  Determine the process with the next-lowest rank */
         if(OUR_RANK == 0)
@@ -161,17 +166,21 @@ int main(int argc, char **argv)
 
         
         /* X.  Run the simulation for the specified number of time steps */
+        long start = hclib_current_time_ms();
         for(current_time_step = 0; current_time_step <= NUMBER_OF_TIME_STEPS - 1;
                 current_time_step++)
         {
             /* X.A.  Set up the ghost rows */
+            ds_hclib_ready(false);
             hclib::finish([&](){
                 for(my_current_column = 0; my_current_column <= NUMBER_OF_COLUMNS + 1; my_current_column++)
                 {
                     hclib::async([&](){
+                        ds_hclib_ready(true);
                         our_current_grid[0][my_current_column] = our_current_grid[OUR_NUMBER_OF_ROWS][my_current_column];
 
                         our_current_grid[OUR_NUMBER_OF_ROWS + 1][my_current_column] = our_current_grid[1][my_current_column];
+                        ds_hclib_ready(false);
                     });
 
                 }
@@ -189,17 +198,23 @@ int main(int argc, char **argv)
             // }
 
             /* X.B.  Set up the ghost columns */
+            ds_hclib_ready(true);
+            std::vector<hclib::promise_t<void>> pv;
             for(our_current_row = 0; our_current_row <= OUR_NUMBER_OF_ROWS + 1; our_current_row++)
             {
-                /* X.B.1.  The left ghost column is the same as the farthest-right,
-                *  non-ghost column */
-                our_current_grid[our_current_row][0] = our_current_grid[our_current_row][NUMBER_OF_COLUMNS];
+                hclib::async([&](){
+                    /* X.B.1.  The left ghost column is the same as the farthest-right,
+                    *  non-ghost column */
+                    our_current_grid[our_current_row][0] = our_current_grid[our_current_row][NUMBER_OF_COLUMNS];
 
-                /* X.B.2.  The right ghost column is the same as the farthest-left,
-                *  non-ghost column */
-                our_current_grid[our_current_row][NUMBER_OF_COLUMNS + 1] = our_current_grid[our_current_row][1];
+                    /* X.B.2.  The right ghost column is the same as the farthest-left,
+                    *  non-ghost column */
+                    our_current_grid[our_current_row][NUMBER_OF_COLUMNS + 1] = our_current_grid[our_current_row][1];
+                });
             }
-
+            for(auto p = pv.begin(); p != pv.end(); p++){
+                p->get_future()->wait();
+            }
 
 /* X.C.  Display our current grid */
 #ifdef SHOW_RESULTS
@@ -316,24 +331,27 @@ int main(int argc, char **argv)
             /* X.E.  Spawn threads to copy the next grid into the current grid */
             for(our_current_row = 1; our_current_row <= OUR_NUMBER_OF_ROWS; our_current_row++)
             {
+                ds_hclib_ready(false);
                 hclib::finish([&](){
                     for(my_current_column = 1; my_current_column <= NUMBER_OF_COLUMNS; my_current_column++)
                     {
                         hclib::async([&](){
+                            ds_hclib_ready(true);
                             our_current_grid[our_current_row][my_current_column] = our_next_grid[our_current_row][my_current_column];
+                            ds_hclib_ready(false);
                         });
                     }
                 });
-                //#pragma omp parallel for private(my_current_column)
-                // for(my_current_column = 1; my_current_column <= NUMBER_OF_COLUMNS; my_current_column++)
-                // {
-                //     our_current_grid[our_current_row][my_current_column] = our_next_grid[our_current_row][my_current_column];
-                // }
             }
         }
 
         ds_hclib_ready(false);
-        printf("ending in hclib \n");
+        long end = hclib_current_time_ms();
+        double dur = ((double)(end-start))/1000;
+        printf("end tasks, duration is: %f \n",dur);
+        printf("cache size is %d \n",ds_get_cache_size());
+        printf("number of task is %d \n",get_task_id_unique());
+        printf("number of nt join %d \n", get_nt_count());
     });
 
     /* XI.  Deallocate data structures */

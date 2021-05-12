@@ -105,6 +105,7 @@ typedef struct tree_node{
 typedef struct dpst{
     struct tree_node *root;
     struct tree_node *current_step_node;
+    int height;
 } dpst;
 
 tree_node* newtreeNode();
@@ -115,6 +116,8 @@ tree_node* get_current_step_node();
 tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent);
 tree_node* insert_leaf(tree_node *task_node);
 int get_current_task_id();
+int get_dpst_height();
+int get_nt_count();
 extern struct dpst DPST;
 
 typedef struct _hclib_worker_state {
