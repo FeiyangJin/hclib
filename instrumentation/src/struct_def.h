@@ -33,6 +33,7 @@ typedef struct tree_node_cpp{
     struct tree_node_cpp *children_list_head;
     struct tree_node_cpp *children_list_tail;
     struct tree_node_cpp *next_sibling;
+    int inline_finish_step;
 } tree_node_cpp;
 
 enum task_state{

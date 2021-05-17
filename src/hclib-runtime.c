@@ -77,9 +77,23 @@ static int task_id_unique = 0;
 
 int nt_count = 0;
 
+bool promise_finish = false;
+
+bool is_during_promise_finish(){
+    return promise_finish;
+}
+
+void promise_finish_start(){
+    promise_finish = true;
+}
+
+void promise_finish_end(){
+    promise_finish = false;
+}
+
 __attribute__((weak)) void* hclib_get_current_task_info(int* task_id, int* current_finish_id, bool* is_step, bool* is_future){
     hclib_worker_state *ws = current_ws();
-    hclib_task_t *task = ws->curr_task;
+    hclib_task_t *task = (hclib_task_t *) ws->curr_task;
 
     *task_id = task->task_id;
     *current_finish_id = task->current_finish->node_in_dpst->index;
@@ -92,13 +106,13 @@ __attribute__((weak)) void* hclib_get_current_task_info(int* task_id, int* curre
 
 __attribute__((weak)) bool ds_current_is_future(){
     hclib_worker_state *ws = current_ws();
-    hclib_task_t *task = ws->curr_task;
+    hclib_task_t *task = (hclib_task_t *) ws->curr_task;
     return (task->node_in_dpst->this_node_type == FUTURE);
 }
 
 __attribute__((weak)) int ds_get_current_finish(){
     hclib_worker_state *ws = current_ws();
-    hclib_task_t *task = ws->curr_task;
+    hclib_task_t *task = (hclib_task_t *) ws->curr_task;
     return task->current_finish->node_in_dpst->index;
 }
 
@@ -120,7 +134,7 @@ void increase_task_id_unique(){
 
 int get_current_task_id(){
     hclib_worker_state *ws = current_ws();
-    hclib_task_t *task = ws->curr_task;
+    hclib_task_t *task = (hclib_task_t *) ws->curr_task;
     return task->task_id;
 }
 
@@ -267,6 +281,7 @@ struct tree_node* newtreeNode()
     node->corresponding_task_id = -2;
     node->number_of_child = 0;
     node->is_parent_nth_child = 0;
+    node->inline_finish_step = -2;
 
     node->index = node_index;
     node_index ++;
@@ -1255,7 +1270,7 @@ void *hclib_future_wait(hclib_future_t *future) {
     // save current finish scope (in case of worker swap)
     hclib_worker_state *ws = CURRENT_WS_INTERNAL;
     finish_t *current_finish = ws->current_finish;
-    hclib_task_t *current_task = ws->curr_task;
+    hclib_task_t *current_task = (hclib_task_t *) ws->curr_task;
 
     if (future->owner->satisfied == false){
         // fj: mark the task as blocked
@@ -1319,7 +1334,11 @@ void *hclib_future_wait(hclib_future_t *future) {
     }
     else{
         // otherwise the future is just an access to a promise, we do promise operations on disjoint
-        if(ds_dpst_precede((void*)future->owner->setter_node,(void*)get_current_step_node())){
+        if(future->owner->end_task_put){
+            int promise_setter = future->owner->setter_task_id;
+            ds_merge(current_task->task_id, promise_setter, (void*)continuation, true);
+        }
+        else if(ds_dpst_precede((void*)future->owner->setter_node,(void*)get_current_step_node())){
             // printf("not adding nt edge, current task %d, setter index %d, current step index %d \n",get_current_task_id(),
             // future->owner->setter_node->index,get_current_step_node()->index);
         }
@@ -1459,7 +1478,7 @@ void hclib_yield(hclib_locale_t *locale) {
     hclib_task_t *stolen[STEAL_CHUNK_SIZE];
     hclib_worker_state *ws = CURRENT_WS_INTERNAL;
     finish_t *old_finish = ws->current_finish;
-    hclib_task_t *old_task = ws->curr_task;
+    hclib_task_t *old_task = (hclib_task_t *) ws->curr_task;
 
 #ifdef HCLIB_STATS
     worker_stats[ws->id].count_yields++;
@@ -1602,7 +1621,7 @@ void hclib_start_finish() {
 void hclib_end_finish() {
     hclib_worker_state *ws = CURRENT_WS_INTERNAL;
     finish_t *current_finish = ws->current_finish;
-    hclib_task_t *current_task = ws->curr_task;
+    hclib_task_t *current_task = (hclib_task_t *) ws->curr_task;
 #ifdef VERBOSE
     fprintf(stderr, "hclib_end_finish: ending finish %p on worker %p\n",
             current_finish, CURRENT_WS_INTERNAL);

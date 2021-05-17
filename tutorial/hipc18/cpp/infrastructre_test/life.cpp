@@ -199,21 +199,20 @@ int main(int argc, char **argv)
 
             /* X.B.  Set up the ghost columns */
             ds_hclib_ready(true);
-            std::vector<hclib::promise_t<void>> pv;
+            std::vector<hclib::promise_t<void>*> pv;
+            int index = 0;
             for(our_current_row = 0; our_current_row <= OUR_NUMBER_OF_ROWS + 1; our_current_row++)
             {
+                pv.push_back(new hclib::promise_t<void>());
                 hclib::async([&](){
-                    /* X.B.1.  The left ghost column is the same as the farthest-right,
-                    *  non-ghost column */
                     our_current_grid[our_current_row][0] = our_current_grid[our_current_row][NUMBER_OF_COLUMNS];
-
-                    /* X.B.2.  The right ghost column is the same as the farthest-left,
-                    *  non-ghost column */
                     our_current_grid[our_current_row][NUMBER_OF_COLUMNS + 1] = our_current_grid[our_current_row][1];
+                    pv.at(index)->end_put();
                 });
+                index++;
             }
             for(auto p = pv.begin(); p != pv.end(); p++){
-                p->get_future()->wait();
+                (*p)->get_future()->wait();
             }
 
 /* X.C.  Display our current grid */

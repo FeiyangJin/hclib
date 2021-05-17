@@ -83,7 +83,7 @@ typedef struct {
 int main ( int argc, char* argv[] ) {
     char const *deps[] = { "system" };
     hclib::launch(deps, 1, [&]() {
-        ds_hclib_ready(true);
+        ds_hclib_ready(false);
         int i, j;
 
         int tile_width = (int) atoi (argv[3]);
@@ -126,6 +126,7 @@ int main ( int argc, char* argv[] ) {
         fprintf(stdout, "Allocating tile matrix\n");
 
         // sagnak: all workers allocate their own copy of tile matrix
+        ds_hclib_ready(false);
         Tile_t** tile_matrix = (Tile_t **) malloc(sizeof(Tile_t*)*(n_tiles_height+1)); 
         for ( i = 0; i < n_tiles_height+1; ++i ) {
             tile_matrix[i] = (Tile_t *) malloc(sizeof(Tile_t)*(n_tiles_width+1));
@@ -170,9 +171,8 @@ int main ( int argc, char* argv[] ) {
         struct timeval begin,end;
         gettimeofday(&begin,0);
 
-        // ds_hclib_ready(false);
+        ds_hclib_ready(false);
         hclib::finish([=]() {
-            ds_hclib_ready(true);
             for (int i = 1; i < n_tiles_height+1; ++i ) {
                 for (int j = 1; j < n_tiles_width+1; ++j ) {
                     hclib::async([=](){
@@ -211,24 +211,39 @@ int main ( int argc, char* argv[] ) {
                             }
                         }
 
-                        int* curr_bottom_right = (int*)malloc(sizeof(int));
-                        curr_bottom_right[0] = curr_tile[tile_height][tile_width];
-                        tile_matrix[i][j].bottom_right->put(curr_bottom_right);
+                        // ds_hclib_ready(false);
+                        // hclib::async([=](){
+                            // ds_hclib_ready(true);
+                            int* curr_bottom_right = (int*)malloc(sizeof(int));
+                            curr_bottom_right[0] = curr_tile[tile_height][tile_width];
+                            tile_matrix[i][j].bottom_right->put(curr_bottom_right);
+                        // });
 
-                        int* curr_right_column = (int*)malloc(sizeof(int)*tile_height);
-                        for ( index = 0; index < tile_height; ++index ) {
-                            curr_right_column[index] = curr_tile[index+1][tile_width];
-                        }
-                        tile_matrix[i][j].right_column->put(curr_right_column);
+                        // ds_hclib_ready(false);
+                        // hclib::async([=](){
+                            // ds_hclib_ready(true);
+                            int* curr_right_column = (int*)malloc(sizeof(int)*tile_height);
+                            for (int index_1 = 0; index_1 < tile_height; ++index_1 ) {
+                                curr_right_column[index_1] = curr_tile[index_1+1][tile_width];
+                            }
+                            tile_matrix[i][j].right_column->put(curr_right_column);
+                        // });
 
-                        int* curr_bottom_row = (int*)malloc(sizeof(int)*tile_width);
-                        for ( index = 0; index < tile_width; ++index ) {
-                            curr_bottom_row[index] = curr_tile[tile_height][index+1];
-                        }
-                        tile_matrix[i][j].bottom_row->put(curr_bottom_row);
+                        // ds_hclib_ready(false);
+                        // hclib::async([=](){
+                            // ds_hclib_ready(true);
+                            int* curr_bottom_row = (int*)malloc(sizeof(int)*tile_width);
+                            for (int index_2 = 0; index_2 < tile_width; ++index_2 ) {
+                                curr_bottom_row[index_2] = curr_tile[tile_height][index_2+1];
+                            }
+                            tile_matrix[i][j].bottom_row->put(curr_bottom_row);
+                        // });
 
-                        free(curr_tile);
-                        free(curr_tile_tmp);
+                        ds_hclib_ready(false);
+                        ds_free(curr_tile);
+                        ds_free(curr_tile_tmp);
+                        // free(curr_tile);
+                        // free(curr_tile_tmp);
                     });
                     // tile_matrix[i][j-1].right_column->get_future(),
                     // tile_matrix[i-1][j].bottom_row->get_future(),
@@ -239,6 +254,7 @@ int main ( int argc, char* argv[] ) {
 
         ds_hclib_ready(false);
         printf("cache size is %d \n",ds_get_cache_size());
+        printf("DPST height is: %d \n", get_dpst_height());
         printf("number of task is %d \n",get_task_id_unique());
         printf("number of nt join %d \n", get_nt_count());
         

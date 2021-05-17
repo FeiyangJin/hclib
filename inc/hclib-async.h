@@ -202,6 +202,7 @@ inline void async(T &&lambda) {
     hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
     tree_node *the_node;
 
+
     if(ws->current_finish != NULL && ws->current_finish->belong_to_task_id == curr_task->task_id){
         the_node = insert_tree_node(ASYNC,ws->current_finish->node_in_dpst);
     }
@@ -209,8 +210,10 @@ inline void async(T &&lambda) {
         the_node = insert_tree_node(ASYNC,curr_task->node_in_dpst);
     }
     
+
     task->node_in_dpst = the_node;
     the_node->corresponding_task_id = task->task_id;
+
 
     // insert two step nodes as sibling and child
     insert_leaf(task->node_in_dpst->parent);
@@ -218,7 +221,7 @@ inline void async(T &&lambda) {
 
     int finish_id = task->current_finish == NULL ? -1:task->current_finish->node_in_dpst->index;
     ds_addtask(task->task_id,curr_task->task_id,the_node,task,0,finish_id, current_step_node);
-
+    
     spawn(task);
 
     hclib_yield(NULL);

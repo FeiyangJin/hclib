@@ -1,5 +1,9 @@
 #include "ds_dpst.h"
 
+int DisjointSet::get_tree_join_count(){
+    return this->tree_join_count;
+}
+
 hclib_finish::hclib_finish(int finish_id, int belong_to_task_id, void *node_in_dpst, void *finish_address){
     this->finish_id = finish_id;
     this->belong_to_task_id = belong_to_task_id;
@@ -22,7 +26,7 @@ void DisjointSet::end_finish_merge(int finish_id, tree_node_cpp* query_node){
     for(vector<int>::iterator i = finish->task_in_this_finish.begin(); i != finish->task_in_this_finish.end(); i++){
         int sub_task_id = *i;
         this->update_task_state(sub_task_id,JOINED);
-        this->mergeBtoA(finish_owner_task, sub_task_id, query_node);
+        this->mergeBtoA(finish_owner_task, sub_task_id, query_node, false);
     }
 }
 
@@ -66,6 +70,10 @@ void DisjointSet::update_task_dpst_node(int task_id, void *new_node){
 
 
 DisjointSet::DisjointSet(){
+    this->all_finishes.reserve(1000);
+    this->cache.reserve(20000);
+    this->all_tasks.reserve(5000);
+    this->parent_aka_setnowin.reserve(5000);
 
 }
 
@@ -103,7 +111,14 @@ int DisjointSet::Find(int k){
  * @param  b: task b task_id
  * @retval None
  */
-void DisjointSet::mergeBtoA(int a, int b, tree_node_cpp* query_node){
+void DisjointSet::mergeBtoA(int a, int b, tree_node_cpp* query_node, bool update_inline_finish){
+    this->tree_join_count++;
+    
+    if(update_inline_finish){
+        tree_node_cpp* node = (tree_node_cpp*) this->all_tasks.at(b).node_in_dpst;
+        node->inline_finish_step = query_node->is_parent_nth_child;
+    }
+
     set_info* a_set_info = find_helper(a);
     set_info* b_set_info = find_helper(b);
 
@@ -392,6 +407,9 @@ bool DisjointSet::precede_dpst(tree_node_cpp* node1, tree_node_cpp* node2){
     if(node1_last_node->is_parent_nth_child < node2_last_node->is_parent_nth_child){
         // node1 is to the left of node 2
         if(node1_last_node->this_node_type == FUTURE || node1_last_node->this_node_type == ASYNC){
+            if(node1_last_node->inline_finish_step > 0 && node1_last_node->inline_finish_step <= node2_last_node->is_parent_nth_child){
+                return true;
+            }
             return false;
         }
         else{
@@ -482,12 +500,12 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
         assert(last_step_node->this_node_type == STEP);
 
         if(visit(step_a, last_step_node, task_a, task_id, visited)){
-            if(in_cache){
-                cache.at(key) = step_a;
-            }
-            else{
-                cache.insert(std::pair<cache_key,tree_node_cpp*>(key,step_a));
-            }
+            // if(in_cache){
+            //     cache.at(key) = step_a;
+            // }
+            // else{
+            //     cache.insert(std::pair<cache_key,tree_node_cpp*>(key,step_a));
+            // }
             return true;
         }
     }
@@ -514,12 +532,12 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
                 assert(last_step_node->this_node_type == STEP);
 
                 if(visit(step_a, last_step_node, task_a, task_id, visited)){
-                    if(in_cache){
-                        cache.at(key) = step_a;
-                    }
-                    else{
-                        cache.insert(std::pair<cache_key,tree_node_cpp*>(key,step_a));
-                    }
+                    // if(in_cache){
+                    //     cache.at(key) = step_a;
+                    // }
+                    // else{
+                    //     cache.insert(std::pair<cache_key,tree_node_cpp*>(key,step_a));
+                    // }
                     return true;
                 }
             }

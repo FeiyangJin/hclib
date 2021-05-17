@@ -100,6 +100,7 @@ typedef struct tree_node{
     struct tree_node *children_list_head;
     struct tree_node *children_list_tail;
     struct tree_node *next_sibling;
+    int inline_finish_step;
 } tree_node;
 
 typedef struct dpst{
@@ -115,10 +116,15 @@ tree_node* find_lca_left_child(tree_node *node1,tree_node *node2);
 tree_node* get_current_step_node();
 tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent);
 tree_node* insert_leaf(tree_node *task_node);
+void update_node_parent(tree_node *node, tree_node* new_parent);
 int get_current_task_id();
 int get_dpst_height();
 int get_nt_count();
 extern struct dpst DPST;
+
+void promise_finish_start();
+void promise_finish_end();
+bool is_during_promise_finish();
 
 typedef struct _hclib_worker_state {
     // Global context for this instance of the runtime.

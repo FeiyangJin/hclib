@@ -11,7 +11,7 @@ using addr_t = uint64_t;
 #define LOG_KEY_SIZE  4
 #define LOG_TBL_SIZE 20
 
-// #define LOOP_READERS
+#define LOOP_READERS
 #define LINK_READER
 
 #ifndef ADDR_TO_KEY
@@ -42,32 +42,35 @@ using addr_t = uint64_t;
 #define SIZE_TO_NUM_GRAINS(size) (size >> LOG_GRAIN_SIZE)
 class MemAccess_t {
 public:
+  bool promise_task;
   access_info task_and_node;
   addr_t rip;
 #ifdef LINK_READER
   MemAccess_t* next;
   MemAccess_t* prev;
 #endif
-  MemAccess_t(access_info t_a_n, addr_t r);
+  MemAccess_t(access_info t_a_n, addr_t r, bool is_promise);
 };
 
 class MemAccessList_t {
 public:
   addr_t start_addr;
-#ifdef LINK_READER
-  MemAccess_t* readers[NUM_SLOTS] = {};
-  MemAccess_t* readers_tail[NUM_SLOTS] = {};
-#else
-  std::vector<MemAccess_t>* readers[NUM_SLOTS] = {};
-#endif
+
+  #ifdef LINK_READER
+    MemAccess_t* readers[NUM_SLOTS] = {};
+    MemAccess_t* readers_tail[NUM_SLOTS] = {};
+  #else
+    std::vector<MemAccess_t>* readers[NUM_SLOTS] = {};
+  #endif
 
   #ifndef LOOP_READERS
     std::unordered_set<int>* readers_finish_id[NUM_SLOTS] = {};
   #endif
 
+
   MemAccess_t* writers[NUM_SLOTS] = {};
 
-  MemAccessList_t(addr_t addr, bool is_read, access_info task_and_node, addr_t rip, std::size_t mem_size, int first_finish_id);
+  MemAccessList_t(addr_t addr, bool is_read, access_info task_and_node, addr_t rip, std::size_t mem_size, int first_finish_id, bool is_promise);
   ~MemAccessList_t();
   
 }; // end class MemAccessList_t

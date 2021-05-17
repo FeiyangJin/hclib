@@ -9,8 +9,8 @@
 
 
 int N = 1000;
-int P = 2000; //number of promise
-int T = 3; // branching factor
+int P = 500; //number of promise
+int T = 2; // branching factor
 double W = 0.5; // probability to wait for a promise
 unsigned long R = 1234567;
 
@@ -38,16 +38,13 @@ double nextdouble(unsigned long seed){
 }
 
 
-void fulfill(int start, int end,long seed){
-    // printf("start %d, end %d \n",start,end);
-    //srand(time(NULL));
+void fulfill(int start, int end, long seed){
     srand(seed);
 
-    //printf("start is %d, end is %d \n",start,end);
     int initial_end = end;
     std::vector<hclib::future_t<void>*> tasks;
 
-    //while(end - start > 1){
+
     ds_hclib_ready(false);
     for (int t = 0; t < T && (end - start > 1); t++) {
         int mid = (int)((end + start) / 2);
@@ -67,16 +64,6 @@ void fulfill(int start, int end,long seed){
     if(((double) rand() / (RAND_MAX)) < W){
         int i = (int) (seed % P);
         if (i < 0) i += P;
-        // can only wait for promise index behind us;
-        //int i = end + ( std::rand() % (P - end) );
-        
-        // int satisfy_count = 0;
-        // for(int j=0; j<allPromises->size(); j++){
-        //     if(allPromises->at(j)->satisfied == true){
-        //         satisfy_count++;
-        //     }
-        // }
-        // printf("    wait on promise %d, total %d satisfied \n",i,satisfy_count);
         ds_hclib_ready(true);
         allPromises->at(i)->get_future()->wait();
         ds_hclib_ready(false);
@@ -84,18 +71,13 @@ void fulfill(int start, int end,long seed){
 
     // waiting
     ds_hclib_ready(true);
-    for(int i = 0; i < 50; i++){
-        for(int j = 0; j < 50; j++){
-            // if(((double) rand() / (RAND_MAX)) < 0.2){
-                data[i] += data[j];
-            // }
-            // else{
-                // int u = data[i];
-                // int v = data[j];
-            // }
-            
-        }
-    }
+    data[0] = 1;
+    data[1] = 2;
+    // for(int i = 0; i < 50; i++){
+    //     for(int j = 0; j < 50; j++){
+    //         data[i] += data[j];
+    //     }
+    // }
     
     // complete promises and wait all tasks
     for(int i = start; i <= end; i++){

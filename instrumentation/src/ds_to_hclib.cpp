@@ -19,6 +19,10 @@ hclib_task test_get_task_info(int task_id){
     return ds->get_task_info(task_id);
 }
 
+__attribute__((weak)) int ds_get_tree_join_count(){
+    return ds->get_tree_join_count();
+}
+
 __attribute__((weak)) bool ds_dpst_precede(void* node1, void* node2){
     return ds->precede_dpst((tree_node_cpp*)node1,(tree_node_cpp*)node2);
 }
@@ -89,9 +93,9 @@ __attribute__((weak)) int ds_findSet(int element){
     return ds->Find(element);
 }
 
-__attribute__((weak)) void ds_merge(int a, int b, void* query_node){
+__attribute__((weak)) void ds_merge(int a, int b, void* query_node, bool update_inline_finish){
     tree_node_cpp* query_node_cpp = (tree_node_cpp*) query_node;
-    ds->mergeBtoA(a,b,query_node_cpp);
+    ds->mergeBtoA(a,b,query_node_cpp, update_inline_finish);
 }
 
 __attribute__((weak)) void ds_addnt(int task, int nt_task_id, void* last_step_before_nt){

@@ -96,6 +96,7 @@
         "stack": "cpp",
         "filesystem": "cpp",
         "__functional_03": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "climits": "cpp"
     }
 }

@@ -5,11 +5,14 @@
 extern "C" {
 #endif
 
+__attribute__((weak)) void ds_promise_task(bool b);
+__attribute__((weak)) void ds_free(void* ptr);
+__attribute__((weak)) int ds_get_tree_join_count();
 __attribute__((weak)) int ds_get_cache_size();
 __attribute__((weak)) void ds_print();
 __attribute__((weak)) void ds_addSet(int set_index);
 __attribute__((weak)) int ds_findSet(int element);
-__attribute__((weak)) void ds_merge(int a, int b, void* query_node);
+__attribute__((weak)) void ds_merge(int a, int b, void* query_node, bool update_inline_finish);
 __attribute__((weak)) void ds_addnt(int task, int nt_task_id, void* last_step_before_nt);
 __attribute__((weak)) int ds_ntcounts(int task_id);
 __attribute__((weak)) int ds_ntcounts_task(int task_id);

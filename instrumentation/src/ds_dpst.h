@@ -39,6 +39,8 @@ class CacheHashFunction {
 // A class to represent a disjoint set
 class DisjointSet
 {
+    int tree_join_count = 0;
+
     // a map from finish dpst node id to finish
     unordered_map<int, hclib_finish*> all_finishes;
 
@@ -53,6 +55,8 @@ class DisjointSet
 public:
     DisjointSet();
 
+    int get_tree_join_count();
+    
     // finish functions
     void end_finish_merge(int finish_id, tree_node_cpp* query_node);
 
@@ -80,7 +84,7 @@ public:
     set_info* find_helper(int k);
 
     // Peform Union of two subsets where A called get(B)
-    void mergeBtoA(int a, int b, tree_node_cpp* query_node_in_A);
+    void mergeBtoA(int a, int b, tree_node_cpp* query_node_in_A, bool update_inline_finish);
 
     // add a set to other's nt
     void addnt(int task, int nt_task_id,tree_node_cpp* last_node_before_nt);

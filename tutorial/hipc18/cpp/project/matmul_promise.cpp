@@ -12,6 +12,9 @@ static int POWER; //the power of two the base case is based on
 static const unsigned int Q[] = {0x55555555, 0x33333333, 0x0F0F0F0F, 0x00FF00FF};
 static const unsigned int S[] = {1, 2, 4, 8};
 
+void mat_mul_par_promise(const REAL *const A, const REAL *const B, REAL *C, int n);
+void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n);
+
 //provides a look up for the Morton Number of the z-order curve given the x and y coordinate
 //every instance of an (x,y) lookup must use this function
 unsigned int z_convert(int row, int col){
@@ -117,9 +120,98 @@ void iter_matmul_rm(REAL *A, REAL *B, REAL *C, int n){
 }
 
 
+void mat_mul_par_promise(const REAL *const A, const REAL *const B, REAL *C, int n){
+    ds_hclib_ready(true);
+    ds_promise_task(true);
+
+    if(n == BASE_CASE) {
+        int i, j, k;
+        for(i = 0; i < n; i++){
+            for(k = 0; k < n; k++){
+                REAL c = 0.0;
+                for(j = 0; j < n; j++){
+                    c += A[i * n + j] * B[j* n + k];
+                }
+                C[i * n + k] += c;
+            }
+        }
+
+        return;
+    }
+
+    const REAL *const A1 = &A[block_convert(0,0)];
+    const REAL *const A2 = &A[block_convert(0, n >> 1)];
+    const REAL *const A3 = &A[block_convert(n >> 1,0)];
+    const REAL *const A4 = &A[block_convert(n >> 1, n >> 1)];
+
+    const REAL *const B1 = &B[block_convert(0,0)];
+    const REAL *const B2 = &B[block_convert(0, n >> 1)];
+    const REAL *const B3 = &B[block_convert(n >> 1, 0)];
+    const REAL *const B4 = &B[block_convert(n >> 1, n >> 1)];
+    
+    REAL *C1 = &C[block_convert(0,0)];
+    REAL *C2 = &C[block_convert(0, n >> 1)];
+    REAL *C3 = &C[block_convert(n >> 1,0)];
+    REAL *C4 = &C[block_convert(n >> 1, n >> 1)];
+
+    ds_hclib_ready(false);
+    hclib::promise_t<void> *p1 = new hclib::promise_t<void>();
+    // hclib::promise_t<void> *p2 = new hclib::promise_t<void>();
+    // hclib::promise_t<void> *p3 = new hclib::promise_t<void>();
+    hclib::async([&](){
+        mat_mul_par_promise(A1,B1,C1,n>>1);
+        ds_hclib_ready(true);
+        p1->put();
+        ds_hclib_ready(false);
+    });
+
+    hclib::finish([&](){    
+        hclib::async([&](){
+            mat_mul_par(A1,B2,C2,n>>1);
+            ds_hclib_ready(false);
+        });
+
+        hclib::async([&](){
+            mat_mul_par(A3,B1,C3,n>>1);
+            ds_hclib_ready(false);
+        });
+
+            mat_mul_par(A3,B2,C4,n>>1);
+            ds_hclib_ready(false);
+    });
+    ds_hclib_ready(true);
+    p1->get_future()->wait();
+    // p2->get_future()->wait();
+    // p3->get_future()->wait();
+
+    
+    ds_hclib_ready(false);
+    hclib::finish([&](){
+        hclib::async([&](){
+            mat_mul_par(A2,B3,C1,n>>1);
+            ds_hclib_ready(false);
+        });
+
+        hclib::async([&](){
+            mat_mul_par(A2,B4,C2,n>>1);
+            ds_hclib_ready(false);
+        });
+
+        hclib::async([&](){
+            mat_mul_par(A4,B3,C3,n>>1);
+            ds_hclib_ready(false);
+        });
+
+            mat_mul_par(A4,B4,C4,n>>1);
+            ds_hclib_ready(false);
+    });
+}
+
 //recursive parallel solution to matrix multiplication
 void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n){
     ds_hclib_ready(true);
+    ds_promise_task(false);
+    
     //BASE CASE: here computation is switched to itterative matrix multiplication
     //At the base case A, B, and C point to row order matrices of n x n
     if(n == BASE_CASE) {
@@ -155,34 +247,26 @@ void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n){
     REAL *C4 = &C[block_convert(n >> 1, n >> 1)];
 
     ds_hclib_ready(false);
-    hclib::promise_t<void> *p1 = new hclib::promise_t<void>();
-    // hclib::promise_t<void> *p2 = new hclib::promise_t<void>();
-    // hclib::promise_t<void> *p3 = new hclib::promise_t<void>();
-    hclib::async([&](){
-        mat_mul_par(A1,B1,C1,n>>1);
-        ds_hclib_ready(true);
-        p1->put();
-        ds_hclib_ready(false);
-    });
-    
     hclib::finish([&](){    
         hclib::async([&](){
-            mat_mul_par(A1,B2,C2,n>>1);
+            mat_mul_par_promise(A1,B1,C1,n>>1);
             ds_hclib_ready(false);
         });
 
         hclib::async([&](){
-            mat_mul_par(A3,B1,C3,n>>1);
+            mat_mul_par_promise(A1,B2,C2,n>>1);
             ds_hclib_ready(false);
         });
 
-            mat_mul_par(A3,B2,C4,n>>1);
+        hclib::async([&](){
+            mat_mul_par_promise(A3,B1,C3,n>>1);
+            ds_hclib_ready(false);
+        });
+
+            mat_mul_par_promise(A3,B2,C4,n>>1);
             ds_hclib_ready(false);
     });
     ds_hclib_ready(true);
-    p1->get_future()->wait();
-    // p2->get_future()->wait();
-    // p3->get_future()->wait();
 
     
     // hclib::promise_t<int> *p4 = new hclib::promise_t<int>();
@@ -212,6 +296,7 @@ void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n){
 
     // hclib::async([&](){
     //     mat_mul_par(A2,B3,C1,n>>1);
+    //     ds_hclib_ready(true);
     //     p4->put(4);
     //     ds_hclib_ready(false);
     // });
@@ -264,11 +349,10 @@ void compare_matrix(REAL *C, REAL *D, int n){
 
 
 int main(int argc, char *argv[]){
-    // 2048 takes time up to 206.479 seconds
-  int n = argc>1?atoi(argv[1]) : 2048; // default n value is 2048
+  int n = argc>1?atoi(argv[1]) : 2048;
   printf("multiplying two matrices of size %d * %d \n", n, n);
 
-  POWER = 8; //default k value
+  POWER = 6;
   BASE_CASE = (int) pow(2.0, (double) POWER);
 
 
@@ -309,8 +393,10 @@ int main(int argc, char *argv[]){
     //compare_matrix(C,D,n);
     ds_hclib_ready(false);
     printf("cache size is %d \n",ds_get_cache_size());
+    printf("DPST height is: %d \n", get_dpst_height());
     printf("number of task is %d \n",get_task_id_unique());
     printf("number of nt join %d \n", get_nt_count());
+    printf("number of tree joins %d \n", ds_get_tree_join_count());
   });
 
     /* release memory */

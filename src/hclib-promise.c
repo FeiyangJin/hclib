@@ -200,8 +200,49 @@ int register_on_all_promise_dependencies(hclib_task_t *wrapper_task) {
 }
 
 void hclib_promise_end_task_put(hclib_promise_t *promise_to_be_put, void *datum_to_be_put){
+    HASSERT(promise_to_be_put != NULL && "can not put into NULL promise");
+    HASSERT(promise_to_be_put->satisfied == 0 && "violated single assignment property for promises");
     promise_to_be_put->end_task_put = true;
-    hclib_promise_put(promise_to_be_put, datum_to_be_put);
+
+    hclib_task_t *wait_list_of_promise = promise_to_be_put->wait_list_head;
+
+    promise_to_be_put->datum = datum_to_be_put;
+    promise_to_be_put->satisfied = 1;
+
+    // fj: set the promise's setter
+    hclib_worker_state *ws = CURRENT_WS_INTERNAL;
+    hclib_task_t *curr_task = wait_list_of_promise;
+    hclib_task_t *setter_task = (hclib_task_t*) ws->curr_task;
+
+    promise_to_be_put->setter_task_id = setter_task->task_id;
+    promise_to_be_put->setter_node = get_current_step_node();
+
+    hclib_task_t *next_task = NULL;
+    while (!__sync_bool_compare_and_swap(&(promise_to_be_put->wait_list_head),
+                                         wait_list_of_promise,
+                                         SATISFIED_FUTURE_WAITLIST_PTR)) {
+        wait_list_of_promise = promise_to_be_put->wait_list_head;
+    }
+
+    int counter = 0;
+    while (curr_task != SENTINEL_FUTURE_WAITLIST_PTR) {
+
+        next_task = *_next_waiting_task(curr_task);
+        if (register_on_all_promise_dependencies(curr_task)) {
+            try_schedule_async(curr_task, ws);
+            counter ++;
+        }
+
+        curr_task = next_task;
+    }
+
+    while (counter > 0)
+    {
+        hclib_yield(NULL);
+        counter --;
+    }
+
+    // hclib_promise_put(promise_to_be_put, datum_to_be_put);
 }
 
 /**

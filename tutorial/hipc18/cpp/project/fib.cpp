@@ -13,10 +13,13 @@ uint64_t fib_serial(uint64_t n) {
 
 uint64_t fib_async_finish(uint64_t n) {
   ds_hclib_ready(true);
+  ds_promise_task(true);
+
   // bool in_memo = memorization.find(n) != memorization.end();
   // if(in_memo){
   //   return memorization.at(n);
   // }
+  
   if (n < THRESHOLD) {
     int result = fib_serial(n);
     return result;
@@ -80,6 +83,7 @@ int main(int argc, char** argv) {
     printf("cache size is %d \n",ds_get_cache_size());
     printf("number of task is %d \n",get_task_id_unique());
     printf("number of nt join %d \n", get_nt_count());
+    printf("number of tree joins %d \n", ds_get_tree_join_count());
   });
 
   return 0;
