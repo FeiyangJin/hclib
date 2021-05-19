@@ -15,7 +15,7 @@ using addr_t = uint64_t;
 #define LINK_READER
 
 #ifndef ADDR_TO_KEY
-#define ADDR_TO_KEY(addr) ((addr_t) ((addr_t)addr >> LOG_KEY_SIZE))
+#define ADDR_TO_KEY(addr) ((uint64_t) (uint64_t)addr)
 #endif
 
 #define GRAIN_SIZE 4

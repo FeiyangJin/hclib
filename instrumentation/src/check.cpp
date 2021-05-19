@@ -7,7 +7,7 @@
 #include <chrono>
 #include <ctime> 
 
-static ShadowMem<MemAccessList_t> *shadow_mem = new ShadowMem<MemAccessList_t>();
+static ShadowMem *shadow_mem = new ShadowMem();
 access_info current_task_and_step;
 static int current_finish_id;
 static bool is_step = false;
@@ -268,7 +268,7 @@ extern "C" void asap_check_write(int *addr, int bytes) {
 
     if(slot == NULL){
       MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, false, current_task_and_step, (addr_t)pc, bytes, current_finish_id, is_asap_promise_task);
-      slot = shadow_mem->insert(ADDR_TO_KEY(addr), mem_list);
+      shadow_mem->insert(ADDR_TO_KEY(addr), mem_list);
       return;
     }
 
@@ -292,7 +292,7 @@ extern "C" void asap_check_read(int *addr, int bytes) {
 
     if(slot == nullptr){
       MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, true, current_task_and_step, (addr_t)pc, bytes, current_finish_id, is_asap_promise_task);
-      slot = shadow_mem->insert(ADDR_TO_KEY(addr), mem_list);
+      shadow_mem->insert(ADDR_TO_KEY(addr), mem_list);
       return;
     }
 
