@@ -216,7 +216,7 @@ int main ( int argc, char* argv[] ) {
                             // ds_hclib_ready(true);
                             int* curr_bottom_right = (int*)malloc(sizeof(int));
                             curr_bottom_right[0] = curr_tile[tile_height][tile_width];
-                            tile_matrix[i][j].bottom_right->put(curr_bottom_right);
+                            tile_matrix[i][j].bottom_right->end_put(curr_bottom_right);
                         // });
 
                         // ds_hclib_ready(false);
@@ -226,7 +226,7 @@ int main ( int argc, char* argv[] ) {
                             for (int index_1 = 0; index_1 < tile_height; ++index_1 ) {
                                 curr_right_column[index_1] = curr_tile[index_1+1][tile_width];
                             }
-                            tile_matrix[i][j].right_column->put(curr_right_column);
+                            tile_matrix[i][j].right_column->end_put(curr_right_column);
                         // });
 
                         // ds_hclib_ready(false);
@@ -236,7 +236,7 @@ int main ( int argc, char* argv[] ) {
                             for (int index_2 = 0; index_2 < tile_width; ++index_2 ) {
                                 curr_bottom_row[index_2] = curr_tile[tile_height][index_2+1];
                             }
-                            tile_matrix[i][j].bottom_row->put(curr_bottom_row);
+                            tile_matrix[i][j].bottom_row->end_put(curr_bottom_row);
                         // });
 
                         ds_hclib_ready(false);

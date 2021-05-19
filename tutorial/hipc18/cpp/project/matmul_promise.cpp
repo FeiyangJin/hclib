@@ -352,7 +352,7 @@ int main(int argc, char *argv[]){
   int n = argc>1?atoi(argv[1]) : 2048;
   printf("multiplying two matrices of size %d * %d \n", n, n);
 
-  POWER = 6;
+  POWER = 7;
   BASE_CASE = (int) pow(2.0, (double) POWER);
 
 

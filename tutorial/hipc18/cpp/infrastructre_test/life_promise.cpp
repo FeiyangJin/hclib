@@ -132,7 +132,6 @@ int main(int argc, char **argv)
         /* VII.  Initialize the grid (each cell gets a random state) */
         for(our_current_row = 1; our_current_row <= OUR_NUMBER_OF_ROWS; our_current_row++)
         {
-
             ds_hclib_ready(false);
             hclib::finish([&](){
                 for(my_current_column = 1; my_current_column <= NUMBER_OF_COLUMNS; my_current_column++)
@@ -144,11 +143,6 @@ int main(int argc, char **argv)
                     });
                 }
             });
-            //#pragma omp parallel for private(my_current_column)
-            // for(my_current_column = 1; my_current_column <= NUMBER_OF_COLUMNS; my_current_column++)
-            // {
-            //     our_current_grid[our_current_row][my_current_column] = random() % (ALIVE + 1);
-            // }
         }
         ds_hclib_ready(true);
 
@@ -171,43 +165,45 @@ int main(int argc, char **argv)
                 current_time_step++)
         {
             /* X.A.  Set up the ghost rows */
-            ds_hclib_ready(false);
-            hclib::finish([&](){
-                for(my_current_column = 0; my_current_column <= NUMBER_OF_COLUMNS + 1; my_current_column++)
-                {
-                    hclib::async([&](){
-                        ds_hclib_ready(true);
-                        our_current_grid[0][my_current_column] = our_current_grid[OUR_NUMBER_OF_ROWS][my_current_column];
+            std::vector<hclib::promise_t<void>*> pv1;
+            int index1 = 0;
+            for(my_current_column = 0; my_current_column <= NUMBER_OF_COLUMNS + 1; my_current_column++){
+                pv1.push_back(new hclib::promise_t<void>());
+                ds_hclib_ready(false);
+                hclib::async([&](){
+                    ds_hclib_ready(true);
+                    our_current_grid[0][my_current_column] = our_current_grid[OUR_NUMBER_OF_ROWS][my_current_column];
+                    our_current_grid[OUR_NUMBER_OF_ROWS + 1][my_current_column] = our_current_grid[1][my_current_column];
+                    pv1.at(index1)->end_put();
+                    ds_hclib_ready(false);
+                });
+                index1++;
+            }
 
-                        our_current_grid[OUR_NUMBER_OF_ROWS + 1][my_current_column] = our_current_grid[1][my_current_column];
-                        ds_hclib_ready(false);
-                    });
+            for(auto p = pv1.begin(); p != pv1.end(); p++){
+                (*p)->get_future()->wait();
+            }
 
-                }
-            });
-            //#pragma omp parallel private(my_current_column)
-            // for(my_current_column = 0; my_current_column <= NUMBER_OF_COLUMNS + 1; my_current_column++)
-            // {
-            //     /* X.A.1.  Set our top row to be the same as our second-to-last 
-            //     *  row */
-            //     our_current_grid[0][my_current_column] = our_current_grid[OUR_NUMBER_OF_ROWS][my_current_column];
-
-            //     /* X.A.2.  Set our bottom row to be the same as our 
-            //     *  second-to-top row */
-            //     our_current_grid[OUR_NUMBER_OF_ROWS + 1][my_current_column] = our_current_grid[1][my_current_column];
-            // }
 
             /* X.B.  Set up the ghost columns */
-            ds_hclib_ready(false);
-            hclib::finish([&](){
-                ds_hclib_ready(true);
-                for(our_current_row = 0; our_current_row <= OUR_NUMBER_OF_ROWS + 1; our_current_row++){
-                    hclib::async([&](){
-                        our_current_grid[our_current_row][0] = our_current_grid[our_current_row][NUMBER_OF_COLUMNS];
-                        our_current_grid[our_current_row][NUMBER_OF_COLUMNS + 1] = our_current_grid[our_current_row][1];
-                    });
-                }
-            });
+            std::vector<hclib::promise_t<void>*> pv2;
+            int index2 = 0;
+            for(our_current_row = 0; our_current_row <= OUR_NUMBER_OF_ROWS + 1; our_current_row++){
+                pv2.push_back(new hclib::promise_t<void>());
+                ds_hclib_ready(false);
+                hclib::async([&](){
+                    ds_hclib_ready(true);
+                    our_current_grid[our_current_row][0] = our_current_grid[our_current_row][NUMBER_OF_COLUMNS];
+                    our_current_grid[our_current_row][NUMBER_OF_COLUMNS + 1] = our_current_grid[our_current_row][1];
+                    pv2.at(index2)->end_put();
+                    ds_hclib_ready(false);
+                });
+                index2++;
+            }
+
+            for(auto p = pv2.begin(); p != pv2.end(); p++){
+                (*p)->get_future()->wait();
+            }
 
 /* X.C.  Display our current grid */
 #ifdef SHOW_RESULTS
@@ -324,17 +320,23 @@ int main(int argc, char **argv)
             /* X.E.  Spawn threads to copy the next grid into the current grid */
             for(our_current_row = 1; our_current_row <= OUR_NUMBER_OF_ROWS; our_current_row++)
             {
-                ds_hclib_ready(false);
-                hclib::finish([&](){
-                    for(my_current_column = 1; my_current_column <= NUMBER_OF_COLUMNS; my_current_column++)
-                    {
-                        hclib::async([&](){
-                            ds_hclib_ready(true);
-                            our_current_grid[our_current_row][my_current_column] = our_next_grid[our_current_row][my_current_column];
-                            ds_hclib_ready(false);
-                        });
-                    }
-                });
+                std::vector<hclib::promise_t<void>*> pv3;
+                int index3 = 0;
+                for(my_current_column = 1; my_current_column <= NUMBER_OF_COLUMNS; my_current_column++)
+                {
+                    pv3.push_back(new hclib::promise_t<void>());
+                    ds_hclib_ready(false);
+                    hclib::async([&](){
+                        ds_hclib_ready(true);
+                        our_current_grid[our_current_row][my_current_column] = our_next_grid[our_current_row][my_current_column];
+                        pv3.at(index3)->end_put();
+                        ds_hclib_ready(false);
+                    });
+                    index3++;
+                }
+                for(auto p = pv3.begin(); p != pv3.end(); p++){
+                    (*p)->get_future()->wait();
+                }
             }
         }
 

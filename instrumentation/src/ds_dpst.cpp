@@ -422,6 +422,7 @@ bool DisjointSet::precede_dpst(tree_node_cpp* node1, tree_node_cpp* node2){
 }
 
 bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b){
+    // printf("precede \n");
     if(step_a->index == step_b->index){
         return true;
     }
@@ -480,7 +481,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
     int Sa = a_set_info->set_id;
     int Sb = b_set_info->set_id;
 
-    //optimization 1
+    //optimization
     if(this->all_tasks[Sa].this_task_state == ACTIVE){
         // if(in_cache){
         //     cache.at(key) = step_a;
@@ -493,19 +494,12 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
 
     // nt joins
     for(auto nt_join = b_set_info->nt->begin(); nt_join != b_set_info->nt->end(); nt_join++){
-        // printf("in nt \n");
         int task_id = (*nt_join).task_id;
         tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
         tree_node_cpp* last_step_node = task_node->children_list_tail;
         assert(last_step_node->this_node_type == STEP);
 
         if(visit(step_a, last_step_node, task_a, task_id, visited)){
-            // if(in_cache){
-            //     cache.at(key) = step_a;
-            // }
-            // else{
-            //     cache.insert(std::pair<cache_key,tree_node_cpp*>(key,step_a));
-            // }
             return true;
         }
     }
@@ -515,7 +509,6 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
     
     while (one_lsa.task_id != -1)
     {
-        // printf("in lsa \n");
         tree_node_cpp* lsa_deepest_reachable_node = one_lsa.last_node_reachable_in_lsa;
         assert(lsa_deepest_reachable_node != NULL);
         
@@ -532,12 +525,6 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
                 assert(last_step_node->this_node_type == STEP);
 
                 if(visit(step_a, last_step_node, task_a, task_id, visited)){
-                    // if(in_cache){
-                    //     cache.at(key) = step_a;
-                    // }
-                    // else{
-                    //     cache.insert(std::pair<cache_key,tree_node_cpp*>(key,step_a));
-                    // }
                     return true;
                 }
             }

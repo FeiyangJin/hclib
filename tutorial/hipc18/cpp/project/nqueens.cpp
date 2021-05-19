@@ -59,7 +59,8 @@ int nqueens_fj(int n, int j, char *a){
     }
 
     ds_hclib_ready(false);
-    std::vector<hclib::promise_t<int>*> pv;
+    ds_promise_task(true);
+    std::vector<hclib::promise_t<int>*> *pv = new std::vector<hclib::promise_t<int>*>();
 
     for (i = 0; i < n; i++) {
         a[j] = (char) i;
@@ -70,14 +71,14 @@ int nqueens_fj(int n, int j, char *a){
                 int result = nqueens_fj(n, j + 1, a);
                 // solution += result;
                 hclib::promise_t<int>* p = new hclib::promise_t<int>();
-                p->end_put(result);
-                pv.push_back(p);
+                p->put(result);
+                pv->push_back(p);
             });
         }
     }
 
     ds_hclib_ready(true);
-    for(auto i = pv.begin(); i != pv.end(); i++){
+    for(auto i = pv->begin(); i != pv->end(); i++){
         solution += (*i)->get_future()->wait();
     }
 
@@ -128,7 +129,7 @@ int verify_queens (int size)
 }
 
 int main(int argc, char** argv) {
-    printf("hello nqueens \n");
+
     if(argc < 2){
         printf("usage: ./nqueens.exe number \n");
         return -1;

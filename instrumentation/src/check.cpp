@@ -21,7 +21,16 @@ extern "C" __attribute__((weak)) void ds_promise_task(bool b){
 
 extern "C" __attribute__((weak)) void ds_free(void* ptr){
   auto slot = shadow_mem->find(ADDR_TO_KEY(ptr));
-  delete slot;
+  if(slot != nullptr){
+    auto mem_size = sizeof(ptr);
+    const int start = ADDR_TO_MEM_INDEX(ptr);
+    const int grains = SIZE_TO_NUM_GRAINS(mem_size);
+    for(int i = start; i < (start + grains); i++) {
+      slot->writers[i] = nullptr;
+      slot->readers[i] = nullptr;
+      slot->readers_tail[i] = nullptr;
+    }
+  }
   free(ptr);
 }
 
@@ -48,16 +57,6 @@ extern "C" bool dpst_precede(access_info previous_step, access_info current_step
   return ds->precede_dpst(p_node,c_node);
 }
 
-extern "C" bool easy_precede(access_info previous_step, access_info current_step){
-  int p_id = previous_step.task_id;
-  tree_node_cpp *p_node = (tree_node_cpp*) previous_step.node_in_dpst;
-  int c_id = current_step.task_id;
-  tree_node_cpp *c_node = (tree_node_cpp*) current_step.node_in_dpst;
-
-  bool result = ds->easy_precede(p_node, c_node, p_id, c_id);
-
-  return result;
-}
 
 extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size_t mem_size) {
   const int start = ADDR_TO_MEM_INDEX(addr);
@@ -100,53 +99,41 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
             }
           }
           else{ // 3. we have more than 1 reader
-            #ifdef LOOP_READERS
-              bool update = false;
-              while(reader != nullptr){
-                if(reader->task_and_node.task_id == c_id){
-                  update = true;
-                  if(reader->prev != nullptr){
-                    reader->prev->next = reader->next;
-                  }
-
-                  if(reader->next != nullptr){
-                    reader->next->prev = reader->prev;
-                  }
-
-                  if(reader == slot->readers_tail[i]){
-                    slot->readers_tail[i] = reader->prev;
-                  }
-
-                  if(reader == slot->readers[i]){
-                    slot->readers[i] = reader->next;
-                  }
-                  delete reader;
-                  break;
+            bool update = false;
+            while(reader != nullptr){
+              if(reader->task_and_node.task_id == c_id){
+                update = true;
+                if(reader->prev != nullptr){
+                  reader->prev->next = reader->next;
                 }
-                else if(reader->promise_task){
-                  update = true;
+
+                if(reader->next != nullptr){
+                  reader->next->prev = reader->prev;
                 }
-                reader = reader->next;
+
+                if(reader == slot->readers_tail[i]){
+                  slot->readers_tail[i] = reader->prev;
+                }
+
+                if(reader == slot->readers[i]){
+                  slot->readers[i] = reader->next;
+                }
+                delete reader;
+                break;
               }
-
-              if(update || is_asap_promise_task){
-                MemAccess_t* new_reader = new MemAccess_t(current_task_and_step, rip, is_asap_promise_task);
-                slot->readers_tail[i]->next = new_reader;
-                new_reader->prev = slot->readers_tail[i];
-
-                slot->readers_tail[i] = new_reader;
+              else if(reader->promise_task){
+                update = true;
               }
-            #else
-                bool other_sibling_in_set = finish_ids->find(c) != finish_ids->end();
-                if(other_sibling_in_set == false){
-                  MemAccess_t* new_reader = new MemAccess_t(current_task_and_step, rip);
-                  slot->readers_tail[i]->next = new_reader;
-                  new_reader->prev = slot->readers_tail[i];
+              reader = reader->next;
+            }
 
-                  slot->readers_tail[i] = new_reader;
-                  finish_ids->insert(c);
-                }
-            #endif
+            if(update || is_asap_promise_task){
+              MemAccess_t* new_reader = new MemAccess_t(current_task_and_step, rip, is_asap_promise_task);
+              slot->readers_tail[i]->next = new_reader;
+              new_reader->prev = slot->readers_tail[i];
+
+              slot->readers_tail[i] = new_reader;
+            }
           }
       #else
           vector<MemAccess_t> *reader = slot->readers[i];
@@ -196,7 +183,7 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
             #endif
           }
       #endif
-  }
+  } // end of all grains readers
 }
 
 
@@ -255,12 +242,6 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
         slot->readers[i]->clear();
         slot->readers[i] = nullptr;
     #endif
-
-    #ifndef LOOP_READERS
-        slot->readers_finish_id[i]->clear();
-        // slot->readers_finish_id[i] = nullptr;
-    #endif
-
   }
   
 }

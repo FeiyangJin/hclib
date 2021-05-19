@@ -14,4 +14,6 @@
 
 # LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./test7.exe
 
-LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./life.exe 100 100 50
+# LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./life.exe 100 100 50
+
+LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./life_promise.exe 100 100 500

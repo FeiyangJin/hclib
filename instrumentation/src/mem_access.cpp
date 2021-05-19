@@ -13,6 +13,11 @@ MemAccess_t::MemAccess_t(access_info t_a_n, addr_t r, bool is_promise){
 #endif
 }
 
+MemAccess_t::~MemAccess_t(){
+  this->next = nullptr;
+  this->prev = nullptr;
+}
+
 MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read, 
                                  access_info task_and_node,
                                  addr_t rip, std::size_t mem_size,
@@ -50,24 +55,17 @@ MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read,
 
 MemAccessList_t::~MemAccessList_t() {
   for(int i=0; i < NUM_SLOTS; i++) {
-    if(readers[i]) {
+    if(readers[i]){
       #ifdef LINK_READER
-            delete readers[i];
-            readers[i] = nullptr;
-            if(readers_tail[i]){
-              delete readers_tail[i];
-              readers_tail[i] = nullptr;
-            }
+        delete readers[i];
+        readers[i] = nullptr;
+        if(readers_tail[i]){
+          delete readers_tail[i];
+          readers_tail[i] = nullptr;
+        }
       #else
-            readers[i]->clear();
-            readers[i] = nullptr;
-      #endif
-
-      #ifndef LOOP_READERS
-            if(readers_finish_id[i]){
-              readers_finish_id[i]->clear();
-              readers_finish_id[i] = nullptr;
-            }
+        readers[i]->clear();
+        readers[i] = nullptr;
       #endif
 
     }

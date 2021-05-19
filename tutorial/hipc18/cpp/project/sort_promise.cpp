@@ -205,26 +205,8 @@ ELM *binsplit(ELM val, ELM *low, ELM *high) {
 
 
 void cilkmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest) {
-  /*
-   * Cilkmerge: Merges range [low1, high1] with range [low2, high2] 
-   * into the range [lowdest, ...]  
-   */
-
-  /*
-   * We want to take the middle element (indexed by split1) from the
-   * larger of the two arrays.  The following code assumes that split1
-   * is taken from range [low1, high1].  So if [low1, high1] is
-   * actually the smaller range, we should swap it with [low2, high2] 
-   */
-
-  ELM *split1, *split2;	/*
-                         * where each of the ranges are broken for 
-                         * recursive merge 
-                         */
-  long int lowsize;		/*
-                                 * total size of lower halves of two
-                                 * ranges - 2 
-                                 */
+  ELM *split1, *split2;
+  long int lowsize;
 
   ds_hclib_ready(true);
   if (high2 - low2 > high1 - low1) {
@@ -242,32 +224,12 @@ void cilkmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest) {
     seqmerge(low1, high1, low2, high2, lowdest);
     return;
   }
-  /*
-   * Basic approach: Find the middle element of one range (indexed by
-   * split1). Find where this element would fit in the other range
-   * (indexed by split 2). Then merge the two lower halves and the two
-   * upper halves. 
-   */
+
   split1 = ((high1 - low1 + 1) / 2) + low1;
   split2 = binsplit(*split1, low2, high2);
   lowsize = split1 - low1 + split2 - low2;
 
-  /* 
-   * directly put the splitting element into
-   * the appropriate location
-   */
   *(lowdest + lowsize + 1) = *split1;
-
-  // ds_hclib_ready(false);
-  // hclib::finish([&](){
-  //   hclib::async([&](){
-  //     cilkmerge(low1, split1 - 1, low2, split2, lowdest);
-  //     ds_hclib_ready(false);
-  //   });
-
-  //   cilkmerge(split1 + 1, high1, split2 + 1, high2, lowdest + lowsize + 2);
-  //   ds_hclib_ready(false);
-  // });
 
   ds_hclib_ready(false);  
   hclib::promise_t<void> *p1 = new hclib::promise_t<void>();
@@ -287,13 +249,6 @@ void cilkmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest) {
 
 void cilksort(ELM *low, ELM *tmp, long size) {
   ds_hclib_ready(true);
-  /*
-   * divide the input in four parts of the same size (A, B, C, D)
-   * Then:
-   *   1) recursively sort A, B, C, and D (in parallel)
-   *   2) merge A and B into tmp1, and C and D into tmp2 (in parallel)
-   *   3) merbe tmp1 and tmp2 into the original array
-   */
 
   long quarter = size / 4;
   ELM *A, *B, *C, *D, *tmpA, *tmpB, *tmpC, *tmpD;
@@ -312,83 +267,50 @@ void cilksort(ELM *low, ELM *tmp, long size) {
   D = C + quarter;
   tmpD = tmpC + quarter;
 
-  // ds_hclib_ready(false);
-  // hclib::promise_t<void> *p1 = new hclib::promise_t<void>();
-  // hclib::promise_t<void> *p2 = new hclib::promise_t<void>();
-  // hclib::promise_t<void> *p3 = new hclib::promise_t<void>();
+  ds_hclib_ready(false);
+  hclib::promise_t<void> *p1 = new hclib::promise_t<void>();
+  hclib::promise_t<void> *p2 = new hclib::promise_t<void>();
+  hclib::promise_t<void> *p3 = new hclib::promise_t<void>();
 
   ds_hclib_ready(false);
-  hclib::finish([&](){
-    hclib::async([&](){
-      cilksort(A, tmpA, quarter);
-      ds_hclib_ready(false);
-    });
-
-    hclib::async([&](){
-      cilksort(B, tmpB, quarter);
-      ds_hclib_ready(false);
-    });
-
-    hclib::async([&](){
-      cilksort(C, tmpC, quarter);
-      ds_hclib_ready(false);
-    });
-
-    cilksort(D, tmpD, size - 3 * quarter);
+  hclib::async([&](){
+    cilksort(A, tmpA, quarter);
+    ds_hclib_ready(true);
+    p1->end_put();
     ds_hclib_ready(false);
   });
 
-
-  // ds_hclib_ready(false);
-  // hclib::async([&](){
-  //   cilksort(A, tmpA, quarter);
-  //   ds_hclib_ready(true);
-  //   p1->end_put();
-  //   ds_hclib_ready(false);
-  // });
-
-  // hclib::async([&](){
-  //   cilksort(B, tmpB, quarter);
-  //   ds_hclib_ready(true);
-  //   p2->end_put();
-  //   ds_hclib_ready(false);
-  // });
-
-  // hclib::async([&](){
-  //   cilksort(C, tmpC, quarter);
-  //   ds_hclib_ready(true);
-  //   p3->end_put();
-  //   ds_hclib_ready(false);
-  // });
-
-  // cilksort(D, tmpD, size - 3 * quarter);
-
-  // p1->get_future()->wait();
-  // p2->get_future()->wait();
-  // p3->get_future()->wait();
-
-  ds_hclib_ready(false);
-  hclib::finish([&](){
-    hclib::async([&](){
-      cilkmerge(A, A + quarter - 1, B, B + quarter - 1, tmpA);
-      ds_hclib_ready(false);
-    });
-
-    cilkmerge(C, C + quarter - 1, D, low + size - 1, tmpC);
+  hclib::async([&](){
+    cilksort(B, tmpB, quarter);
+    ds_hclib_ready(true);
+    p2->end_put();
     ds_hclib_ready(false);
   });
 
-  // ds_hclib_ready(false);
-  // hclib::promise_t<void> *p4 = new hclib::promise_t<void>();
-  // hclib::async([&](){
-  //   cilkmerge(A, A + quarter - 1, B, B + quarter - 1, tmpA);
-  //   p4->end_put();
-  // });
+  hclib::async([&](){
+    cilksort(C, tmpC, quarter);
+    ds_hclib_ready(true);
+    p3->end_put();
+    ds_hclib_ready(false);
+  });
 
-  // ds_hclib_ready(false);
-  // cilkmerge(C, C + quarter - 1, D, low + size - 1, tmpC);
-  // p4->get_future()->wait();
+  cilksort(D, tmpD, size - 3 * quarter);
 
+  p1->get_future()->wait();
+  p2->get_future()->wait();
+  p3->get_future()->wait();
+
+  
+  ds_hclib_ready(false);
+  hclib::promise_t<void> *p4 = new hclib::promise_t<void>();
+  hclib::async([&](){
+    cilkmerge(A, A + quarter - 1, B, B + quarter - 1, tmpA);
+    p4->end_put();
+  });
+
+  ds_hclib_ready(false);
+  cilkmerge(C, C + quarter - 1, D, low + size - 1, tmpC);
+  p4->get_future()->wait();
 
   cilkmerge(tmpA, tmpC - 1, tmpC, tmpA + size - 1, A);
   ds_hclib_ready(false);

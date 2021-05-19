@@ -50,6 +50,7 @@ public:
   MemAccess_t* prev;
 #endif
   MemAccess_t(access_info t_a_n, addr_t r, bool is_promise);
+  ~MemAccess_t();
 };
 
 class MemAccessList_t {
