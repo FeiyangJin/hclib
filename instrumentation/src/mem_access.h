@@ -15,7 +15,8 @@ using addr_t = uint64_t;
 #define LINK_READER
 
 #ifndef ADDR_TO_KEY
-#define ADDR_TO_KEY(addr) ((uint64_t) (uint64_t)addr)
+#define ADDR_TO_KEY(addr) ((addr_t) (addr_t)addr & 0xFFFFFFF)
+// #define ADDR_TO_KEY(addr) ((uint64_t) (uint64_t)addr)
 #endif
 
 #define GRAIN_SIZE 4
@@ -34,7 +35,7 @@ using addr_t = uint64_t;
 #define ALIGN_BY_NEXT_MAX_GRAIN_SIZE(addr)                  \
   ((addr_t) ((addr+(MAX_GRAIN_SIZE-1)) & MAX_GRAIN_MASK))
 
-// compute (addr % 16) / GRAIN_SIZE 
+// compute (addr % 16) / GRAIN_SIZE
 #define ADDR_TO_MEM_INDEX(addr)                                       \
   (((addr_t)addr & (addr_t)(MAX_GRAIN_SIZE-1)) >> LOG_GRAIN_SIZE)
 
