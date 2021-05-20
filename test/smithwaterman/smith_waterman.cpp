@@ -172,6 +172,7 @@ int main ( int argc, char* argv[] ) {
         gettimeofday(&begin,0);
 
         ds_hclib_ready(false);
+        ds_promise_task(true);
         hclib::finish([=]() {
             for (int i = 1; i < n_tiles_height+1; ++i ) {
                 for (int j = 1; j < n_tiles_width+1; ++j ) {
@@ -212,38 +213,38 @@ int main ( int argc, char* argv[] ) {
                         }
 
                         // ds_hclib_ready(false);
-                        // hclib::async([=](){
-                            // ds_hclib_ready(true);
+                        // hclib::async([&](){
+                        //     ds_hclib_ready(true);
                             int* curr_bottom_right = (int*)malloc(sizeof(int));
                             curr_bottom_right[0] = curr_tile[tile_height][tile_width];
-                            tile_matrix[i][j].bottom_right->end_put(curr_bottom_right);
+                            tile_matrix[i][j].bottom_right->put(curr_bottom_right);
                         // });
 
                         // ds_hclib_ready(false);
-                        // hclib::async([=](){
-                            // ds_hclib_ready(true);
+                        // hclib::async([&](){
+                        //     ds_hclib_ready(true);
                             int* curr_right_column = (int*)malloc(sizeof(int)*tile_height);
                             for (int index_1 = 0; index_1 < tile_height; ++index_1 ) {
                                 curr_right_column[index_1] = curr_tile[index_1+1][tile_width];
                             }
-                            tile_matrix[i][j].right_column->end_put(curr_right_column);
+                            tile_matrix[i][j].right_column->put(curr_right_column);
                         // });
 
                         // ds_hclib_ready(false);
-                        // hclib::async([=](){
-                            // ds_hclib_ready(true);
+                        // hclib::async([&](){
+                        //     ds_hclib_ready(true);
                             int* curr_bottom_row = (int*)malloc(sizeof(int)*tile_width);
                             for (int index_2 = 0; index_2 < tile_width; ++index_2 ) {
                                 curr_bottom_row[index_2] = curr_tile[tile_height][index_2+1];
                             }
-                            tile_matrix[i][j].bottom_row->end_put(curr_bottom_row);
+                            tile_matrix[i][j].bottom_row->put(curr_bottom_row);
                         // });
 
                         ds_hclib_ready(false);
-                        ds_free(curr_tile);
-                        ds_free(curr_tile_tmp);
-                        // free(curr_tile);
-                        // free(curr_tile_tmp);
+                        // ds_free(curr_tile);
+                        // ds_free(curr_tile_tmp);
+                        free(curr_tile);
+                        free(curr_tile_tmp);
                     });
                     // tile_matrix[i][j-1].right_column->get_future(),
                     // tile_matrix[i-1][j].bottom_row->get_future(),
@@ -253,10 +254,11 @@ int main ( int argc, char* argv[] ) {
         });
 
         ds_hclib_ready(false);
-        printf("cache size is %d \n",ds_get_cache_size());
         printf("DPST height is: %d \n", get_dpst_height());
+        printf("cache size is %d \n",ds_get_cache_size());
         printf("number of task is %d \n",get_task_id_unique());
         printf("number of nt join %d \n", get_nt_count());
+        printf("number of tree joins %d \n", ds_get_tree_join_count());
         
         gettimeofday(&end,0);
         fprintf(stdout, "The computation took %f seconds\n",((end.tv_sec - begin.tv_sec)*1000000+(end.tv_usec - begin.tv_usec))*1.0/1000000);

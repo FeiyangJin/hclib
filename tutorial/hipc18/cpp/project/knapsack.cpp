@@ -69,13 +69,6 @@ void knapsack_par(struct item *e, int c, int n, int v, int *sol, int l)
           *sol = INT_MIN;
           return;
      }
-
-    // hclib::finish([&](){
-    //     // int a = 0;       
-    // });
-    hclib::async([&](){
-
-    });
         
      knapsack_par(e + 1, c, n - 1, v, &without,l+1);
      knapsack_par(e + 1, c - e->weight, n - 1, v + e->value, &with,l+1);
@@ -94,50 +87,55 @@ void knapsack_par(struct item *e, int c, int n, int v, int *sol, int l)
  */
 void knapsack(struct item *e, int c, int n, int v, int *sol)
 {
-     int with, without, best;
-     double ub;
+    int with, without, best;
+    double ub;
 
-     /* base case: full knapsack or no items */
-     if (c < 0)
-     {
-         *sol = INT_MIN;
-         return;
-     }
+    /* base case: full knapsack or no items */
+    if (c < 0)
+    {
+        *sol = INT_MIN;
+        return;
+    }
 
-     /* feasible solution, with value v */
-     if (n == 0 || c == 0)
-     {
-         *sol = v;
-         return;
-     }
+    /* feasible solution, with value v */
+    if (n == 0 || c == 0)
+    {
+        *sol = v;
+        return;
+    }
 
-     ub = (double) v + c * e->value / e->weight;
+    ub = (double) v + c * e->value / e->weight;
 
-     if (ub < best_so_far) {
-	  /* prune ! */
-          *sol = INT_MIN;
-          return;
-     }
-     /* 
-      * compute the best solution without the current item in the knapsack 
-      */
-        knapsack(e + 1, c, n - 1, v, &without);
+    if (ub < best_so_far) {
+        *sol = INT_MIN;
+        return;
+    }
+
+    /* 
+    * compute the best solution without the current item in the knapsack 
+    */
+    hclib::async([&](){
         
-        /* compute the best solution with the current item in the knapsack */
+    });
+    knapsack(e + 1, c, n - 1, v, &without);
+
+    /* compute the best solution with the current item in the knapsack */
+    // hclib::async([&](){
         knapsack(e + 1, c - e->weight, n - 1, v + e->value, &with);
+    // });
 
-     best = with > without ? with : without;
+    best = with > without ? with : without;
 
-     /* 
-      * notice the race condition here. The program is still
-      * correct, in the sense that the best solution so far
-      * is at least best_so_far. Moreover best_so_far gets updated
-      * when returning, so eventually it should get the right
-      * value. The program is highly non-deterministic.
-      */
-     if (best > best_so_far) best_so_far = best;
+    /* 
+    * notice the race condition here. The program is still
+    * correct, in the sense that the best solution so far
+    * is at least best_so_far. Moreover best_so_far gets updated
+    * when returning, so eventually it should get the right
+    * value. The program is highly non-deterministic.
+    */
+    if (best > best_so_far) best_so_far = best;
 
-     *sol = best;
+    *sol = best;
 }
 
 
@@ -159,8 +157,8 @@ int main(int argc, char** argv) {
     hclib::launch(deps, 1, [&]() {
 
         long start = hclib_current_time_ms();
-        // knapsack_main(items,capacity,n,&sol);
-        knapsack_main_par(items,capacity,n,&sol);
+        knapsack_main(items,capacity,n,&sol);
+        // knapsack_main_par(items,capacity,n,&sol);
 
         long end = hclib_current_time_ms();
         double dur = ((double)(end-start))/1000;

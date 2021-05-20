@@ -105,14 +105,15 @@ static ELM *seqpart(ELM *low, ELM *high) {
 
 
 static void insertion_sort(ELM *low, ELM *high) {
-
   ELM *p, *q;
   ELM a, b;
 
   for (q = low + 1; q <= high; ++q) {
     a = q[0];
-    for (p = q - 1; p >= low && (b = p[0]) > a; p--)
+    
+    for (p = q - 1; p >= low && (b = p[0]) > a; p--){
       p[1] = b;
+    }
     p[1] = a;
   }
 }
@@ -132,8 +133,7 @@ void seqquick(ELM *low, ELM *high) {
 }
 
 
-void seqmerge(ELM *low1, ELM *high1, 
-  ELM *low2, ELM *high2, ELM *lowdest) {
+void seqmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest) {
 
   ELM a1, a2;
 

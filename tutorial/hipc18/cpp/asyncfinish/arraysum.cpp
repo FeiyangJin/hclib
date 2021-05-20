@@ -49,6 +49,11 @@ int main(int argc, char **argv) {
     const char* pass = sum==SIZE ? "true" : "false";
     printf("Test PASSED = %s\n",pass);
     printf("Time = %f\n",dur);
+    printf("DPST height is: %d \n", get_dpst_height());
+    printf("cache size is %d \n",ds_get_cache_size());
+    printf("number of task is %d \n",get_task_id_unique());
+    printf("number of nt join %d \n", get_nt_count());
+    printf("number of tree joins %d \n", ds_get_tree_join_count());
     delete array;
   });
   return 0;

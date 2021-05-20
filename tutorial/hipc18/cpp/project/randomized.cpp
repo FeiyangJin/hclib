@@ -8,10 +8,10 @@
 #include "hclib_cpp.h"
 
 
-int N = 1000;
+int N = 2000;
 int P = 500; //number of promise
 int T = 2; // branching factor
-double W = 0.5; // probability to wait for a promise
+double W = 0.8; // probability to wait for a promise
 unsigned long R = 1234567;
 
 std::vector<hclib::promise_t<void>*> *allPromises = new std::vector<hclib::promise_t<void>*>();
@@ -71,13 +71,11 @@ void fulfill(int start, int end, long seed){
 
     // waiting
     ds_hclib_ready(true);
-    data[0] = 1;
-    data[1] = 2;
-    // for(int i = 0; i < 50; i++){
-    //     for(int j = 0; j < 50; j++){
-    //         data[i] += data[j];
-    //     }
-    // }
+    for(int i = 0; i < N; i++){
+        for(int j = 0; j < N; j++){
+            data[i] += data[j];
+        }
+    }
     
     // complete promises and wait all tasks
     for(int i = start; i <= end; i++){
