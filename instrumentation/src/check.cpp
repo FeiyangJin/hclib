@@ -24,12 +24,12 @@ extern "C" __attribute__((weak)) void ds_print_check_read_count(){
   printf("check read count: %d \n", check_read_count);
 }
 
-extern "C" __attribute__((weak)) void ds_promise_task(bool b){
+extern "C" void ds_promise_task(bool b){
   is_asap_promise_task = b;
 }
 
 
-extern "C" __attribute__((weak)) void ds_free(void* ptr){
+extern "C" void ds_free(void* ptr){
   auto slot = shadow_mem->find(ADDR_TO_KEY(ptr));
   if(slot != nullptr){
     auto mem_size = sizeof(ptr);
@@ -44,9 +44,9 @@ extern "C" __attribute__((weak)) void ds_free(void* ptr){
   free(ptr);
 }
 
-extern "C" __attribute__((weak)) void ds_print(){
-    printf("hello from check.cpp \n");
-}
+// extern "C" void ds_print(){
+//     printf("hello from check.cpp \n");
+// }
 
 //int bool_count = 0;
 extern "C" bool precede(access_info previous_step, access_info current_step){
@@ -200,7 +200,7 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
 extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, size_t mem_size) {
   const int start = ADDR_TO_MEM_INDEX(addr);
   const int grains = SIZE_TO_NUM_GRAINS(mem_size);
-
+  
   for (int i=start; i < (start + grains); ++i) {
     MemAccess_t *writer = slot->writers[i];
     if(writer == NULL) {

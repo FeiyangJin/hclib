@@ -17,6 +17,7 @@ ROOT=$(readlink -f $(dirname $0))
 PASS_LIB="libinstrumentation.so"
 DETECTOR="asap"
 DETECTOR_LIB="lib${DETECTOR}.so"
+DEFAULT_OPTIONS="-g"
 
 if [ $# -lt "1" ]; then
     usage
@@ -98,22 +99,22 @@ if [ ${SOURCE_FILE: -2} == ".c" ]; then
     BC=${SOURCE_FILE/%.c/.bc}
     INST_BC=${SOURCE_FILE/%.c/-inst.bc}
     EXE=${SOURCE_FILE/%.c/.exe}
-    echo "${CLANG} -c -g -emit-llvm ${OPTIONS} -o ${BC} ${SOURCE_FILE}"
-    ${CLANG} -c -g -emit-llvm ${OPTIONS} -o ${BC} ${SOURCE_FILE}
+    echo "${CLANG} -c -emit-llvm ${DEFAULT_OPTIONS} ${OPTIONS} -o ${BC} ${SOURCE_FILE}"
+    ${CLANG} -c -g -emit-llvm ${DEFAULT_OPTIONS} ${OPTIONS} -o ${BC} ${SOURCE_FILE}
     echo "${OPT} -load-pass-plugin ${ROOT}/${PASS_LIB} --passes=\"asap-inst\" -o ${INST_BC} ${BC}"
     ${OPT} -load-pass-plugin ${ROOT}/${PASS_LIB} --passes="asap-inst" -o ${INST_BC} ${BC}
-    echo "${CLANG} ${INST_BC} -L${ROOT} -lasap ${OPTIONS} -o ${EXE}"
-    ${CLANG} ${INST_BC} -L${ROOT} -lasap ${OPTIONS} -o ${EXE}
+    echo "${CLANG} -L${ROOT} ${INST_BC} -lasap ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}"
+    ${CLANG} -L${ROOT} ${INST_BC} -lasap ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE} 
 else
     BC=${SOURCE_FILE/%.cpp/.bc}
     INST_BC=${SOURCE_FILE/%.cpp/-inst.bc}
     EXE=${SOURCE_FILE/%.cpp/.exe}
-    echo "${CLANGPP} -c -g -emit-llvm ${OPTIONS} -o ${BC} ${SOURCE_FILE}"
-    ${CLANGPP} -c -g -emit-llvm ${OPTIONS} -o ${BC} ${SOURCE_FILE}
+    echo "${CLANGPP} -c -emit-llvm ${DEFAULT_OPTIONS} ${OPTIONS} -o ${BC} ${SOURCE_FILE}"
+    ${CLANGPP} -c -g -emit-llvm ${DEFAULT_OPTIONS} ${OPTIONS} -o ${BC} ${SOURCE_FILE}
     echo "${OPT} -load-pass-plugin ${ROOT}/${PASS_LIB} --passes=\"asap-inst\" -o ${INST_BC} ${BC}"
     ${OPT} -load-pass-plugin ${ROOT}/${PASS_LIB} --passes="asap-inst" -o ${INST_BC} ${BC}
-    echo "${CLANGPP} ${INST_BC} -L${ROOT} -lasap ${OPTIONS} -o ${EXE}"
-    ${CLANGPP} ${INST_BC} -L${ROOT} -lasap ${OPTIONS} -o ${EXE}
+    echo "${CLANGPP} -L${ROOT} ${INST_BC} -lasap ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}"
+    ${CLANGPP} -L${ROOT} ${INST_BC} -lasap ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}
 fi
 
 echo "==============================================================================="
