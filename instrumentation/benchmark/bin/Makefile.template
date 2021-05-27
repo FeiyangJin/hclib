@@ -1,0 +1,14 @@
+include ../common/make.inc
+
+all: #name-rd.exe #name-origin.exe
+
+#name-rd.exe: #name.cpp 
+	$(INST) $^ -DRACE_DETECTION $(RD_OPTIONS)
+	mv #name.exe #name-rd.exe
+
+#name-origin.exe: #name.cpp
+	${CXX} -o $@ $^ $(ORIGIN_OPTIONS)
+
+.PHONY: clean
+clean:
+	rm *.exe *.bc *.ll
