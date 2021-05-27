@@ -343,12 +343,7 @@ int main(int argc, char **argv)
         ds_hclib_ready(false);
         long end = hclib_current_time_ms();
         double dur = ((double)(end-start))/1000;
-        printf("end tasks, duration is: %f \n",dur);
-        printf("DPST height is: %d \n", get_dpst_height());
-        printf("cache size is %d \n",ds_get_cache_size());
-        printf("number of task is %d \n",get_task_id_unique());
-        printf("number of nt join %d \n", get_nt_count());
-        printf("number of tree joins %d \n", ds_get_tree_join_count());
+        printf("life time is: %f \n",dur);
     });
 
     /* XI.  Deallocate data structures */

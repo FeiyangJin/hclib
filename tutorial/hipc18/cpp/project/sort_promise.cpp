@@ -110,10 +110,11 @@ static void insertion_sort(ELM *low, ELM *high) {
 
   for (q = low + 1; q <= high; ++q) {
     a = q[0];
-    
+    ds_hclib_ready(false);
     for (p = q - 1; p >= low && (b = p[0]) > a; p--){
       p[1] = b;
     }
+    ds_hclib_ready(true);
     p[1] = a;
   }
 }
@@ -400,33 +401,15 @@ int main(int argc, char* argv[]){
 	char const *deps[] = { "system" };
   hclib::launch(deps, 1, [&]() {
   	long start = hclib_current_time_ms();
-
-  	//parallel sort
+    ds_hclib_ready(true);
+    
 		cilksort(array,tmp,size);
 
+    ds_hclib_ready(false);
 		long end = hclib_current_time_ms();
 		double dur = ((double)(end-start))/1000;
 
-		printf("sort time in parallel: %.3f for array of size %ld \n",dur,size);
-    printf("DPST height is: %d \n", get_dpst_height());
-		//seq sort
-		// fill_array(array,size);
-		// zero(tmp,size);
-
-		// start = hclib_current_time_ms();
-
-		// seqquick(array, array + size - 1);
-
-		// end = hclib_current_time_ms();
-		// dur = ((double)(end-start))/1000;
-
-		// printf("sort time in sequential: %.3f for array of size %ld \n",dur,size);
-
-    ds_hclib_ready(false);
-    printf("cache size is %d \n",ds_get_cache_size());
-    printf("number of task is %d \n",get_task_id_unique());
-    printf("number of nt join %d \n", get_nt_count());
-    printf("number of tree joins %d \n", ds_get_tree_join_count());
+		printf("sort time: %.3f for array of size %ld \n",dur,size);
 	});
 
   check_result(array,size);

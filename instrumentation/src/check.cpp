@@ -13,6 +13,16 @@ static int current_finish_id;
 static bool is_step = false;
 static bool is_future = false;
 static bool is_asap_promise_task = false;
+static int check_write_count = 0;
+static int check_read_count = 0;
+
+extern "C" __attribute__((weak)) void ds_print_check_write_count(){
+  printf("check write count: %d \n", check_write_count);
+}
+
+extern "C" __attribute__((weak)) void ds_print_check_read_count(){
+  printf("check read count: %d \n", check_read_count);
+}
 
 extern "C" __attribute__((weak)) void ds_promise_task(bool b){
   is_asap_promise_task = b;
@@ -188,7 +198,6 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
 
 
 extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, size_t mem_size) {
-
   const int start = ADDR_TO_MEM_INDEX(addr);
   const int grains = SIZE_TO_NUM_GRAINS(mem_size);
 
@@ -247,10 +256,10 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
 }
 
 
-int check_write_count = 0;
 extern "C" void asap_check_write(int *addr, int bytes) {
 
   if(hclib_ready == true){
+    check_write_count++;
     void *pc = __builtin_return_address(0);
     // auto start = std::chrono::system_clock::now();
     auto slot = shadow_mem->find(ADDR_TO_KEY(addr));
@@ -277,10 +286,9 @@ extern "C" void asap_check_write(int *addr, int bytes) {
 
 }
 
-
 extern "C" void asap_check_read(int *addr, int bytes) {
-
   if(hclib_ready == true){
+    check_read_count++;
     void *pc = __builtin_return_address(0);
     auto slot = shadow_mem->find(ADDR_TO_KEY(addr));
 

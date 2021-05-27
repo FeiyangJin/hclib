@@ -370,33 +370,16 @@ int main(int argc, char *argv[]){
 
   char const *deps[] = { "system" };
   hclib::launch(deps, 1, [&]() {
-    ds_hclib_ready(true);
-    
-    // sequential calculation
     long start = hclib_current_time_ms();
-    
-    //iter_matmul(A,B,C,n);
-    
-    long end = hclib_current_time_ms();
-    double dur = ((double)(end-start))/1000;
-    
-    //printf("Sequential Matrix Multiplication Time = %.3f\n", dur);
+    ds_hclib_ready(true);
 
-    start = hclib_current_time_ms();
     mat_mul_par(A,B,D,n);
-    end = hclib_current_time_ms();
-    dur = ((double)(end-start))/1000;
+
+    ds_hclib_ready(false);
+    long end = hclib_current_time_ms();
+    long dur = ((double)(end-start))/1000;
 
     printf("parallel Matrix Multiplication Time = %.3f\n", dur);
-    
-    //compare two results
-    //compare_matrix(C,D,n);
-    ds_hclib_ready(false);
-    printf("cache size is %d \n",ds_get_cache_size());
-    printf("DPST height is: %d \n", get_dpst_height());
-    printf("number of task is %d \n",get_task_id_unique());
-    printf("number of nt join %d \n", get_nt_count());
-    printf("number of tree joins %d \n", ds_get_tree_join_count());
   });
 
     /* release memory */

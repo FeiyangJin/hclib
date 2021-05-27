@@ -118,6 +118,7 @@ tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent);
 tree_node* insert_leaf(tree_node *task_node);
 void update_node_parent(tree_node *node, tree_node* new_parent);
 int get_current_task_id();
+int get_task_id_unique();
 int get_dpst_height();
 int get_nt_count();
 extern struct dpst DPST;

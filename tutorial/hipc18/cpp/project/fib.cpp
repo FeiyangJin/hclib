@@ -57,33 +57,17 @@ int main(int argc, char** argv) {
 
   char const *deps[] = { "system" }; 
   hclib::launch(deps, 1, [&]() {
-    // sequential execution
     long start = hclib_current_time_ms();
-
-    //uint64_t result = fib_serial(n);
-
-    long end = hclib_current_time_ms();
-    double dur = ((double)(end-start))/1000;
-    //printf("Fibonacci of %" PRIu64 " is %" PRIu64 ".\n", n, result);
-    //printf("Sequential Time = %f \n \n",dur);
-
-
-    // async finish execution
-    start = hclib_current_time_ms();
-
+    ds_hclib_ready(true);
+    
     uint64_t result = fib_async_finish(n);
 
     ds_hclib_ready(false);
     
-    end = hclib_current_time_ms();
-    dur = ((double)(end-start))/1000;
+    long end = hclib_current_time_ms();
+    long dur = ((double)(end-start))/1000;
     printf("Fibonacci of %" PRIu64 " is %" PRIu64 ".\n", n, result);
-    printf("Async finish Time = %f \n",dur);
-    printf("DPST height is: %d \n", get_dpst_height());
-    printf("cache size is %d \n",ds_get_cache_size());
-    printf("number of task is %d \n",get_task_id_unique());
-    printf("number of nt join %d \n", get_nt_count());
-    printf("number of tree joins %d \n", ds_get_tree_join_count());
+    printf("Time = %f \n",dur);
   });
 
   return 0;

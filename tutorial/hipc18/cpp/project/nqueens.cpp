@@ -66,13 +66,16 @@ int nqueens_fj(int n, int j, char *a){
         a[j] = (char) i;
         if (ok(j + 1, a)) {
             ds_hclib_ready(false);
-            hclib::async([&](){
+            pv->push_back(new hclib::promise_t<int>());
+            int index = pv->size() - 1;
+            hclib::async([&, index](){
                 ds_hclib_ready(true);
+                ds_promise_task(true);
+                
                 int result = nqueens_fj(n, j + 1, a);
-                // solution += result;
-                hclib::promise_t<int>* p = new hclib::promise_t<int>();
-                p->put(result);
-                pv->push_back(p);
+
+                ds_hclib_ready(false);
+                pv->at(index)->put(result);
             });
         }
     }
@@ -115,8 +118,10 @@ void find_queens (int size)
 	total_count=0;
 	a = (char *)alloca(size * sizeof(char));
 	printf("Computing N-Queens algorithm (n=%d) \n", size);
-	// nqueens(size, 0, a, &total_count);
+	
     total_count = nqueens_fj(size,0,a);
+
+    ds_hclib_ready(false);
     printf("result is %d, completed ! \n",total_count);
 }
 
@@ -145,11 +150,6 @@ int main(int argc, char** argv) {
         long end = hclib_current_time_ms();
         double dur = ((double)(end-start))/1000;
         printf("nqueens Time = %f \n",dur);
-        printf("DPST height is: %d \n", get_dpst_height());
-        printf("cache size is %d \n",ds_get_cache_size());
-        printf("number of task is %d \n",get_task_id_unique());
-        printf("number of nt join %d \n", get_nt_count());
-        printf("number of tree joins %d \n", ds_get_tree_join_count());
     });
     return 0;
 }

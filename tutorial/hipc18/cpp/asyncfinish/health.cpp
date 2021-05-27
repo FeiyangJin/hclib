@@ -366,6 +366,7 @@ void put_in_hosp(struct Hosp *hosp, struct Patient *patient)
 /**********************************************************************/
 void sim_village(struct Village *village)
 {
+   ds_hclib_ready(true);
    struct Village *vlist;
 
    // lowest level returns nothing
@@ -385,19 +386,19 @@ void sim_village(struct Village *village)
       hclib::promise_t<void> *p = new hclib::promise_t<void>();
       pv.push_back(p);
       hclib::async([&](){
-            ds_hclib_ready(true);
             sim_village(vlist);
+            ds_hclib_ready(true);
             p->end_put();
             ds_hclib_ready(false);
       });
       
       vlist = vlist->next;
    }
+   ds_hclib_ready(true);
    for(auto i = pv.begin(); i != pv.end(); i++){
       (*i)->get_future()->wait();
    }
-   ds_hclib_ready(true);
-
+   
    /* Uses lists v->hosp->inside, and v->return */
    check_patients_inside(village);
 
@@ -548,15 +549,9 @@ int main(int argc, char **argv) {
         ds_hclib_ready(false);
         long end = hclib_current_time_ms();
         double dur = ((double)(end-start))/1000;
-        printf("duration is %f \n",dur);
+        printf("health duration is %f \n",dur);
       //   check_village(top);
     });
 
-    printf("DPST height is: %d \n", get_dpst_height());
-    printf("cache size is %d \n",ds_get_cache_size());
-    printf("number of task is %d \n",get_task_id_unique());
-    printf("number of nt join %d \n", get_nt_count());
-    printf("number of tree joins %d \n", ds_get_tree_join_count());
-    printf("health benchmark ending\n");
     return 0;
 }
