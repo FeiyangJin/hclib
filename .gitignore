@@ -22,5 +22,5 @@ Makefile.in
 aclocal.m4
 yield
 *.so
-*.bc
-*.exe
+eval-*
+latest-result
