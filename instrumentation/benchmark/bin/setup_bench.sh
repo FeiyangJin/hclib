@@ -29,6 +29,7 @@ for BENCHMARK_NAME in $*; do
     pushd ${BENCHMARK_NAME} > /dev/null
     sed "s/#name/${BENCHMARK_NAME}/g" ${MAKEFILE_TEMPLATE} > ${MAKEFILE_OUTPUT}
     sed "s/#name/${BENCHMARK_NAME}/g; s/#input/${DEFAULT_INPUT}/g" ${RUN_SH_TEMPLATE} > ${RUN_SH_OUTPUT}
+    chmod 700 ${RUN_SH_OUTPUT}
     popd > /dev/null
 done
 
