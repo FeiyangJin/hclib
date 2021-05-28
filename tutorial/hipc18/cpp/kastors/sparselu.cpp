@@ -5,68 +5,117 @@
 
 void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
 {
+    ds_promise_task(true);
     int ii, jj, kk;
 
     int array_size = matrix_size*matrix_size;
     hclib::promise_t<void>* promise_array[array_size];
+    std::vector<hclib::promise_t<void>*> task_vector;
 
-    
     for (kk=0; kk<matrix_size; kk++){
+
+        // at the beginning of for loop, initialize promise array
+        ds_hclib_ready(false);
         for(int index=0; index < array_size; index++){
             hclib::promise_t<void> *p = new hclib::promise_t<void>();
             promise_array[index] = p;
         }
 
-        hclib::finish([&](){
-            #pragma omp task firstprivate(kk) shared(BENCH) depend(inout: BENCH[kk*matrix_size+kk:submatrix_size*submatrix_size])
-            hclib::async([=, &BENCH, &promise_array]() {
+        // #pragma omp task firstprivate(kk) shared(BENCH) depend(inout: BENCH[kk*matrix_size+kk:submatrix_size*submatrix_size])
+        ds_hclib_ready(false);
+        task_vector.push_back(new hclib::promise_t<void>());
 
-                lu0(BENCH[kk*matrix_size+kk], submatrix_size);
+        hclib::async([=, &BENCH, &promise_array, &task_vector]() {
+            ds_hclib_ready(true);
+            ds_promise_task(true);
 
-                for(int b_index = kk*matrix_size+kk; b_index <= kk*matrix_size+ kk + submatrix_size*submatrix_size && b_index < array_size; b_index++){
-                    promise_array[b_index]->put();
-                }
-            });
-            
-            for (jj=kk+1; jj<matrix_size; jj++)
-                if (BENCH[kk*matrix_size+jj] != NULL)
-                {
-                    #pragma omp task firstprivate(kk, jj) shared(BENCH) \
-                    depend(in: BENCH[kk*matrix_size+kk:submatrix_size*submatrix_size]) \
-                    depend(inout: BENCH[kk*matrix_size+jj:submatrix_size*submatrix_size])
-                    hclib::async([=, &BENCH, &promise_array]() {
-                        // for(int b_index = kk*matrix_size+kk; b_index <= kk*matrix_size+ kk + submatrix_size*submatrix_size && b_index < array_size; b_index++){
-                        //     // printf("Wait on %d \n", b_index);
-                        //     promise_array[b_index]->get_future()->wait();
-                        // }
+            lu0(BENCH[kk*matrix_size+kk], submatrix_size);
 
-                        fwd(BENCH[kk*matrix_size+kk], BENCH[kk*matrix_size+jj], submatrix_size);
-                    });
-                    
-                }
-            for (ii=kk+1; ii<matrix_size; ii++)
-                if (BENCH[ii*matrix_size+kk] != NULL)
-                {
-                    #pragma omp task firstprivate(kk, ii) shared(BENCH) depend(in: BENCH[kk*matrix_size+kk:submatrix_size*submatrix_size]) depend(inout: BENCH[ii*matrix_size+kk:submatrix_size*submatrix_size])
-                    hclib::async([=, &BENCH]() {
-                        bdiv (BENCH[kk*matrix_size+kk], BENCH[ii*matrix_size+kk], submatrix_size);
-                    });
-                }
+            promise_array[kk*matrix_size+kk]->put();
+            task_vector.at(0)->put();
+        });
+        
+        for (jj=kk+1; jj<matrix_size; jj++)
+            if (BENCH[kk*matrix_size+jj] != NULL)
+            {
+                // #pragma omp task firstprivate(kk, jj) shared(BENCH) \
+                // depend(in: BENCH[kk*matrix_size+kk:submatrix_size*submatrix_size]) \
+                // depend(inout: BENCH[kk*matrix_size+jj:submatrix_size*submatrix_size])
 
-            for (ii=kk+1; ii<matrix_size; ii++)
-                if (BENCH[ii*matrix_size+kk] != NULL)
-                    for (jj=kk+1; jj<matrix_size; jj++)
-                        if (BENCH[kk*matrix_size+jj] != NULL)
-                        {
-                            if (BENCH[ii*matrix_size+jj]==NULL) BENCH[ii*matrix_size+jj] = allocate_clean_block(submatrix_size);
-                            #pragma omp task firstprivate(kk, jj, ii) shared(BENCH) \
-                            depend(in: BENCH[ii*matrix_size+kk:submatrix_size*submatrix_size], BENCH[kk*matrix_size+jj:submatrix_size*submatrix_size]) \
-                            depend(inout: BENCH[ii*matrix_size+jj:submatrix_size*submatrix_size])
-                            hclib::async([=, &BENCH]() {
-                                bmod(BENCH[ii*matrix_size+kk], BENCH[kk*matrix_size+jj], BENCH[ii*matrix_size+jj], submatrix_size);
-                            });
-                        }
-        }); // end of finish
+                ds_hclib_ready(false);
+                task_vector.push_back(new hclib::promise_t<void>());
+                int task_index = task_vector.size() - 1;
+                hclib::async([=, &BENCH, &promise_array, &task_vector]() {
+                    ds_hclib_ready(true);
+                    ds_promise_task(true);
+                    promise_array[kk*matrix_size+kk]->get_future()->wait();
+
+                    fwd(BENCH[kk*matrix_size+kk], BENCH[kk*matrix_size+jj], submatrix_size);
+
+                    promise_array[kk*matrix_size+jj]->put();
+                    task_vector.at(task_index)->put();
+                });
+                
+            }
+        for (ii=kk+1; ii<matrix_size; ii++)
+            if (BENCH[ii*matrix_size+kk] != NULL)
+            {
+                // #pragma omp task firstprivate(kk, ii) shared(BENCH) \
+                // depend(in: BENCH[kk*matrix_size+kk:submatrix_size*submatrix_size]) \
+                // depend(inout: BENCH[ii*matrix_size+kk:submatrix_size*submatrix_size])
+
+                ds_hclib_ready(false);
+                task_vector.push_back(new hclib::promise_t<void>());
+                int task_index = task_vector.size() - 1;
+                hclib::async([=, &BENCH, &promise_array]() {
+                    ds_hclib_ready(true);
+                    ds_promise_task(true);
+                    promise_array[kk*matrix_size+kk]->get_future()->wait();
+
+                    bdiv (BENCH[kk*matrix_size+kk], BENCH[ii*matrix_size+kk], submatrix_size);
+
+                    promise_array[ii*matrix_size+kk]->put();
+                    task_vector.at(task_index)->put();
+                });
+            }
+
+        for (ii=kk+1; ii<matrix_size; ii++)
+            if (BENCH[ii*matrix_size+kk] != NULL)
+                for (jj=kk+1; jj<matrix_size; jj++)
+                    if (BENCH[kk*matrix_size+jj] != NULL)
+                    {
+                        if (BENCH[ii*matrix_size+jj]==NULL) BENCH[ii*matrix_size+jj] = allocate_clean_block(submatrix_size);
+                        // #pragma omp task firstprivate(kk, jj, ii) shared(BENCH) \
+                        // depend(in: BENCH[ii*matrix_size+kk:submatrix_size*submatrix_size], BENCH[kk*matrix_size+jj:submatrix_size*submatrix_size]) \
+                        // depend(inout: BENCH[ii*matrix_size+jj:submatrix_size*submatrix_size])
+
+                        ds_hclib_ready(false);
+                        task_vector.push_back(new hclib::promise_t<void>());
+                        int task_index = task_vector.size() - 1;
+                        hclib::async([=, &BENCH, &promise_array]() {
+                            ds_hclib_ready(true);
+                            ds_promise_task(true);
+                            promise_array[ii*matrix_size+kk]->get_future()->wait();
+                            promise_array[kk*matrix_size+jj]->get_future()->wait();
+
+                            bmod(BENCH[ii*matrix_size+kk], BENCH[kk*matrix_size+jj], BENCH[ii*matrix_size+jj], submatrix_size);
+
+                            promise_array[ii*matrix_size+jj]->put();
+                            task_vector.at(task_index)->put();
+                        });
+                    }
+
+        // at the end of for loop, reset all promise
+        ds_hclib_ready(false);
+        for(int index=0; index < array_size; index++){
+            delete promise_array[index];
+        }
+
+        for(auto p = task_vector.begin(); p != task_vector.end(); p++){
+            (*p)->get_future()->wait();
+        }
+
+        task_vector.clear();
     } // end of for loop
 }
 
@@ -97,6 +146,7 @@ void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
                     promise_vector.at(index)->put();
                 });
             }
+            
         for (ii=kk+1; ii<matrix_size; ii++)
             if (BENCH[ii*matrix_size+kk] != NULL)
             {
@@ -336,8 +386,8 @@ void run(int ms, int ss)
     long start = hclib_current_time_ms();
 
     ds_hclib_ready(true);
-    sparselu_par_call(BENCH, matrix_size, submatrix_size);
-    // sparselu_par_call_dep(BENCH, matrix_size, submatrix_size);
+    // sparselu_par_call(BENCH, matrix_size, submatrix_size);
+    sparselu_par_call_dep(BENCH, matrix_size, submatrix_size);
     ds_hclib_ready(false);
 
     long end = hclib_current_time_ms();
@@ -362,6 +412,8 @@ int main (int argc, char ** argv) {
         matrix_size = atoi(argv[1]);
         submatrix_size = atoi(argv[2]);
     }
+    
+    printf("matrix size is: %d, submatrix size is: %d \n", matrix_size, submatrix_size);
 
     char const *deps[] = { "system" }; 
     hclib::launch(deps, 1, [&]() {
@@ -370,6 +422,12 @@ int main (int argc, char ** argv) {
         long end = hclib_current_time_ms();
         double dur = ((double)(end-start))/1000;
         printf("Run Time = %f\n",dur);
+        printf("cache size is %d \n",ds_get_cache_size());
+        printf("number of task is %d \n",get_task_id_unique());
+        printf("number of nt join %d \n", get_nt_count());
+        printf("number of tree joins %d \n", ds_get_tree_join_count());
+        ds_print_check_read_count();
+        ds_print_check_write_count();
     });
 
     return 0;
