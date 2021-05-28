@@ -128,24 +128,24 @@ void seqmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest)
      // ds_hclib_ready(false);
      ELM a1, a2;
 
-     if (low1 < high1 && low2 < high2) {
-          a1 = *low1;
-          a2 = *low2;
-          for (;;) {
-               if (a1 < a2){
-               *lowdest++ = a1;
-               a1 = *++low1;
-               if (low1 >= high1)
-                    break;
-               }
-               else{
-               *lowdest++ = a2;
-               a2 = *++low2;
-               if (low2 >= high2)
-                    break;
-               }
-          }
-     }
+     // if (low1 < high1 && low2 < high2) {
+     //      a1 = *low1;
+     //      a2 = *low2;
+     //      for (;;) {
+     //           if (a1 < a2){
+     //           *lowdest++ = a1;
+     //           a1 = *++low1;
+     //           if (low1 >= high1)
+     //                break;
+     //           }
+     //           else{
+     //           *lowdest++ = a2;
+     //           a2 = *++low2;
+     //           if (low2 >= high2)
+     //                break;
+     //           }
+     //      }
+     // }
 
      if (low1 <= high1 && low2 <= high2) {
           a1 = *low1;
