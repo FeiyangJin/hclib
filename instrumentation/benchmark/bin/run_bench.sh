@@ -4,9 +4,11 @@ set -e
 ROOT=$(readlink -f $(dirname $0)/..)
 CURRENT_DIR=$(pwd)
 BENCHMARKS="fib health matmul nqueens poisson sort sparselu strassen"
-OUTPUT="${CURRENT_DIR}/eval-$(date +%y%m%d-%H%M%S).csv"
+OUTPUT="${CURRENT_DIR}/run-$(date +%y%m%d-%H%M%S).csv"
 
-echo "Benchmark,Orig-Time(sec),Orig-Memory(kb),RD-Time(sec),RD-Memory(kb),Time Overhead,Memory Overhead" > $OUTPUT
+touch ${OUTPUT}
+ln -fs ${OUTPUT} ${CURRENT_DIR}/latest-result
+echo "Benchmark,Orig-Time(sec),Orig-Memory(kb),Rd-Time(sec),Rd-Memory(kb),Time Overhead,Memory Overhead" >> $OUTPUT
 
 for bench in ${BENCHMARKS}; do 
     pushd $ROOT/$bench > /dev/null
@@ -26,6 +28,4 @@ for bench in ${BENCHMARKS}; do
     echo "${bench},${ORIGIN_TIME},${ORIGIN_MEMORY},${RD_TIME},${RD_MEMORY},${TIME_OVERHEAD},${MEMORY_OVERHEAD}" >> $OUTPUT
     popd > /dev/null
 done
-
-ln -fs ${OUTPUT} ${CURRENT_DIR}/latest-result
 
