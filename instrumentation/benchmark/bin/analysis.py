@@ -61,6 +61,9 @@ def main():
         ylim = 0
         for i, g in enumerate(groups):
             bar = ax.bar(index + i * width, met[g], width=width)
+            for x,y in zip(index + i * width, met[g]):
+                label = "{:.2f}".format(y)
+                ax.annotate(label, (x,y), textcoords="offset points", xytext=(0,5), ha='center', fontsize=6)
             bars.append(bar)
             max_y = np.max(met[g])
             ylim = max_y if ylim < max_y else ylim
@@ -72,7 +75,7 @@ def main():
         ax.set_xlabel("Benchmarks")
         ax.set_ylabel("{} ({})".format(m, unit[m]))
         ax.set_yscale('log')
-        ax.set_ylim([0.1, ylim_round])
+        ax.set_ylim([0.01, ylim_round * 10])
         ax.legend(bars, desc, loc='upper center', bbox_to_anchor=(0.5, 1.0), ncol=4, fancybox=True, shadow=False)
         fig.savefig("{}.pdf".format(m.lower()))
 
@@ -84,6 +87,9 @@ def main():
         for i, g in enumerate(groups):
             val = met[g]/met[groups[0]]
             bar = ax.bar(index + i * width, val, width=width)
+            for x,y in zip(index + i * width, val):
+                label = "{:.2f}".format(y)
+                ax.annotate(label, (x,y), textcoords="offset points", xytext=(0,5), ha='center', fontsize=6)
             bars.append(bar)
             max_y = np.max(val)
             ylim = max_y if ylim < max_y else ylim
