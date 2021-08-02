@@ -24,12 +24,13 @@ class RaceDetector{
   FunctionCallee checkWrite;
   Function *fptr;
   ItaniumPartialDemangler demangler;
-  SmallVector<StringRef,10> blackList;
+  SmallVector<StringRef,10> nsBlackList;
+  SmallVector<StringRef,10> funcWhiteList;
   void instrumentLoadAndStore();
   int getMemoryAccessSize(Value *Addr, const DataLayout &DL);
 };
 
-RaceDetector::RaceDetector(Function &f) : fptr(&f), demangler(), blackList() {
+RaceDetector::RaceDetector(Function &f) : fptr(&f), demangler(), nsBlackList(), funcWhiteList() {
   Module *m = f.getParent();
   IRBuilder<> irb(m->getContext());
   AttributeList attr;
@@ -43,7 +44,8 @@ RaceDetector::RaceDetector(Function &f) : fptr(&f), demangler(), blackList() {
   checkWrite = m->getOrInsertFunction(writeFuncName, attr, 
                                       irb.getVoidTy(), irb.getInt8PtrTy(), 
                                       irb.getInt32Ty());
-  blackList.append({"hclib"});
+  nsBlackList.append({"hclib"});
+  funcWhiteList.append({"call_lambda"});
 }
 
 void RaceDetector::sanitizeFunction() {
@@ -52,13 +54,27 @@ void RaceDetector::sanitizeFunction() {
 
 void RaceDetector::instrumentLoadAndStore() {
   const DataLayout &dl = fptr->getParent()->getDataLayout();
-  size_t size = 1;
-  char *buf = static_cast<char *>(std::malloc(size));
+  size_t size = 100;
+  char *buf1 = static_cast<char *>(std::malloc(size));
+  char *buf2 = static_cast<char *>(std::malloc(size));
   if (!demangler.partialDemangle(fptr->getName().data())) {
-    StringRef contextName = demangler.getFunctionDeclContextName(buf, &size);
-    for (auto &item : blackList) {
+    StringRef contextName = demangler.getFunctionDeclContextName(buf1, &size);
+    StringRef baseName = demangler.getFunctionBaseName(buf2, &size);
+    for (auto &item : nsBlackList) {
       if (contextName.startswith(item)) {
-        return;
+        bool isIgnore = true;
+        for (auto &item2 : funcWhiteList) {
+          if (item2 == baseName) {
+            isIgnore = false;
+            break;
+          }
+        }
+        if (isIgnore) {
+          errs() << "Ignored: " << contextName << "::" << baseName << "\n";
+          return;
+        } else {
+          break;
+        }
       }
     }
   }
