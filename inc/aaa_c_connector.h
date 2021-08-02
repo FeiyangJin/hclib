@@ -5,6 +5,9 @@
 extern "C" {
 #endif
 
+__attribute__((weak)) void test_check_read();
+__attribute__((weak)) void asap_check_read(int *addr, int bytes);
+
 __attribute__((weak)) void ds_print_check_write_count();
 __attribute__((weak)) void ds_print_check_read_count();
 __attribute__((weak)) void ds_promise_task(bool b);

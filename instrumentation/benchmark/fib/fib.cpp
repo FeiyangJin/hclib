@@ -3,8 +3,9 @@
 #include <unordered_map>
 #define THRESHOLD 10
 
+// llvm-symbolizer --obj=./test.exe 0x401e4d
+
 using namespace std;
-// unordered_map<int,int> memorization;
 
 uint64_t fib_serial(uint64_t n) {
     if (n < 2) return n;
@@ -12,17 +13,16 @@ uint64_t fib_serial(uint64_t n) {
 }
 
 uint64_t fib_async_finish(uint64_t n) {
-#ifdef RACE_DETECTION
-  ds_hclib_ready(true);
-#endif
-#ifdef RACE_DETECTION
-  ds_promise_task(true);
-#endif
+  #ifdef RACE_DETECTION
+    ds_hclib_ready(true);
+    ds_promise_task(true);
+  #endif
 
-  // bool in_memo = memorization.find(n) != memorization.end();
-  // if(in_memo){
-  //   return memorization.at(n);
-  // }
+  int testx = 100;
+  hclib::async([&testx](){
+    testx = 200;
+  });
+  testx = 300;
   
   if (n < THRESHOLD) {
     int result = fib_serial(n);
@@ -30,40 +30,38 @@ uint64_t fib_async_finish(uint64_t n) {
   }
 
   //uint64_t x, y;
-#ifdef RACE_DETECTION
-  ds_hclib_ready(false);
-#endif
+  #ifdef RACE_DETECTION
+    ds_hclib_ready(false);
+  #endif
   hclib::promise_t<uint64_t> *x = new hclib::promise_t<uint64_t>();
   hclib::promise_t<uint64_t> *y = new hclib::promise_t<uint64_t>();
 
-#ifdef RACE_DETECTION
-    ds_hclib_ready(false);
-#endif
-    hclib::async([&]() {
+    hclib::async([=,&x]() {
+      #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+      #endif
+
       uint64_t value1 = fib_async_finish(n-1);
-#ifdef RACE_DETECTION
-      ds_hclib_ready(true); 
-#endif
-      x->put(value1);
-#ifdef RACE_DETECTION
-      ds_hclib_ready(false);
-#endif
-    });
-    
+
+      #ifdef RACE_DETECTION
+        x->put(value1);
+      #else
+        x->put(value1);
+      #endif
       
-#ifdef RACE_DETECTION
-    ds_hclib_ready(false);
-#endif
+    });
+
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
+        
     uint64_t value2 = fib_async_finish(n-2);
-#ifdef RACE_DETECTION
-    ds_hclib_ready(true);
-#endif
+
     y->put(value2);
 
+    int value = x->get_future()->wait() + y->get_future()->wait();
 
-  int value = x->get_future()->wait() + y->get_future()->wait();
-  // memorization.insert(std::pair<int,int>(n,value));
-  return value;
+    return value;
 }
 
 
@@ -73,37 +71,32 @@ int main(int argc, char** argv) {
 
   char const *deps[] = { "system" }; 
   hclib::launch(deps, 1, [&]() {
-    // sequential execution
+    // async finish execution
     long start = hclib_current_time_ms();
 
-    //uint64_t result = fib_serial(n);
-
-    long end = hclib_current_time_ms();
-    double dur = ((double)(end-start))/1000;
-    //printf("Fibonacci of %" PRIu64 " is %" PRIu64 ".\n", n, result);
-    //printf("Sequential Time = %f \n \n",dur);
-
-
-    // async finish execution
-    start = hclib_current_time_ms();
+    #ifdef RACE_DETECTION
+      ds_hclib_ready(true);
+    #endif
 
     uint64_t result = fib_async_finish(n);
 
-#ifdef RACE_DETECTION
-    ds_hclib_ready(false);
-#endif
+    #ifdef RACE_DETECTION
+      ds_hclib_ready(false);
+    #endif
     
-    end = hclib_current_time_ms();
-    dur = ((double)(end-start))/1000;
+    long end = hclib_current_time_ms();
+    long dur = ((double)(end-start))/1000;
     printf("Fibonacci of %" PRIu64 " is %" PRIu64 ".\n", n, result);
-    printf("Async finish Time = %f \n",dur);
-#ifdef RACE_DETECTION
-    printf("DPST height is: %d \n", get_dpst_height());
-    printf("cache size is %d \n",ds_get_cache_size());
-    printf("number of task is %d \n",get_task_id_unique());
-    printf("number of nt join %d \n", get_nt_count());
-    printf("number of tree joins %d \n", ds_get_tree_join_count());
-#endif
+    printf("Async finish Time = %ld \n",dur);
+    #ifdef RACE_DETECTION
+        printf("DPST height is: %d \n", get_dpst_height());
+        printf("cache size is %d \n",ds_get_cache_size());
+        printf("number of task is %d \n",get_task_id_unique());
+        printf("number of nt join %d \n", get_nt_count());
+        printf("number of tree joins %d \n", ds_get_tree_join_count());
+        ds_print_check_write_count();
+        ds_print_check_read_count();
+    #endif
   });
 
   return 0;

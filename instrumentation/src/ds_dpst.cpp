@@ -90,7 +90,12 @@ void DisjointSet::addSet(int task_index){
     // this->parent_aka_setnowin[task_index] = new_set;
 }
 
+int DisjointSet::get_find_count(){
+    return this->find_count;
+}
+
 set_info* DisjointSet::find_helper(int k){
+    this->find_count++;
     assert(k != -1);
     set_info* current_set_info = parent_aka_setnowin.at(k);
     if (current_set_info->set_id != k)

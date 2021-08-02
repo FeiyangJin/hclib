@@ -11,6 +11,8 @@
 *.bc
 *.exe
 *.ll
+*.csv
+
 ### Above combination will ignore all files without extension ###
 build
 hclib-install

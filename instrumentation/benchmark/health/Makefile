@@ -3,11 +3,11 @@ include ../common/make.inc
 all: health-rd.exe health-origin.exe
 
 health-rd.exe: health.cpp 
-	$(INST) $^ -DRACE_DETECTION $(RD_OPTIONS)
+	$(INST) $^ -DRACE_DETECTION $(TEST_RD_OPTIONS)
 	mv health.exe health-rd.exe
 
 health-origin.exe: health.cpp
-	${CXX} -o $@ $^ $(ORIGIN_OPTIONS)
+	${CXX} -o $@ $^ $(TEST_ORIGIN_OPTIONS)
 
 .PHONY: clean
 clean:

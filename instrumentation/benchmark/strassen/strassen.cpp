@@ -43,9 +43,16 @@ static void OptimizedStrassenMultiply_par(double *C, double *A, double *B,
   hclib::promise_t<void>  *p_s1, *p_s2, *p_s3, *p_s4, *p_s5, *p_s6, *p_s7, *p_s8, *p_m2, *p_m5, *p_t1smult;
 
   hclib::promise_t<void>  *p_a, *p_b, *p_c;
+
+  #ifdef RACE_DETECTION
+      ds_hclib_ready(false);
+  #endif
   p_a = new hclib::promise_t<void>();
   p_b = new hclib::promise_t<void>();
   p_c = new hclib::promise_t<void>();
+  #ifdef RACE_DETECTION
+      ds_hclib_ready(true);
+  #endif
 
   if (MatrixSize <= cutoff_size) {
     MultiplyByDivideAndConquer(C, A, B, MatrixSize, RowWidthC, RowWidthA, RowWidthB, 0);
@@ -53,78 +60,87 @@ static void OptimizedStrassenMultiply_par(double *C, double *A, double *B,
   }
 
   /* Initialize quandrant matrices */
+  #ifdef RACE_DETECTION
+      ds_hclib_ready(false);
+  #endif
+        p_a12 = new hclib::promise_t<void>();
+        p_b12 = new hclib::promise_t<void>();
+        p_c12 = new hclib::promise_t<void>();
+        p_a21 = new hclib::promise_t<void>();
+                p_a21->put();
+        p_b21 = new hclib::promise_t<void>();
+        p_c21 = new hclib::promise_t<void>();
+        p_a22 = new hclib::promise_t<void>();
+                p_a22->put();
+        p_b22 = new hclib::promise_t<void>();
+        p_c22 = new hclib::promise_t<void>();
+
+        p_s1 = new hclib::promise_t<void>();
+        p_s2 = new hclib::promise_t<void>();
+        p_s3 = new hclib::promise_t<void>();
+        p_s4 = new hclib::promise_t<void>();
+        p_s5 = new hclib::promise_t<void>();
+        p_s6 = new hclib::promise_t<void>();
+        p_s7 = new hclib::promise_t<void>();
+        p_s8 = new hclib::promise_t<void>();
+        p_m2 = new hclib::promise_t<void>();
+        p_m5 = new hclib::promise_t<void>();
+        p_t1smult = new hclib::promise_t<void>();
+  #ifdef RACE_DETECTION
+      ds_hclib_ready(true);
+  #endif
+
+
   A12 = A + QuadrantSize;
-    p_a12 = new hclib::promise_t<void>();
 
   B12 = B + QuadrantSize;
-    p_b12 = new hclib::promise_t<void>();
 
   C12 = C + QuadrantSize;
-    p_c12 = new hclib::promise_t<void>();
 
   A21 = A + (RowWidthA * QuadrantSize);
-    p_a21 = new hclib::promise_t<void>();
-    p_a21->put();
 
   B21 = B + (RowWidthB * QuadrantSize);
-    p_b21 = new hclib::promise_t<void>();
 
   C21 = C + (RowWidthC * QuadrantSize);
-    p_c21 = new hclib::promise_t<void>();
 
   A22 = A21 + QuadrantSize;
-    p_a22 = new hclib::promise_t<void>();
-    p_a22->put();
 
   B22 = B21 + QuadrantSize;
-    p_b22 = new hclib::promise_t<void>();
 
   C22 = C21 + QuadrantSize;
-    p_c22 = new hclib::promise_t<void>();
 
   /* Allocate Heap Space Here */
   StartHeap = Heap = (char*) malloc(QuadrantSizeInBytes * NumberOfVariables);
 
   /* Distribute the heap space over the variables */
   S1 = (double*) Heap; Heap += QuadrantSizeInBytes;
-    p_s1 = new hclib::promise_t<void>();
 
   S2 = (double*) Heap; Heap += QuadrantSizeInBytes;
-    p_s2 = new hclib::promise_t<void>();
 
   S3 = (double*) Heap; Heap += QuadrantSizeInBytes;
-    p_s3 = new hclib::promise_t<void>();
-
+    
   S4 = (double*) Heap; Heap += QuadrantSizeInBytes;
-    p_s4 = new hclib::promise_t<void>();
 
   S5 = (double*) Heap; Heap += QuadrantSizeInBytes;
-    p_s5 = new hclib::promise_t<void>();
 
   S6 = (double*) Heap; Heap += QuadrantSizeInBytes;
-    p_s6 = new hclib::promise_t<void>();
 
   S7 = (double*) Heap; Heap += QuadrantSizeInBytes;
-    p_s7 = new hclib::promise_t<void>();
 
   S8 = (double*) Heap; Heap += QuadrantSizeInBytes;
-    p_s8 = new hclib::promise_t<void>();
 
   M2 = (double*) Heap; Heap += QuadrantSizeInBytes;
-    p_m2 = new hclib::promise_t<void>();
 
   M5 = (double*) Heap; Heap += QuadrantSizeInBytes;
-    p_m5 = new hclib::promise_t<void>();
 
   T1sMULT = (double*) Heap; Heap += QuadrantSizeInBytes;
-    p_t1smult = new hclib::promise_t<void>();
 
   if (Depth < cutoff_depth)
   {
 #ifdef RACE_DETECTION
       ds_hclib_ready(false);
 #endif
-      hclib::finish([&](){
+      //hclib::finish([&](){
 
         //#pragma omp task depend(in: A21, A22) depend(out: S1) private(Row, Column)
         hclib::async([&,Row,Column]() mutable{
@@ -513,7 +529,7 @@ static void OptimizedStrassenMultiply_par(double *C, double *A, double *B,
               C22[RowWidthC * Row + Column] += M5[Row * QuadrantSize + Column] + T1sMULT[Row * QuadrantSize + Column] + M2[Row * QuadrantSize + Column];
         });
         //#pragma omp taskwait
-    });
+    //});
   }
   else // the following are all sequential
   {

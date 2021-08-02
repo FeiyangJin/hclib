@@ -366,9 +366,10 @@ void put_in_hosp(struct Hosp *hosp, struct Patient *patient)
 /**********************************************************************/
 void sim_village(struct Village *village)
 {
-#ifdef RACE_DETECTION
-   ds_hclib_ready(true);
-#endif
+   #ifdef RACE_DETECTION
+      ds_hclib_ready(true);
+   #endif
+
    struct Village *vlist;
 
    // lowest level returns nothing
@@ -377,44 +378,66 @@ void sim_village(struct Village *village)
    if (village == NULL) return;
 
    /* Traverse village hierarchy (lower level first)*/
+   #ifdef RACE_DETECTION
+      ds_hclib_ready(false);
+   #endif
    vlist = village->forward;
 
-#ifdef RACE_DETECTION
-   ds_hclib_ready(false);
-#endif
+   #ifdef RACE_DETECTION
+      ds_hclib_ready(false);
+   #endif
    
    std::vector<hclib::promise_t<void>*> pv;
    while(vlist)
    {
-#ifdef RACE_DETECTION
-      ds_hclib_ready(false);
-#endif
+      #ifdef RACE_DETECTION
+         ds_hclib_ready(false);
+      #endif
+
       hclib::promise_t<void> *p = new hclib::promise_t<void>();
       pv.push_back(p);
-      hclib::async([&](){
-            sim_village(vlist);
-#ifdef RACE_DETECTION
-            ds_hclib_ready(true);
-#endif
-#ifdef RACE_DETECTION
-            p->end_put();
-#else
-            p->put();
-#endif
-#ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-#endif
-      });
       
+      hclib::async([vlist, &p](){
+         sim_village(vlist);
+         #ifdef RACE_DETECTION
+            ds_hclib_ready(true);
+            p->end_put();
+            ds_hclib_ready(false);
+         #else
+            p->put();
+         #endif
+      });
+
+      #ifdef RACE_DETECTION
+         ds_hclib_ready(true);
+      #endif
+      
+      #ifdef RACE_DETECTION
+         ds_hclib_ready(false);
+      #endif
       vlist = vlist->next;
    }
-#ifdef RACE_DETECTION
-   ds_hclib_ready(true);
-#endif
-   for(auto i = pv.begin(); i != pv.end(); i++){
-      (*i)->get_future()->wait();
-   }
-   
+
+   #ifdef RACE_DETECTION
+      ds_hclib_ready(true);
+   #endif
+
+   // try visit all elements here
+   // void* v;
+   // v = village->hosp.inside;
+   // v = village->hosp.assess;
+   // auto hf = village->hosp.free_personnel;
+   // v = village->population;
+   // v = village->back->hosp.realloc;
+   // auto bh = village->back->hosp;
+   // v = village->hosp.waiting;
+   // v = village->hosp.realloc;
+
+   // // turn off hclib
+   // #ifdef RACE_DETECTION
+   //    ds_hclib_ready(false);
+   // #endif
+
    /* Uses lists v->hosp->inside, and v->return */
    check_patients_inside(village);
 
@@ -424,11 +447,25 @@ void sim_village(struct Village *village)
    /* Uses lists v->hosp->waiting, and v->hosp->assess */
    check_patients_waiting(village);
 
-   /* Uses lists v->hosp->realloc, v->hosp->asses and v->hosp->waiting */
+   #ifdef RACE_DETECTION
+      ds_hclib_ready(false);
+   #endif
+   for(auto i = pv.begin(); i != pv.end(); i++){
+      (*i)->get_future()->wait();
+   }
+   #ifdef RACE_DETECTION
+      ds_hclib_ready(true);
+   #endif
+
+   /* Uses lists v->hosp->realloc, v->hosp->assess and v->hosp->waiting */
    check_patients_realloc(village);
 
-   /* Uses list v->population, v->hosp->asses and v->h->waiting */
+   /* Uses list v->population, v->hosp->assess and v->h->waiting */
    check_patients_population(village);
+
+   #ifdef RACE_DETECTION
+      ds_hclib_ready(false);
+   #endif
 }
 /**********************************************************************/
 void my_print(struct Village *village)
@@ -557,11 +594,16 @@ int main(int argc, char **argv) {
 
     char const *deps[] = { "system" }; 
     hclib::launch(deps, 1, [&]() {
-        long start = hclib_current_time_ms();
+      long start = hclib_current_time_ms();
 #ifdef RACE_DETECTION
-        ds_hclib_ready(true);
+   ds_hclib_ready(true);
 #endif
-
+      // int x = 0;
+      // hclib::async([&](){
+      //    x = 100;
+      // });
+      // x = 200;
+      
         sim_village_main(top);
 
 #ifdef RACE_DETECTION
@@ -571,6 +613,15 @@ int main(int argc, char **argv) {
         double dur = ((double)(end-start))/1000;
         printf("health duration is %f \n",dur);
       //   check_village(top);
+      #ifdef RACE_DETECTION
+        printf("DPST height is: %d \n", get_dpst_height());
+        printf("cache size is %d \n",ds_get_cache_size());
+        printf("number of task is %d \n",get_task_id_unique());
+        printf("number of nt join %d \n", get_nt_count());
+        printf("number of tree joins %d \n", ds_get_tree_join_count());
+        ds_print_check_write_count();
+        ds_print_check_read_count();
+    #endif
     });
 
     return 0;

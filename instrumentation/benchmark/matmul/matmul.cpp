@@ -130,6 +130,32 @@ void mat_mul_par_promise(const REAL *const A, const REAL *const B, REAL *C, int 
 
     if(n == BASE_CASE) {
         int i, j, k;
+    //     int temp = 0;
+
+    //     for(i=0; i<n; i++){
+    //         for(j=0; j<n; j++){
+    //             temp += A[i * n + j] * B[i*n + j];
+    //         }
+    //     }
+
+    // #ifdef RACE_DETECTION
+    //     ds_hclib_ready(false);
+    // #endif
+        // check read for A
+        // for(i = 0; i < n; i++){
+        //     for(j = 0; j < n; j++){
+        //         // check read A[i * n + j]
+        //         test_check_read();
+        //     }
+        // }
+
+        // // check read for B
+        // for(k = 0; k < n; k++){
+        //     for(j = 0; j < n; j++){
+        //         // check read B[j * n + k]
+        //     }
+        // }
+
         for(i = 0; i < n; i++){
             for(k = 0; k < n; k++){
                 REAL c = 0.0;
@@ -139,6 +165,10 @@ void mat_mul_par_promise(const REAL *const A, const REAL *const B, REAL *C, int 
                 C[i * n + k] += c;
             }
         }
+
+    // #ifdef RACE_DETECTION
+    //     ds_hclib_ready(true);
+    // #endif
 
         return;
     }
@@ -312,10 +342,6 @@ void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n){
     ds_hclib_ready(true);
 #endif
 
-    
-    // hclib::promise_t<int> *p4 = new hclib::promise_t<int>();
-    // hclib::promise_t<int> *p5 = new hclib::promise_t<int>();
-    // hclib::promise_t<int> *p6 = new hclib::promise_t<int>();
 
 #ifdef RACE_DETECTION
     ds_hclib_ready(false);
@@ -348,32 +374,6 @@ void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n){
 #endif
     });
 
-    // hclib::async([&](){
-    //     mat_mul_par(A2,B3,C1,n>>1);
-    //     ds_hclib_ready(true);
-    //     p4->put(4);
-    //     ds_hclib_ready(false);
-    // });
-
-    // hclib::async([&](){
-    //     mat_mul_par(A2,B4,C2,n>>1);
-    //     p5->put(5);
-    //     ds_hclib_ready(false);
-    // });
-
-    // hclib::async([&](){
-    //     mat_mul_par(A4,B3,C3,n>>1);
-    //     p6->put(6);
-    //     ds_hclib_ready(false);
-    // });
-
-    // ds_hclib_ready(false);
-    // mat_mul_par(A4,B4,C4,n>>1);
-
-    // ds_hclib_ready(true);
-    // p4->get_future()->wait();
-    // p5->get_future()->wait();
-    // p6->get_future()->wait();
 }
 
 
@@ -403,7 +403,7 @@ void compare_matrix(REAL *C, REAL *D, int n){
 
 
 int main(int argc, char *argv[]){
-  int n = argc>1?atoi(argv[1]) : 2048;
+  int n = argc>1?atoi(argv[1]) : 512;
   printf("multiplying two matrices of size %d * %d \n", n, n);
 
   POWER = 7;
@@ -424,9 +424,6 @@ int main(int argc, char *argv[]){
 
   char const *deps[] = { "system" };
   hclib::launch(deps, 1, [&]() {
-#ifdef RACE_DETECTION
-    ds_hclib_ready(true);
-#endif
     
     // sequential calculation
     long start = hclib_current_time_ms();
@@ -447,16 +444,17 @@ int main(int argc, char *argv[]){
     
     //compare two results
     //compare_matrix(C,D,n);
-#ifdef RACE_DETECTION
-    ds_hclib_ready(false);
-#endif
-#ifdef RACE_DETECTION
-    printf("cache size is %d \n",ds_get_cache_size());
-    printf("DPST height is: %d \n", get_dpst_height());
-    printf("number of task is %d \n",get_task_id_unique());
-    printf("number of nt join %d \n", get_nt_count());
-    printf("number of tree joins %d \n", ds_get_tree_join_count());
-#endif
+
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+        printf("DPST height is: %d \n", get_dpst_height());
+        printf("cache size is %d \n",ds_get_cache_size());
+        printf("number of task is %d \n",get_task_id_unique());
+        printf("number of nt join %d \n", get_nt_count());
+        printf("number of tree joins %d \n", ds_get_tree_join_count());
+        ds_print_check_write_count();
+        ds_print_check_read_count();
+    #endif
   });
 
     /* release memory */

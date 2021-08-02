@@ -14,8 +14,8 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 
-BENCHMARK_NAME="poisson"
-DEFAULT_INPUT="256 128 4"
+BENCHMARK_NAME="life"
+DEFAULT_INPUT="100 100 500"
 ORIGIN_EXE="${BENCHMARK_NAME}-origin.exe"
 RD_EXE="${BENCHMARK_NAME}-rd.exe"
 

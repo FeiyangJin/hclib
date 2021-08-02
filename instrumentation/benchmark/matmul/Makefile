@@ -3,11 +3,11 @@ include ../common/make.inc
 all: matmul-rd.exe matmul-origin.exe
 
 matmul-rd.exe: matmul.cpp 
-	$(INST) $^ -DRACE_DETECTION $(RD_OPTIONS)
+	$(INST) $^ -DRACE_DETECTION $(TEST_RD_OPTIONS)
 	mv matmul.exe matmul-rd.exe
 
 matmul-origin.exe: matmul.cpp
-	${CXX} -o $@ $^ $(ORIGIN_OPTIONS)
+	${CXX} -o $@ $^ $(TEST_ORIGIN_OPTIONS)
 
 .PHONY: clean
 clean:

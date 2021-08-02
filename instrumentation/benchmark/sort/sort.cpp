@@ -208,9 +208,9 @@ void cilkmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest) {
   ELM *split1, *split2;
   long int lowsize;
 
-#ifdef RACE_DETECTION
-  ds_hclib_ready(true);
-#endif
+  #ifdef RACE_DETECTION
+    ds_hclib_ready(true);
+  #endif
   if (high2 - low2 > high1 - low1) {
     swap_indices(low1, low2);
     swap_indices(high1, high2);
@@ -233,23 +233,23 @@ void cilkmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest) {
 
   *(lowdest + lowsize + 1) = *split1;
 
-#ifdef RACE_DETECTION
-  ds_hclib_ready(false);  
-#endif
+  #ifdef RACE_DETECTION
+    ds_hclib_ready(false);  
+  #endif
   hclib::promise_t<void> *p1 = new hclib::promise_t<void>();
-  hclib::async([&](){
+  hclib::async([low1, split1, low2, split2, lowdest, &p1](){
     cilkmerge(low1, split1 - 1, low2, split2, lowdest);
-#ifdef RACE_DETECTION
-    ds_hclib_ready(true);
-#endif
-#ifdef RACE_DETECTION
-    p1->end_put();
-#else
-    p1->put();
-#endif
-#ifdef RACE_DETECTION
-    ds_hclib_ready(false); 
-#endif
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
+    #ifdef RACE_DETECTION
+        p1->end_put();
+    #else
+        p1->put();
+    #endif
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false); 
+    #endif
   });
 
   cilkmerge(split1 + 1, high1, split2 + 1, high2, lowdest + lowsize + 2);
@@ -260,9 +260,9 @@ void cilkmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest) {
 
 
 void cilksort(ELM *low, ELM *tmp, long size) {
-#ifdef RACE_DETECTION
-  ds_hclib_ready(true);
-#endif
+  #ifdef RACE_DETECTION
+    ds_hclib_ready(true);
+  #endif
 
   long quarter = size / 4;
   ELM *A, *B, *C, *D, *tmpA, *tmpB, *tmpC, *tmpD;
@@ -281,59 +281,59 @@ void cilksort(ELM *low, ELM *tmp, long size) {
   D = C + quarter;
   tmpD = tmpC + quarter;
 
-#ifdef RACE_DETECTION
-  ds_hclib_ready(false);
-#endif
+  #ifdef RACE_DETECTION
+    ds_hclib_ready(false);
+  #endif
   hclib::promise_t<void> *p1 = new hclib::promise_t<void>();
   hclib::promise_t<void> *p2 = new hclib::promise_t<void>();
   hclib::promise_t<void> *p3 = new hclib::promise_t<void>();
 
-#ifdef RACE_DETECTION
-  ds_hclib_ready(false);
-#endif
-  hclib::async([&](){
+  #ifdef RACE_DETECTION
+    ds_hclib_ready(false);
+  #endif
+  hclib::async([A, tmpA, quarter, &p1](){
     cilksort(A, tmpA, quarter);
-#ifdef RACE_DETECTION
-    ds_hclib_ready(true);
-#endif
-#ifdef RACE_DETECTION
-    p1->end_put();
-#else
-    p1->put();
-#endif
-#ifdef RACE_DETECTION
-    ds_hclib_ready(false);
-#endif
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
+    #ifdef RACE_DETECTION
+        p1->end_put();
+    #else
+        p1->put();
+    #endif
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
   });
 
-  hclib::async([&](){
+  hclib::async([B, tmpB, quarter, &p2](){
     cilksort(B, tmpB, quarter);
-#ifdef RACE_DETECTION
-    ds_hclib_ready(true);
-#endif
-#ifdef RACE_DETECTION
-    p2->end_put();
-#else
-    p2->put();
-#endif
-#ifdef RACE_DETECTION
-    ds_hclib_ready(false);
-#endif
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
+    #ifdef RACE_DETECTION
+        p2->end_put();
+    #else
+        p2->put();
+    #endif
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
   });
 
-  hclib::async([&](){
+  hclib::async([C, tmpC, quarter, &p3](){
     cilksort(C, tmpC, quarter);
-#ifdef RACE_DETECTION
-    ds_hclib_ready(true);
-#endif
-#ifdef RACE_DETECTION
-    p3->end_put();
-#else
-    p3->put();
-#endif
-#ifdef RACE_DETECTION
-    ds_hclib_ready(false);
-#endif
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
+    #ifdef RACE_DETECTION
+        p3->end_put();
+    #else
+        p3->put();
+    #endif
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
   });
 
   cilksort(D, tmpD, size - 3 * quarter);
@@ -343,29 +343,30 @@ void cilksort(ELM *low, ELM *tmp, long size) {
   p3->get_future()->wait();
 
   
-#ifdef RACE_DETECTION
-  ds_hclib_ready(false);
-#endif
+  #ifdef RACE_DETECTION
+    ds_hclib_ready(false);
+  #endif
   hclib::promise_t<void> *p4 = new hclib::promise_t<void>();
-  hclib::async([&](){
+  hclib::async([A, quarter, B, tmpA, &p4](){
     cilkmerge(A, A + quarter - 1, B, B + quarter - 1, tmpA);
-#ifdef RACE_DETECTION
-    p4->end_put();
-#else
-    p4->put();
-#endif
+    #ifdef RACE_DETECTION
+        p4->end_put();
+    #else
+        p4->put();
+    #endif
   });
 
-#ifdef RACE_DETECTION
-  ds_hclib_ready(false);
-#endif
+
+  #ifdef RACE_DETECTION
+    ds_hclib_ready(false);
+  #endif
   cilkmerge(C, C + quarter - 1, D, low + size - 1, tmpC);
   p4->get_future()->wait();
 
   cilkmerge(tmpA, tmpC - 1, tmpC, tmpA + size - 1, A);
-#ifdef RACE_DETECTION
-  ds_hclib_ready(false);
-#endif
+  #ifdef RACE_DETECTION
+    ds_hclib_ready(false);
+  #endif
 
   return;
 }
@@ -437,60 +438,62 @@ void check_result(ELM *sorted, unsigned long size){
 
 
 int main(int argc, char* argv[]){
-        long size;
-        ELM *array, *tmp;
-        long i;
+  long size;
+  ELM *array, *tmp;
+  long i;
 
   size = argc>1?atoi(argv[1]) : 10000000; // default n value is 10000000
-        printf("sort array of size %ld \n", size);
+  printf("sort array of size %ld \n", size);
 
-        array = (ELM *) malloc(size * sizeof(ELM));
-        tmp = (ELM *) malloc(size * sizeof(ELM));
+  array = (ELM *) malloc(size * sizeof(ELM));
+  tmp = (ELM *) malloc(size * sizeof(ELM));
 
-        fill_array(array,size);
+  fill_array(array,size);
 
-        char const *deps[] = { "system" };
+  char const *deps[] = { "system" };
+
   hclib::launch(deps, 1, [&]() {
         long start = hclib_current_time_ms();
 
         //parallel sort
-                cilksort(array,tmp,size);
+        cilksort(array,tmp,size);
 
-                long end = hclib_current_time_ms();
-                double dur = ((double)(end-start))/1000;
+        long end = hclib_current_time_ms();
+        double dur = ((double)(end-start))/1000;
 
-                printf("sort time in parallel: %.3f for array of size %ld \n",dur,size);
-#ifdef RACE_DETECTION
-                printf("DPST height is: %d \n", get_dpst_height());
-#endif
-                //seq sort
-                // fill_array(array,size);
-                // zero(tmp,size);
+        printf("sort time in parallel: %.3f for array of size %ld \n",dur,size);
 
-                // start = hclib_current_time_ms();
+        //seq sort
+        // fill_array(array,size);
+        // zero(tmp,size);
 
-                // seqquick(array, array + size - 1);
+        // start = hclib_current_time_ms();
 
-                // end = hclib_current_time_ms();
-                // dur = ((double)(end-start))/1000;
+        // seqquick(array, array + size - 1);
 
-                // printf("sort time in sequential: %.3f for array of size %ld \n",dur,size);
+        // end = hclib_current_time_ms();
+        // dur = ((double)(end-start))/1000;
 
-#ifdef RACE_DETECTION
-    ds_hclib_ready(false);
-#endif
-#ifdef RACE_DETECTION
-    printf("cache size is %d \n",ds_get_cache_size());
-    printf("number of task is %d \n",get_task_id_unique());
-    printf("number of nt join %d \n", get_nt_count());
-    printf("number of tree joins %d \n", ds_get_tree_join_count());
-#endif
-        });
+        // printf("sort time in sequential: %.3f for array of size %ld \n",dur,size);
+
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(false);
+        #endif
+        #ifdef RACE_DETECTION
+          printf("DPST height is: %d \n", get_dpst_height());
+          printf("cache size is %d \n",ds_get_cache_size());
+          printf("number of task is %d \n",get_task_id_unique());
+          printf("number of nt join %d \n", get_nt_count());
+          printf("number of tree joins %d \n", ds_get_tree_join_count());
+          ds_print_check_write_count();
+          ds_print_check_read_count();
+        #endif
+  });
 
   check_result(array,size);
   free(array);
-        free(tmp);
+  free(tmp);
 
-        return 0;
+  return 0;
 
 }

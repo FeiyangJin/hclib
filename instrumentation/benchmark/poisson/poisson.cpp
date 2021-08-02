@@ -50,6 +50,13 @@ void sweep_seq(int nx, int ny, double dx, double dy, double *f_, int itold, int 
 
 void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itnew, double *u_, double *unew_, int block_size)
 {
+    int testx = 100;
+
+    // hclib::async([&testx](){
+    //     testx = 200;
+    // });
+    // testx = 300;
+
     int i;
     int it;
     int j;
@@ -60,72 +67,88 @@ void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itn
     // TODO: allocate unew_p[], 1-D array of nx promises that are all initialized = ready
     hclib::promise_t<void>* promise_unew[nx];
     for(int pi = 0; pi<nx; pi++){
-#ifdef RACE_DETECTION
-        ds_hclib_ready(false);
-#endif
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(false);
+        #endif
+
         hclib::promise_t<void> *p = new hclib::promise_t<void>();
-#ifdef RACE_DETECTION
-        ds_hclib_ready(true);
-#endif
+
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(true);
+        #endif
 
         p->put();
         promise_unew[pi] = p;
     }
-#ifdef RACE_DETECTION
-    ds_hclib_ready(true);
-#endif
+
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
     hclib::promise_t<void>* promise_u[nx];
 
     for (it = itold + 1; it <= itnew; it++) {
         for(int pi=0; pi < nx; pi++){
-#ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-#endif
+            #ifdef RACE_DETECTION
+                ds_hclib_ready(false);
+            #endif
+
             hclib::promise_t<void> *p = new hclib::promise_t<void>();
-#ifdef RACE_DETECTION
-            ds_hclib_ready(true);
-#endif
+
+            #ifdef RACE_DETECTION
+                ds_hclib_ready(true);
+            #endif
             promise_u[pi] = p;
         }
-#ifdef RACE_DETECTION
-        ds_hclib_ready(true);
-#endif
+        #ifdef RACE_DETECTION
+                ds_hclib_ready(true);
+        #endif
 
 
         for (i = 0; i < nx; i++) {
-#ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-#endif
-            hclib::async([=, &u, &unew, &promise_unew, &promise_u]() mutable{
-#ifdef RACE_DETECTION
-                ds_hclib_ready(true);
-#endif
-#ifdef RACE_DETECTION
-                ds_promise_task(true);
-#endif
+            #ifdef RACE_DETECTION
+                ds_hclib_ready(false);
+            #endif
+            hclib::async([i, nx, ny, &u, &unew, &promise_unew, &promise_u]() mutable{
+                if(i > 0){
+                    promise_unew[i-1]->get_future()->wait();
+                }
                 promise_unew[i]->get_future()->wait();
+                if(i < nx - 1){
+                    promise_unew[i+1]->get_future()->wait();
+                }
 
-                for (j = 0; j < ny; j++) {
-                    u[index2d(ny,i,j)] = unew[index2d(ny,i,j)];
+                #ifdef RACE_DETECTION
+                    ds_hclib_ready(true);
+                    ds_promise_task(true);
+                #endif
+
+                for (int ja = 0; ja < ny; ja++) {
+                    // if(i == 0 && ja == 1){
+                    //     printf("address is %p \n",&u[index2d(ny,i,ja)]);
+                    // }
+                    
+                    u[index2d(ny,i,ja)] = unew[index2d(ny,i,ja)];
                 }
  
+                #ifdef RACE_DETECTION
+                    ds_hclib_ready(false);
+                #endif
+
                 promise_u[i]->put();
-                delete promise_unew[i];
-                promise_unew[i] = new hclib::promise_t<void>();
+                // delete promise_unew[i];
+                // promise_unew[i] = new hclib::promise_t<void>();
             }); // end of async
+        }
+        for(i = 0; i < nx; i++){
+            delete promise_unew[i];
+            promise_unew[i] = new hclib::promise_t<void>();
         }
 
         for (i = 0; i < nx; i++) {
-#ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-#endif
-            hclib::async([=, &u, &unew, &promise_u, &promise_unew]() mutable{
-#ifdef RACE_DETECTION
-                ds_hclib_ready(true);
-#endif
-#ifdef RACE_DETECTION
-                ds_promise_task(true);
-#endif
+            #ifdef RACE_DETECTION
+                ds_hclib_ready(false);
+            #endif
+            hclib::async([i, nx, ny, dx, dy, f, &u, &unew, &promise_u, &promise_unew]() mutable{
                 if(i > 0){
                     promise_u[i-1]->get_future()->wait();
                 }
@@ -133,19 +156,29 @@ void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itn
                 if(i < nx - 1){
                     promise_u[i+1]->get_future()->wait();
                 }
+
+                #ifdef RACE_DETECTION
+                    ds_hclib_ready(true);
+                    ds_promise_task(true);
+                #endif
                 
-                
-                for (j = 0; j < ny; j++) {
-                    if (i == 0 || j == 0 || i == nx - 1 || j == ny - 1) {
-                        unew[index2d(ny, i, j)] = f[index2d(ny, i, j)];
+                for (int jb = 0; jb < ny; jb++) {
+                    if (i == 0 || jb == 0 || i == nx - 1 || jb == ny - 1) {
+                        unew[index2d(ny, i, jb)] = f[index2d(ny, i, jb)];
                     } else {
-                        unew[index2d(ny, i, j)] = 0.25 * (u[index2d(ny, i-1, j)] + u[index2d(ny, i, j+1)] + u[index2d(ny, i, j-1)] + u[index2d(ny, i+1, j)]
-                                                + f[index2d(ny, i, j)] * dx * dy);
+                        // if(i-1 == 0 && jb == 1){
+                        //     // i = 1, jb = 1
+                        //     printf("visiting u[512,0,1] %p \n",&u[index2d(ny, i-1, jb)]);
+                        // }
+                        unew[index2d(ny, i, jb)] = 0.25 * (u[index2d(ny, i-1, jb)] + u[index2d(ny, i, jb+1)] + u[index2d(ny, i, jb-1)] + u[index2d(ny, i+1, jb)]
+                                                + f[index2d(ny, i, jb)] * dx * dy);
                     }
                 }
+                #ifdef RACE_DETECTION
+                    ds_hclib_ready(false);
+                #endif
                 promise_unew[i]->put();
 
-                // TODO: figure out how to reset or reallocate u_p[*]
             }); // end of async
         }
     }
@@ -237,6 +270,10 @@ double uxxyy_exact(double x, double y) {
 
 void run(int ms, int bs, int nit)
 {
+
+// #ifdef RACE_DETECTION
+//     ds_hclib_ready(true);
+// #endif
     int matrix_size = ms;
     int block_size = bs;
     int niter = nit;
@@ -293,11 +330,11 @@ void run(int ms, int bs, int nit)
         }
 
     /// KERNEL INTENSIVE COMPUTATION
+    long start = hclib_current_time_ms();
+    
 #ifdef RACE_DETECTION
     ds_hclib_ready(true);
 #endif
-    long start = hclib_current_time_ms();
-    
     sweep(nx, ny, dx, dy, f_, 0, niter, u_, unew_, block_size);
 #ifdef RACE_DETECTION
     ds_hclib_ready(false);
@@ -391,6 +428,16 @@ int main (int argc, char ** argv) {
         long end = hclib_current_time_ms();
         double dur = ((double)(end-start))/1000;
         printf("Run Time = %f\n",dur);
+
+    #ifdef RACE_DETECTION
+        printf("DPST height is: %d \n", get_dpst_height());
+        printf("cache size is %d \n",ds_get_cache_size());
+        printf("number of task is %d \n",get_task_id_unique());
+        printf("number of nt join %d \n", get_nt_count());
+        printf("number of tree joins %d \n", ds_get_tree_join_count());
+        ds_print_check_write_count();
+        ds_print_check_read_count();
+    #endif
     });
 
     return 0;

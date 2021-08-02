@@ -126,6 +126,13 @@ void mat_mul_par_promise(const REAL *const A, const REAL *const B, REAL *C, int 
 
     if(n == BASE_CASE) {
         int i, j, k;
+
+        for(i=0; i<n; i++){
+            for(j=0; j<n; j++){
+                temp += A[i * n + j] * B[i*n + j];
+            }
+        }
+        ds_hclib_ready(false);
         for(i = 0; i < n; i++){
             for(k = 0; k < n; k++){
                 REAL c = 0.0;
@@ -135,7 +142,7 @@ void mat_mul_par_promise(const REAL *const A, const REAL *const B, REAL *C, int 
                 C[i * n + k] += c;
             }
         }
-
+        ds_hclib_ready(true);
         return;
     }
 

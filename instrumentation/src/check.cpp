@@ -13,15 +13,16 @@ static int current_finish_id;
 static bool is_step = false;
 static bool is_future = false;
 static bool is_asap_promise_task = false;
-static int check_write_count = 0;
-static int check_read_count = 0;
+static unsigned long check_write_count = 0;
+static unsigned long check_read_count = 0;
 
 extern "C" __attribute__((weak)) void ds_print_check_write_count(){
-  printf("check write count: %d \n", check_write_count);
+  printf("check write count: %lu \n", check_write_count);
 }
 
 extern "C" __attribute__((weak)) void ds_print_check_read_count(){
-  printf("check read count: %d \n", check_read_count);
+  printf("check read count: %lu \n", check_read_count);
+  printf("ds find count %d \n",ds->get_find_count());
 }
 
 extern "C" void ds_promise_task(bool b){
@@ -79,6 +80,15 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
     }
 
     bool race = !precede(writer->task_and_node, current_task_and_step);
+    if(race){
+      printf("we find a read-write race !!!!!!!!!! \n");
+      tree_node_cpp* p_node = (tree_node_cpp*)writer->task_and_node.node_in_dpst;
+      tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
+      printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, writer->task_and_node.task_id, current_task_and_step.task_id);
+      printf("addr %lx, mem_size %zu \n",addr,mem_size);
+      printf("previous op is %lx, current op is %lx\n", writer->rip, rip);
+      assert(0);
+    }
   } // end of all grains writer
 
   
@@ -200,7 +210,6 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
 extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, size_t mem_size) {
   const int start = ADDR_TO_MEM_INDEX(addr);
   const int grains = SIZE_TO_NUM_GRAINS(mem_size);
-  
   for (int i=start; i < (start + grains); ++i) {
     MemAccess_t *writer = slot->writers[i];
     if(writer == NULL) {
@@ -209,15 +218,15 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
     }
 
     bool race = !precede(writer->task_and_node, current_task_and_step); 
-    // if(race){
-    //   printf("we find a race !!!!!!!!!! \n");
-    //   tree_node_cpp* p_node = (tree_node_cpp*)writer->task_and_node.node_in_dpst;
-    //   tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
-    //   printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, writer->task_and_node.task_id, current_task_and_step.task_id);
-    //   printf("addr %lx, mem_size %zu \n",addr,mem_size);
-    //   printf("previous op is %lx, current op is %lx\n", writer->rip, rip);
-    //   assert(0);
-    // }
+    if(race){
+      printf("we find a write-write race !!!!!!!!!! \n");
+      tree_node_cpp* p_node = (tree_node_cpp*)writer->task_and_node.node_in_dpst;
+      tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
+      printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, writer->task_and_node.task_id, current_task_and_step.task_id);
+      printf("addr %lx, mem_size %zu \n",addr,mem_size);
+      printf("previous op is %lx, current op is %lx\n", writer->rip, rip);
+      assert(0);
+    }
 
     writer->task_and_node.node_in_dpst = current_task_and_step.node_in_dpst;
     writer->task_and_node.task_id = current_task_and_step.task_id;
@@ -231,6 +240,15 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
         if (reader == nullptr) continue;
         while(reader != nullptr){
           bool race = !precede(reader->task_and_node, current_task_and_step);
+          if(race){
+            printf("we find a write-read race !!!!!!!!!! \n");
+            tree_node_cpp* p_node = (tree_node_cpp*)reader->task_and_node.node_in_dpst;
+            tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
+            printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, reader->task_and_node.task_id, current_task_and_step.task_id);
+            printf("addr %lx, mem_size %zu \n",addr,mem_size);
+            printf("previous op is %lx, current op is %lx\n", reader->rip, rip);
+            assert(0);
+          }
           reader = reader->next;
           if(reader != nullptr){
             delete reader->prev;
@@ -286,7 +304,7 @@ extern "C" void asap_check_write(int *addr, int bytes) {
 
 }
 
-extern "C" void asap_check_read(int *addr, int bytes) {
+extern "C" __attribute__((weak)) void asap_check_read(int *addr, int bytes) {
   if(hclib_ready == true){
     check_read_count++;
     void *pc = __builtin_return_address(0);

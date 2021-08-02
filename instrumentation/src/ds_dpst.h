@@ -39,6 +39,8 @@ class CacheHashFunction {
 // A class to represent a disjoint set
 class DisjointSet
 {
+    int find_count = 0;
+
     int tree_join_count = 0;
 
     // a map from finish dpst node id to finish
@@ -53,6 +55,8 @@ class DisjointSet
     unordered_map<int, set_info*> parent_aka_setnowin;
 
 public:
+    int get_find_count();
+    
     DisjointSet();
 
     int get_tree_join_count();
