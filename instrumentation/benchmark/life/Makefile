@@ -3,11 +3,11 @@ include ../common/make.inc
 all: life-rd.exe life-origin.exe
 
 life-rd.exe: life.cpp 
-	$(INST) $^ -DRACE_DETECTION $(LIFE_RD_OPTIONS)
+	$(INST) $^ -DRACE_DETECTION $(TEST_RD_OPTIONS)
 	mv life.exe life-rd.exe
 
 life-origin.exe: life.cpp
-	${CXX} -o $@ $^ $(LIFE_ORIGIN_OPTIONS)
+	${CXX} -o $@ $^ $(TEST_ORIGIN_OPTIONS)
 
 .PHONY: clean
 clean:

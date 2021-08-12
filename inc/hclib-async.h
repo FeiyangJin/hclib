@@ -67,9 +67,14 @@ namespace hclib {
  */
 template <typename T>
 inline void call_lambda(T* lambda) {
+    ds_hclib_ready(false);
 	const int wid = current_ws()->id;
 	MARK_BUSY(wid);
+
+    ds_hclib_ready(true);
 	(*lambda)();
+    ds_hclib_ready(false);
+
     delete lambda;
 	MARK_OVH(wid);
 }

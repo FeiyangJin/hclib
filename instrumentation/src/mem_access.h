@@ -11,8 +11,8 @@ using addr_t = uint64_t;
 #define LOG_KEY_SIZE  4
 #define LOG_TBL_SIZE 20
 
-#define LOOP_READERS
-#define LINK_READER
+// #define LOOP_READERS
+// #define LINK_READER
 
 #ifndef ADDR_TO_KEY
 #define ADDR_TO_KEY(addr) ((addr_t) ((addr_t)addr >> LOG_KEY_SIZE))
@@ -61,11 +61,8 @@ public:
     MemAccess_t* readers[NUM_SLOTS] = {};
     MemAccess_t* readers_tail[NUM_SLOTS] = {};
   #else
-    std::vector<MemAccess_t>* readers[NUM_SLOTS] = {};
-  #endif
-
-  #ifndef LOOP_READERS
-    std::unordered_set<int>* readers_finish_id[NUM_SLOTS] = {};
+    // std::vector<MemAccess_t>* readers[NUM_SLOTS] = {};
+    std::unordered_map<int,MemAccess_t>* readers[NUM_SLOTS] = {};
   #endif
 
 

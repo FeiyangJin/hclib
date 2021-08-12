@@ -5,15 +5,17 @@
 
 void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
 {
-    // int testx = 100;
-    // hclib::async([&](){
-    //     testx = 200;
-    // });
-    // testx = 300;
-    
     #ifdef RACE_DETECTION
         ds_promise_task(true);
     #endif
+    printf("hello \n");
+    int testx = 100;
+    hclib::async([&testx](){
+        testx = 200;
+    });
+    testx = 300;
+    
+
     int ii, jj, kk;
 
     int array_size = matrix_size*matrix_size;
@@ -514,14 +516,16 @@ void run(int ms, int ss)
     /// KERNEL INTENSIVE COMPUTATION
     long start = hclib_current_time_ms();
 
-#ifdef RACE_DETECTION
-    ds_hclib_ready(true);
-#endif
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
+
     // sparselu_par_call(BENCH, matrix_size, submatrix_size);
     sparselu_par_call_dep(BENCH, matrix_size, submatrix_size);
-#ifdef RACE_DETECTION
-    ds_hclib_ready(false);
-#endif
+
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
 
     long end = hclib_current_time_ms();
     double dur = ((double)(end-start))/1000;
@@ -538,8 +542,8 @@ void run(int ms, int ss)
 
 int main (int argc, char ** argv) {
     printf("sparselu benchmark from KASTORS\n");
-    int matrix_size = 64;
-    int submatrix_size = 32;
+    int matrix_size = 16;
+    int submatrix_size = 4;
 
     if(argc == 3){
         matrix_size = atoi(argv[1]);

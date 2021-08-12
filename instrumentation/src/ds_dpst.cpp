@@ -426,42 +426,48 @@ bool DisjointSet::precede_dpst(tree_node_cpp* node1, tree_node_cpp* node2){
     return false;
 }
 
+#define CACHE;
 bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b){
-    // printf("precede \n");
     if(step_a->index == step_b->index){
         return true;
     }
 
-    cache_key key(task_a,task_b);
-    bool in_cache = cache.find(key) != cache.end();
-    if(in_cache){
-        if(step_a->index <= cache.at(key)->index){
-            return true;
+    #ifdef CACHE
+        cache_key key(task_a,task_b);
+        bool in_cache = cache.find(key) != cache.end();
+        if(in_cache){
+            if(step_a->index <= cache.at(key)->index){
+                return true;
+            }
         }
-    }
+    #endif
 
     unordered_set<int> visited;
     bool result = this->visit(step_a,step_b,task_a,task_b,visited);
 
-    if(result == true){
-        if(in_cache){
-            cache.at(key) = step_a;
+    #ifdef CACHE
+        if(result == true){
+            if(in_cache){
+                cache.at(key) = step_a;
+            }
+            else{
+                cache.insert(std::pair<cache_key,tree_node_cpp*>(key,step_a));
+            }
         }
-        else{
-            cache.insert(std::pair<cache_key,tree_node_cpp*>(key,step_a));
-        }
-    }
+    #endif
     return result;
 }
 
 bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b, unordered_set<int> visited){
-    cache_key key(task_a,task_b);
-    bool in_cache = cache.find(key) != cache.end();
-    if(in_cache){
-        if(step_a->index <= cache.at(key)->index){
-            return true;
+    #ifdef CACHE
+        cache_key key(task_a,task_b);
+        bool in_cache = cache.find(key) != cache.end();
+        if(in_cache){
+            if(step_a->index <= cache.at(key)->index){
+                return true;
+            }
         }
-    }
+    #endif
     
     bool b_in_visited = visited.find(task_b) != visited.end();
     if(b_in_visited){
@@ -488,12 +494,6 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
 
     //optimization
     if(this->all_tasks[Sa].this_task_state == ACTIVE){
-        // if(in_cache){
-        //     cache.at(key) = step_a;
-        // }
-        // else{
-        //     cache.insert(std::pair<cache_key,tree_node_cpp*>(key,step_a));
-        // }
         return true;
     }
 
@@ -505,6 +505,16 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
         assert(last_step_node->this_node_type == STEP);
 
         if(visit(step_a, last_step_node, task_a, task_id, visited)){
+            #ifdef CACHE
+                cache_key key(task_a,task_id);
+                bool in_cache = cache.find(key) != cache.end();
+                if(in_cache){
+                    cache.at(key) = step_a;
+                }
+                else{
+                    cache.insert(std::pair<cache_key,tree_node_cpp*>(key,step_a));
+                }
+            #endif
             return true;
         }
     }
@@ -530,6 +540,16 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
                 assert(last_step_node->this_node_type == STEP);
 
                 if(visit(step_a, last_step_node, task_a, task_id, visited)){
+                    #ifdef CACHE
+                        cache_key key(task_a,task_id);
+                        bool in_cache = cache.find(key) != cache.end();
+                        if(in_cache){
+                            cache.at(key) = step_a;
+                        }
+                        else{
+                            cache.insert(std::pair<cache_key,tree_node_cpp*>(key,step_a));
+                        }
+                    #endif
                     return true;
                 }
             }

@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <math.h>
 #include <vector>
-#include <unordered_map>
 #include "hclib_cpp.h"
 
 #define index2d(ny,i,j) (((i)*(ny))+(j))
@@ -51,32 +50,6 @@ void sweep_seq(int nx, int ny, double dx, double dy, double *f_, int itold, int 
 
 void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itnew, double *u_, double *unew_, int block_size)
 {
-    // std::unordered_map<int,char> test_map;
-    // test_map[1] = 'a';
-    // test_map[2] = 'b';
-    // test_map[1] = 'c';
-
-    // for(auto r=test_map.begin(); r!=test_map.end(); r++){
-    //     printf("key: %d     value: %c \n",r->first,r->second);
-    // }
-    #ifdef RACE_DETECTION
-        ds_hclib_ready(true);
-    #endif
-    // int testx = 100;
-    // #ifdef RACE_DETECTION
-    //     ds_hclib_ready(false);
-    // #endif
-    // hclib::async([&testx](){
-    //     #ifdef RACE_DETECTION
-    //         ds_hclib_ready(true);
-    //     #endif
-    //     testx = 200;
-    // });
-    // #ifdef RACE_DETECTION
-    //     ds_hclib_ready(true);
-    // #endif
-    // testx = 300;
-
     int i;
     int it;
     int j;
@@ -97,6 +70,9 @@ void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itn
         promise_unew[pi] = p;
     }
 
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
     hclib::promise_t<void>* promise_u[nx];
 
     for (it = itold + 1; it <= itnew; it++) {

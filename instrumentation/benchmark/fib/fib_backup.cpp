@@ -28,7 +28,7 @@ uint64_t fib_async_finish(uint64_t n) {
     hclib::async([n,&x]() {
       #ifdef RACE_DETECTION
         ds_hclib_ready(true);
-        // ds_promise_task(true);
+        ds_promise_task(true);
       #endif
 
       uint64_t value1 = fib_async_finish(n-1);
@@ -44,7 +44,7 @@ uint64_t fib_async_finish(uint64_t n) {
 
     #ifdef RACE_DETECTION
         ds_hclib_ready(true);
-        // ds_promise_task(true);
+        ds_promise_task(true);
     #endif
 
     uint64_t value2 = fib_async_finish(n-2);
@@ -65,6 +65,7 @@ int main(int argc, char** argv) {
 
   char const *deps[] = { "system" }; 
   hclib::launch(deps, 1, [&]() {
+    // async finish execution
     long start = hclib_current_time_ms();
 
     #ifdef RACE_DETECTION

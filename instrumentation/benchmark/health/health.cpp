@@ -398,9 +398,13 @@ void sim_village(struct Village *village)
       pv.push_back(p);
       
       hclib::async([vlist, &p](){
-         sim_village(vlist);
          #ifdef RACE_DETECTION
             ds_hclib_ready(true);
+            // ds_promise_task(true);
+         #endif
+         sim_village(vlist);
+
+         #ifdef RACE_DETECTION
             p->end_put();
             ds_hclib_ready(false);
          #else
@@ -408,35 +412,12 @@ void sim_village(struct Village *village)
          #endif
       });
 
-      #ifdef RACE_DETECTION
-         ds_hclib_ready(true);
-      #endif
-      
-      #ifdef RACE_DETECTION
-         ds_hclib_ready(false);
-      #endif
       vlist = vlist->next;
    }
 
    #ifdef RACE_DETECTION
       ds_hclib_ready(true);
    #endif
-
-   // try visit all elements here
-   // void* v;
-   // v = village->hosp.inside;
-   // v = village->hosp.assess;
-   // auto hf = village->hosp.free_personnel;
-   // v = village->population;
-   // v = village->back->hosp.realloc;
-   // auto bh = village->back->hosp;
-   // v = village->hosp.waiting;
-   // v = village->hosp.realloc;
-
-   // // turn off hclib
-   // #ifdef RACE_DETECTION
-   //    ds_hclib_ready(false);
-   // #endif
 
    /* Uses lists v->hosp->inside, and v->return */
    check_patients_inside(village);

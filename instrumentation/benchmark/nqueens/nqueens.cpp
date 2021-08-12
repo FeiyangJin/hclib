@@ -91,12 +91,9 @@ int nqueens_fj(int n, int j, char *a){
                 
                 #ifdef RACE_DETECTION
                     pv->at(index)->end_put(result);
+                    ds_hclib_ready(false);
                 #else
                     pv->at(index)->put(result);
-                #endif
-
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(false);
                 #endif
             });
 
@@ -156,9 +153,9 @@ void find_queens (int size)
 
 int verify_queens (int size)
 {
-        // if ( size > MAX_SOLUTIONS ) return BOTS_RESULT_NA;
-        // if ( total_count == solutions[size-1]) return BOTS_RESULT_SUCCESSFUL;
-        // return BOTS_RESULT_UNSUCCESSFUL;
+    // if ( size > MAX_SOLUTIONS ) return BOTS_RESULT_NA;
+    // if ( total_count == solutions[size-1]) return BOTS_RESULT_SUCCESSFUL;
+    // return BOTS_RESULT_UNSUCCESSFUL;
     return 0;
 }
 
