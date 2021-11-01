@@ -109,17 +109,41 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
               slot->readers_tail[i] = new_reader;
             }
           }
+      #elif defined(VECTOR_READER_LIST)
+          vector<MemAccess_t> *reader = slot->readers[i];
+          if(reader == nullptr){
+            slot->readers[i] = new std::vector<MemAccess_t>();
+            slot->readers[i]->push_back(MemAccess_t(current_task_and_step,rip,is_asap_promise_task));
+          }
+          else{
+            // if we have a vector of readers, how should we decide:
+            // Add the new reader or not
+            // Remove any previous reader or not
+            #ifdef LOOP_READERS
+              bool update = true;
+              auto r = reader->begin();
+              while(r != reader->end()){
+                if(r->task_and_node.task_id == c_id){
+                  r->task_and_node.node_in_dpst = current_task_and_step.node_in_dpst;
+                  r->rip = rip;
+                  update = false;
+                  break;
+                }
+                r++;
+              }
+              if(update){
+                reader->push_back(MemAccess_t(current_task_and_step, rip, is_asap_promise_task));
+              }
+            #else
+              reader->push_back(MemAccess_t(current_task_and_step, rip, is_asap_promise_task));
+            #endif
+          }
       #else
           unordered_map<int,MemAccess_t> *reader = slot->readers[i];
           if(reader == nullptr){
             slot->readers[i] = new std::unordered_map<int,MemAccess_t>();
             slot->readers[i]->insert(std::pair<int,MemAccess_t>(c_id, MemAccess_t(current_task_and_step,rip,is_asap_promise_task)));
-            // slot->readers[i]->push_back(MemAccess_t(current_task_and_step,rip,is_asap_promise_task));
             continue;
-          }
-          else if(reader->size() == 0){
-            reader->insert(std::pair<int,MemAccess_t>(c_id, MemAccess_t(current_task_and_step,rip,is_asap_promise_task)));
-            // reader->push_back(MemAccess_t(current_task_and_step, rip,is_asap_promise_task));
           }
           else{
             #ifdef LOOP_READERS
@@ -128,7 +152,6 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
               while(r != reader->end()){
                 if(r->task_and_node.task_id == c_id){
                   r->task_and_node.node_in_dpst = current_task_and_step.node_in_dpst;
-                  // r = reader->erase(r);
                   update = false;
                   break;
                 }
@@ -140,16 +163,12 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
                 reader->push_back(MemAccess_t(current_task_and_step, rip, is_asap_promise_task));
               }
             #else
-              // suppose to push the reader into the reader list
-              // shall we remove some readers here ?
               if(reader->find(c_id) == reader->end()){
                 reader->insert(std::pair<int,MemAccess_t>(c_id, MemAccess_t(current_task_and_step,rip,is_asap_promise_task)));
               }
               else{
                 reader->at(c_id) = MemAccess_t(current_task_and_step,rip,is_asap_promise_task);
               }
-              
-              // reader->push_back(MemAccess_t(current_task_and_step, rip,is_asap_promise_task));
             #endif
           }
       #endif
@@ -178,8 +197,8 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
       assert(0);
     }
 
-    writer->task_and_node.node_in_dpst = current_task_and_step.node_in_dpst;
-    writer->task_and_node.task_id = current_task_and_step.task_id;
+    // update writer
+    writer->task_and_node = current_task_and_step;
     writer->rip     = rip;
   } // end of checking writers
 
@@ -212,6 +231,31 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
         
         slot->readers[i] = nullptr;
         slot->readers_tail[i] = nullptr;
+    #elif defined(VECTOR_READER_LIST)
+      vector<MemAccess_t>* reader = slot->readers[i];
+      if (reader == nullptr) continue;
+
+      auto r = reader->begin();
+      std::unordered_set<int> past_ids;
+      while(r != reader->end()){
+          if(past_ids.find(r->task_and_node.task_id) != past_ids.end()){
+            r++;
+            continue;
+          }
+          bool race = !precede(r->task_and_node, current_task_and_step);
+          if(race){
+            printf("we find a write-read race !!!!!!!!!! \n");
+            tree_node_cpp* p_node = (tree_node_cpp*)r->task_and_node.node_in_dpst;
+            tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
+            printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, r->task_and_node.task_id, current_task_and_step.task_id);
+            printf("addr %lx, mem_size %zu \n",addr,mem_size);
+            printf("previous op is %lx, current op is %lx\n", r->rip, rip);
+            assert(0);
+          }
+          r++;
+      }
+      slot->readers[i]->clear();
+      slot->readers[i] = nullptr;
     #else
         unordered_map<int,MemAccess_t>* reader = slot->readers[i];
         if (reader == nullptr) continue;

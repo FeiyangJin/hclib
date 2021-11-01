@@ -195,48 +195,51 @@ void mat_mul_par_promise(const REAL *const A, const REAL *const B, REAL *C, int 
     #endif
 
     hclib::promise_t<void> *p1 = new hclib::promise_t<void>();
-    // hclib::promise_t<void> *p2 = new hclib::promise_t<void>();
-    // hclib::promise_t<void> *p3 = new hclib::promise_t<void>();
+    hclib::promise_t<void> *p2 = new hclib::promise_t<void>();
+    hclib::promise_t<void> *p3 = new hclib::promise_t<void>();
+
     hclib::async([A1, B1, C1, n, &p1](){
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(false);
+        #endif
         mat_mul_par_promise(A1,B1,C1,n>>1);
         #ifdef RACE_DETECTION
             ds_hclib_ready(true);
         #endif
 
         p1->put();
-
-        #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-        #endif
     });
 
-    hclib::finish([&](){
-        hclib::async([&](){
-            mat_mul_par(A1,B2,C2,n>>1);
-            #ifdef RACE_DETECTION
-                ds_hclib_ready(false);
-            #endif
-        });
-
-        hclib::async([&](){
-            mat_mul_par(A3,B1,C3,n>>1);
-            #ifdef RACE_DETECTION
-                ds_hclib_ready(false);
-            #endif
-        });
-
-        mat_mul_par(A3,B2,C4,n>>1);
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
+    hclib::async([&](){
+        mat_mul_par(A1,B2,C2,n>>1);
         #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
+            ds_hclib_ready(true);
         #endif
+        p2->put();
     });
+
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
+    hclib::async([&](){
+        mat_mul_par(A3,B1,C3,n>>1);
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(true);
+        #endif
+        p3->put();
+    });
+
+    mat_mul_par(A3,B2,C4,n>>1);
 
     #ifdef RACE_DETECTION
         ds_hclib_ready(true);
     #endif
     p1->get_future()->wait();
-    // p2->get_future()->wait();
-    // p3->get_future()->wait();
+    p2->get_future()->wait();
+    p3->get_future()->wait();
 
     
     #ifdef RACE_DETECTION
@@ -244,31 +247,35 @@ void mat_mul_par_promise(const REAL *const A, const REAL *const B, REAL *C, int 
     #endif
     hclib::finish([&](){
         hclib::async([&](){
+            #ifdef RACE_DETECTION
+                ds_hclib_ready(false);
+            #endif
             mat_mul_par(A2,B3,C1,n>>1);
-            #ifdef RACE_DETECTION
-                ds_hclib_ready(false);
-            #endif
         });
 
-        hclib::async([&](){
-            mat_mul_par(A2,B4,C2,n>>1);
-            #ifdef RACE_DETECTION
-                ds_hclib_ready(false);
-            #endif
-        });
-
-        hclib::async([&](){
-            mat_mul_par(A4,B3,C3,n>>1);
-            #ifdef RACE_DETECTION
-                ds_hclib_ready(false);
-            #endif
-        });
-
-        mat_mul_par(A4,B4,C4,n>>1);
         #ifdef RACE_DETECTION
             ds_hclib_ready(false);
         #endif
+        hclib::async([&](){
+            mat_mul_par(A2,B4,C2,n>>1);
+        });
+
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(false);
+        #endif
+        hclib::async([&](){
+            mat_mul_par(A4,B3,C3,n>>1);
+        });
+
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(false);
+        #endif
+        mat_mul_par(A4,B4,C4,n>>1);
     });
+
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
 }
 
 //recursive parallel solution to matrix multiplication
@@ -317,43 +324,67 @@ void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n){
     #endif
     hclib::finish([A1,B1,B2,A3,&C1,&C2,&C3,&C4,n](){    
         hclib::async([A1,B1,&C1,n](){
+            #ifdef RACE_DETECTION
+                ds_hclib_ready(false);
+            #endif
             mat_mul_par_promise(A1,B1,C1,n>>1);
         });
 
         hclib::async([A1,B2,&C2,n](){
+            #ifdef RACE_DETECTION
+                ds_hclib_ready(false);
+            #endif
             mat_mul_par_promise(A1,B2,C2,n>>1);
         });
 
         hclib::async([A3,B1,&C3,n](){
+            #ifdef RACE_DETECTION
+                ds_hclib_ready(false);
+            #endif
             mat_mul_par_promise(A3,B1,C3,n>>1);
         });
 
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(false);
+        #endif
         mat_mul_par_promise(A3,B2,C4,n>>1);
     });
-    #ifdef RACE_DETECTION
-        ds_hclib_ready(true);
-    #endif
 
 
     #ifdef RACE_DETECTION
         ds_hclib_ready(false);
     #endif
     hclib::finish([&](){
-        hclib::async([&](){
+        hclib::async([A2,B3,&C1,n](){
+            #ifdef RACE_DETECTION
+                ds_hclib_ready(false);
+            #endif
             mat_mul_par(A2,B3,C1,n>>1);
         });
 
-        hclib::async([&](){
+        hclib::async([A2,B4,&C2,n](){
+            #ifdef RACE_DETECTION
+                ds_hclib_ready(false);
+            #endif
             mat_mul_par(A2,B4,C2,n>>1);
         });
 
-        hclib::async([&](){
+        hclib::async([A4,B3,&C3,n](){
+            #ifdef RACE_DETECTION
+                ds_hclib_ready(false);
+            #endif
             mat_mul_par(A4,B3,C3,n>>1);
         });
 
-            mat_mul_par(A4,B4,C4,n>>1);
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(false);
+        #endif
+        mat_mul_par(A4,B4,C4,n>>1);
     });
 
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
 }
 
 

@@ -8,13 +8,6 @@ MemAccess_t::MemAccess_t(access_info t_a_n, addr_t r, bool is_promise){
   this->rip = r;
   this->promise_task = is_promise;
 
-  // inline MemAccess_t operator=(MemAccess_t t){
-  //   this->task_and_node = t.task_and_node;
-  //   this->rip = t.rip;
-  //   this->promise_task = t.promise_task;
-  //   return t;
-  // };
-
 #ifdef LINK_READER
   this->next = nullptr;
   this->prev = nullptr;
@@ -44,6 +37,9 @@ MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read,
         MemAccess_t* first_reader = new MemAccess_t(task_and_node, rip, is_promise);
         this->readers[i] = first_reader;
         this->readers_tail[i] = first_reader;
+      #elif defined(VECTOR_READER_LIST)
+        this->readers[i] = new std::vector<MemAccess_t>();
+        this->readers[i]->push_back(MemAccess_t(task_and_node,rip,is_promise));
       #else
         this->readers[i] = new std::unordered_map<int,MemAccess_t>();
         this->readers[i]->insert(std::pair<int,MemAccess_t>(task_and_node.task_id,MemAccess_t(task_and_node,rip,is_promise)));

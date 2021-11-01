@@ -478,12 +478,6 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
 
     // this covers ancestor in DPST
     if(precede_dpst(step_a,step_b) == true){
-        // if(in_cache){
-        //     cache.at(key) = step_a;
-        // }
-        // else{
-        //     cache.insert(std::pair<cache_key,tree_node_cpp*>(key,step_a));
-        // }
         return true;
     }
 
