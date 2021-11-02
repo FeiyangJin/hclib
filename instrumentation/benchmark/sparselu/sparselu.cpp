@@ -8,13 +8,6 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
     #ifdef RACE_DETECTION
         ds_promise_task(true);
     #endif
-    printf("hello \n");
-    int testx = 100;
-    hclib::async([&testx](){
-        testx = 200;
-    });
-    testx = 300;
-    
 
     int ii, jj, kk;
 
@@ -186,9 +179,9 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
 
 void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
 {
-#ifdef RACE_DETECTION
-    ds_promise_task(true);
-#endif
+    #ifdef RACE_DETECTION
+        ds_promise_task(true);
+    #endif
     int ii, jj, kk;
     std::vector<hclib::promise_t<void>*> promise_vector;
 
@@ -520,8 +513,8 @@ void run(int ms, int ss)
         ds_hclib_ready(true);
     #endif
 
-    // sparselu_par_call(BENCH, matrix_size, submatrix_size);
-    sparselu_par_call_dep(BENCH, matrix_size, submatrix_size);
+    sparselu_par_call(BENCH, matrix_size, submatrix_size);
+    // sparselu_par_call_dep(BENCH, matrix_size, submatrix_size);
 
     #ifdef RACE_DETECTION
         ds_hclib_ready(false);
@@ -542,8 +535,8 @@ void run(int ms, int ss)
 
 int main (int argc, char ** argv) {
     printf("sparselu benchmark from KASTORS\n");
-    int matrix_size = 16;
-    int submatrix_size = 4;
+    int matrix_size = 64;
+    int submatrix_size = 16;
 
     if(argc == 3){
         matrix_size = atoi(argv[1]);

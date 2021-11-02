@@ -12,8 +12,8 @@ using addr_t = uint64_t;
 #define LOG_TBL_SIZE 20
 
 // #define LOOP_READERS
-// #define LINK_READER
-#define VECTOR_READER_LIST
+#define LINK_READER
+// #define VECTOR_READER_LIST
 
 #ifndef ADDR_TO_KEY
 #define ADDR_TO_KEY(addr) ((addr_t) ((addr_t)addr >> LOG_KEY_SIZE))

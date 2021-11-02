@@ -93,14 +93,14 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
           }
           else{ // 3. we have more than 1 reader
             bool update = true;
-            while(reader != nullptr){
-              if(reader->task_and_node.task_id == c_id){
-                reader->task_and_node = current_task_and_step;
-                update = false;
-                break;
-              }
-              reader = reader->next;
-            }
+            // while(reader != nullptr){
+              // if(reader->task_and_node.task_id == c_id){
+              //   reader->task_and_node = current_task_and_step;
+              //   update = false;
+              //   break;
+              // }
+              // reader = reader->next;
+            // }
             if(update){
               MemAccess_t* new_reader = new MemAccess_t(current_task_and_step, rip, is_asap_promise_task);
               slot->readers_tail[i]->next = new_reader;
@@ -111,9 +111,18 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
           }
       #elif defined(VECTOR_READER_LIST)
           vector<MemAccess_t> *reader = slot->readers[i];
+
           if(reader == nullptr){
             slot->readers[i] = new std::vector<MemAccess_t>();
             slot->readers[i]->push_back(MemAccess_t(current_task_and_step,rip,is_asap_promise_task));
+          }
+          else if (reader->size() == 1)
+          {
+            if(reader->at(0).task_and_node.task_id == c_id){
+              reader->at(0) = MemAccess_t(current_task_and_step, rip, is_asap_promise_task);
+              continue;
+            }
+            reader->push_back(MemAccess_t(current_task_and_step, rip, is_asap_promise_task));
           }
           else{
             // if we have a vector of readers, how should we decide:
@@ -207,8 +216,15 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
     #ifdef LINK_READER
         MemAccess_t* reader = slot->readers[i];
         if (reader == nullptr) continue;
-        int size = 0;
+        // std::unordered_set<int> past_ids;
+
         while(reader != nullptr){
+          // if(past_ids.find(reader->task_and_node.task_id) != past_ids.end()){
+          //   reader = reader->next;
+          //   continue;
+          // }
+          // past_ids.insert(reader->task_and_node.task_id);
+
           bool race = !precede(reader->task_and_node, current_task_and_step);
           if(race){
             printf("we find a write-read race !!!!!!!!!! \n");
@@ -219,15 +235,12 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
             printf("previous op is %lx, current op is %lx\n", reader->rip, rip);
             assert(0);
           }
-          size++;
+          
           reader = reader->next;
-          if(reader != nullptr){
-            delete reader->prev;
-          }
+          // if(reader != nullptr){
+          //   delete reader->prev;
+          // }
         }
-        // if(size > 3){
-        //   printf("we have %d readers \n",size);
-        // }
         
         slot->readers[i] = nullptr;
         slot->readers_tail[i] = nullptr;
@@ -236,12 +249,12 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
       if (reader == nullptr) continue;
 
       auto r = reader->begin();
-      std::unordered_set<int> past_ids;
+      // std::unordered_set<int> past_ids;
       while(r != reader->end()){
-          if(past_ids.find(r->task_and_node.task_id) != past_ids.end()){
-            r++;
-            continue;
-          }
+          // if(past_ids.find(r->task_and_node.task_id) != past_ids.end()){
+          //   r++;
+          //   continue;
+          // }
           bool race = !precede(r->task_and_node, current_task_and_step);
           if(race){
             printf("we find a write-read race !!!!!!!!!! \n");
@@ -254,7 +267,7 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
           }
           r++;
       }
-      slot->readers[i]->clear();
+      // slot->readers[i]->clear();
       slot->readers[i] = nullptr;
     #else
         unordered_map<int,MemAccess_t>* reader = slot->readers[i];

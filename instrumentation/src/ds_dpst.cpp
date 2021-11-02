@@ -374,7 +374,6 @@ tree_node_cpp* DisjointSet::find_lca_left_child_cpp(tree_node_cpp* node1, tree_n
     return node2_last_node;
 }
 
-int bool_count = 0;
 bool DisjointSet::precede_dpst(tree_node_cpp* node1, tree_node_cpp* node2){
     if(node1->parent->index == node2->parent->index){
         if(node1->is_parent_nth_child <= node2->is_parent_nth_child){
@@ -386,8 +385,8 @@ bool DisjointSet::precede_dpst(tree_node_cpp* node1, tree_node_cpp* node2){
     }
     
     // need to guarantee prev_node is to the left of current_node
-    tree_node_cpp* node1_last_node = node1;
-    tree_node_cpp* node2_last_node = node2;
+    tree_node_cpp* node1_last_node;
+    tree_node_cpp* node2_last_node;
 
     while (node1->depth != node2->depth)
     {
@@ -484,7 +483,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
     set_info* a_set_info = find_helper(task_a);
     set_info* b_set_info = find_helper(task_b);
     int Sa = a_set_info->set_id;
-    int Sb = b_set_info->set_id;
+    // int Sb = b_set_info->set_id;
 
     //optimization
     if(this->all_tasks[Sa].this_task_state == ACTIVE){
@@ -496,7 +495,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
         int task_id = (*nt_join).task_id;
         tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
         tree_node_cpp* last_step_node = task_node->children_list_tail;
-        assert(last_step_node->this_node_type == STEP);
+        // assert(last_step_node->this_node_type == STEP);
 
         if(visit(step_a, last_step_node, task_a, task_id, visited)){
             #ifdef CACHE
@@ -519,19 +518,19 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
     while (one_lsa.task_id != -1)
     {
         tree_node_cpp* lsa_deepest_reachable_node = one_lsa.last_node_reachable_in_lsa;
-        assert(lsa_deepest_reachable_node != NULL);
+        // assert(lsa_deepest_reachable_node != NULL);
         
         set_info* lsa_set_info = find_helper(one_lsa.task_id);
         for(auto lsa_nt = lsa_set_info->nt->begin(); lsa_nt != lsa_set_info->nt->end(); lsa_nt++){
 
             tree_node_cpp* step_before_this_nt = (*lsa_nt).last_node_before_this_nt;
 
-            assert(lsa_deepest_reachable_node != NULL);
+            // assert(lsa_deepest_reachable_node != NULL);
             if(precede_dpst(step_before_this_nt,lsa_deepest_reachable_node)){
                 int task_id = (*lsa_nt).task_id;
                 tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
                 tree_node_cpp* last_step_node = task_node->children_list_tail;
-                assert(last_step_node->this_node_type == STEP);
+                // assert(last_step_node->this_node_type == STEP);
 
                 if(visit(step_a, last_step_node, task_a, task_id, visited)){
                     #ifdef CACHE

@@ -98,5 +98,6 @@
         "__functional_03": "cpp",
         "*.ipp": "cpp",
         "climits": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": false
 }

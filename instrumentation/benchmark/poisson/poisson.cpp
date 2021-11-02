@@ -51,31 +51,9 @@ void sweep_seq(int nx, int ny, double dx, double dy, double *f_, int itold, int 
 
 void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itnew, double *u_, double *unew_, int block_size)
 {
-    // std::unordered_map<int,char> test_map;
-    // test_map[1] = 'a';
-    // test_map[2] = 'b';
-    // test_map[1] = 'c';
-
-    // for(auto r=test_map.begin(); r!=test_map.end(); r++){
-    //     printf("key: %d     value: %c \n",r->first,r->second);
-    // }
     #ifdef RACE_DETECTION
         ds_hclib_ready(true);
     #endif
-    // int testx = 100;
-    // #ifdef RACE_DETECTION
-    //     ds_hclib_ready(false);
-    // #endif
-    // hclib::async([&testx](){
-    //     #ifdef RACE_DETECTION
-    //         ds_hclib_ready(true);
-    //     #endif
-    //     testx = 200;
-    // });
-    // #ifdef RACE_DETECTION
-    //     ds_hclib_ready(true);
-    // #endif
-    // testx = 300;
 
     int i;
     int it;
@@ -129,7 +107,7 @@ void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itn
 
                 #ifdef RACE_DETECTION
                     ds_hclib_ready(true);
-                    ds_promise_task(true);
+                    // ds_promise_task(true);
                 #endif
 
                 for (int ja = 0; ja < ny; ja++) {
@@ -414,7 +392,7 @@ void run(int ms, int bs, int nit)
 int main (int argc, char ** argv) {
     assert(index2d(5,1,2) == 7);
     printf("jacobi benchmark \n");
-    int matrix_size = 8192;
+    int matrix_size = 512;
     int block_size = 128;
     int niter = 4;
 
