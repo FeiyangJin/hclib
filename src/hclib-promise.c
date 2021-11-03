@@ -259,10 +259,10 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put, void *datum_to_be_put
 
     promise_to_be_put->datum = datum_to_be_put;
     promise_to_be_put->satisfied = 1;
+    hclib_task_t *curr_task = wait_list_of_promise;
 
     // fj: set the promise's setter
     hclib_worker_state *ws = CURRENT_WS_INTERNAL;
-    hclib_task_t *curr_task = wait_list_of_promise;
     hclib_task_t *setter_task = (hclib_task_t*) ws->curr_task;
 
     promise_to_be_put->setter_task_id = setter_task->task_id;
@@ -317,6 +317,7 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put, void *datum_to_be_put
         curr_task = next_task;
     }
 
+    // fj: yield here to execute those ready tasks
     while (counter > 0)
     {
         hclib_yield(NULL);

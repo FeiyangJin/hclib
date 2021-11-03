@@ -77,20 +77,25 @@ static int task_id_unique = 0;
 
 int nt_count = 0;
 
-bool promise_finish = false;
+// bool promise_finish = false;
 
-bool is_during_promise_finish(){
-    return promise_finish;
-}
+// bool is_during_promise_finish(){
+//     return promise_finish;
+// }
 
-void promise_finish_start(){
-    promise_finish = true;
-}
+// void promise_finish_start(){
+//     promise_finish = true;
+// }
 
-void promise_finish_end(){
-    promise_finish = false;
-}
+// void promise_finish_end(){
+//     promise_finish = false;
+// }
 
+/**
+ * @brief  get the tree_node of current task
+ * @note   this is a weak function, only be called from instrumentation when checking write and read
+ * @retval the tree_node of current task in dpst
+ */
 __attribute__((weak)) void* hclib_get_current_task_info(int* task_id, int* current_finish_id, bool* is_step, bool* is_future){
     hclib_worker_state *ws = current_ws();
     hclib_task_t *task = (hclib_task_t *) ws->curr_task;
@@ -104,12 +109,22 @@ __attribute__((weak)) void* hclib_get_current_task_info(int* task_id, int* curre
     return (void*)the_node;
 }
 
+/**
+ * @brief  
+ * @note   Not being used currently 
+ * @retval 
+ */
 __attribute__((weak)) bool ds_current_is_future(){
     hclib_worker_state *ws = current_ws();
     hclib_task_t *task = (hclib_task_t *) ws->curr_task;
     return (task->node_in_dpst->this_node_type == FUTURE);
 }
 
+/**
+ * @brief  
+ * @note   Not being used currently
+ * @retval 
+ */
 __attribute__((weak)) int ds_get_current_finish(){
     hclib_worker_state *ws = current_ws();
     hclib_task_t *task = (hclib_task_t *) ws->curr_task;
@@ -138,18 +153,25 @@ int get_current_task_id(){
     return task->task_id;
 }
 
+/**
+ * @brief  Insert a tree node (not a step node) under parent
+ * @note   
+ * @param  nodeType: root,async,future or finish
+ * @param  *parent: parent node, the inserted node will become a child of parent
+ * @retval the newly inserted node
+ */
 tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent){
     tree_node *node = newtreeNode();   
     node->this_node_type = nodeType;
     
-    if(nodeType == ROOT){
+    if(nodeType == ROOT){ 
         node->depth = 0;
         node->parent = NULL;
         DPST.root = node;
     }
     else{
         // each task corresponds to an async or a future tree node
-        assert(parent);
+        // assert(parent);
         node->parent = parent;
         node->depth = node->parent->depth + 1;
         node->is_parent_nth_child = parent->number_of_child;
@@ -171,8 +193,14 @@ tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent){
     return node;
 }
 
+/**
+ * @brief  Insert a new leaf(step) node to the task_node
+ * @note   
+ * @param  *task_node: the node that will have a new leaf
+ * @retval the newly inserted leaf(step) node
+ */
 tree_node* insert_leaf(tree_node *task_node){
-    HASSERT(task_node);
+    // HASSERT(task_node);
     tree_node *new_step = newtreeNode();   
     new_step->this_node_type = STEP;
     new_step->parent = task_node;
@@ -195,6 +223,13 @@ tree_node* insert_leaf(tree_node *task_node){
     return new_step;
 }
 
+/**
+ * @brief  Find the least common ancestor of two tree nodes
+ * @note   
+ * @param  *node1: 
+ * @param  *node2: 
+ * @retval the least common ancestor
+ */
 tree_node* find_lca(tree_node *node1,tree_node *node2){
     while (node1->depth != node2->depth)
     {
@@ -215,6 +250,13 @@ tree_node* find_lca(tree_node *node1,tree_node *node2){
     return node1;
 }
 
+/**
+ * @brief  Find the left child of least common ancestor
+ * @note   
+ * @param  *node1: 
+ * @param  *node2: 
+ * @retval the left child of least common ancestor
+ */
 tree_node* find_lca_left_child(tree_node *node1,tree_node *node2){
     while (node1->depth != node2->depth)
     {
@@ -245,13 +287,18 @@ tree_node* find_lca_left_child(tree_node *node1,tree_node *node2){
     return node2_last_node;
 }
 
-struct tree_node* get_current_step_node(){
+/**
+ * @brief  Get current step node in DPST
+ * @note   First case: ws_finish == task_finish, return the last node of task children list
+ *         Second case: ws_finish != task_finish, which means we are at a subtree of Finish node,
+ *                      return the last node of the FINISH children list
+ * @retval current step node
+ */
+tree_node* get_current_step_node(){
     hclib_worker_state *ws = current_ws();
     hclib_task_t *task = (hclib_task_t *) ws->curr_task;
     finish_t *task_finish = task->current_finish;
     finish_t *ws_finish = ws->current_finish;
-
-    //printDPST();
 
     if(task_finish->node_in_dpst->index == ws_finish->node_in_dpst->index){
         if(task->task_id == 0){
@@ -271,7 +318,12 @@ struct tree_node* get_current_step_node(){
     }
 }
 
-struct tree_node* newtreeNode()
+/**
+ * @brief  Create a new tree node
+ * @note   
+ * @retval The newly created tree node
+ */
+tree_node* newtreeNode()
 {
     // Allocate memory for new node
     tree_node* node = (tree_node*)malloc(sizeof(tree_node));
@@ -591,7 +643,7 @@ static void hclib_entrypoint(const char **module_dependencies,
      */
     HASSERT(sizeof(worker_done_t) == 64);
 
-    // fj: send function pointer to shadow memory
+    // fj: send function pointer to shadow memory instrumentation
     ds_set_task_id_pointer(&get_current_task_id);
     ds_set_step_node_pointer(&get_current_step_node);
     ds_set_print_dpst_pointer(&printDPST);
@@ -754,7 +806,7 @@ static inline void execute_task(hclib_task_t *task) {
     }
 #endif
 
-    // fj: update task state in ds
+    // fj: update task state as FINISHED_NOT_JOINED in ds
     ds_update_task_state(task->task_id,2);
     free(task);
     
@@ -1311,12 +1363,13 @@ void *hclib_future_wait(hclib_future_t *future) {
 
     HASSERT(future->owner->satisfied);
 
+    // fj: mark the task as active; insert a new step node in DPST after getting future 
     ds_update_task_state(current_task->task_id,0);
-    // fj: insert a new step node in DPST after getting future
     tree_node* continuation = insert_leaf(get_current_step_node()->parent);
     
     // fj: work on disjoint set
     if(future->corresponding_task_id >= 0){
+        // fj: this part is not necessary, because out program has just async,finish and promise
         int future_task_id = future->corresponding_task_id;
         int future_parent_id = ds_parentid(future_task_id);
         // if(ds_findSet(current_task->task_id) == ds_findSet(future_parent_id)){
@@ -1333,22 +1386,25 @@ void *hclib_future_wait(hclib_future_t *future) {
         ds_update_task_state(future->corresponding_task_id,3);
     }
     else{
-        // otherwise the future is just an access to a promise, we do promise operations on disjoint
+        // because the corrsponding task is less than 0,
+        // the future is just an access to a promise, we do promise operations on disjoint set
         if(future->owner->end_task_put){
             int promise_setter = future->owner->setter_task_id;
             ds_merge(current_task->task_id, promise_setter, (void*)continuation, true);
         }
         else if(ds_dpst_precede((void*)future->owner->setter_node,(void*)get_current_step_node())){
+            // this if condition can reduce the overhead a lot
+            // if the putter already precedes getter in dpst, we do not add the empty to getter's nt
+
             // printf("not adding nt edge, current task %d, setter index %d, current step index %d \n",get_current_task_id(),
             // future->owner->setter_node->index,get_current_step_node()->index);
         }
         else if(future->owner->setter_task_id != current_task->task_id){
-            // printf("add promise nt \n");
-            // version 2: add an empty future
+            // add an empty future
             // see promise_put in hclib-promise.c for details
-            assert(future->corresponding_task_id == -1);
-            assert(future->owner->empty_future_id >= 0);
-            assert(future->owner->setter_task_id >= 0);
+            // assert(future->corresponding_task_id == -1);
+            // assert(future->owner->empty_future_id >= 0);
+            // assert(future->owner->setter_task_id >= 0);
             void* current_step_node = (void*) get_current_step_node();
             ds_addnt(current_task->task_id,future->owner->empty_future_id,current_step_node);
             nt_count++;
@@ -1566,17 +1622,18 @@ void hclib_start_finish() {
         finish->belong_to_task_id = 0;
     }
     else if(ws->current_finish->belong_to_task_id == curr_task->task_id){
+        // nested finish
         tree_node *the_node = insert_tree_node(FINISH,ws->current_finish->node_in_dpst);
         finish->node_in_dpst = the_node;
         finish->belong_to_task_id = curr_task->task_id;
     }
     else{
+        // current_finish does not belong to current task
+        // this means current task is under a finish, and the new finish should under current task
         tree_node *the_node = insert_tree_node(FINISH,curr_task->node_in_dpst);
         finish->node_in_dpst = the_node;
         finish->belong_to_task_id = curr_task->task_id;
     }
-    
-    //finish->node_in_dpst->corresponding_task_id = finish;
 
     if(finish->node_in_dpst->index > 1){
         // if it is not the finish for main task, we have a continuation step
@@ -1586,11 +1643,6 @@ void hclib_start_finish() {
 
     // ds operation
     ds_addFinish(finish->node_in_dpst->index, finish->belong_to_task_id, finish->node_in_dpst, finish);
-
-    // tell shadow memory we are ready
-    // if(finish->node_in_dpst->index == 1){
-    //     ds_hclib_ready(true);
-    // }
 
     /*
      * Set finish counter to 1 initially to emulate the main thread inside the

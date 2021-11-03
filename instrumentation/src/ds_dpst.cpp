@@ -47,6 +47,9 @@ void DisjointSet::addTask(int task_id, hclib_task task, tree_node_cpp *last_node
     set_info* task_set_info = find_helper(task_id);
     set_info* parent_set_info = find_helper(task.parent_id);
     
+    // set up least_significant_ancestor
+    // if parent has non-tree joins, lsa = parent
+    // else lsa = parent.lsa
     if(parent_set_info->nt->size() > 0){
         assert(last_node_reachable_in_parent != NULL);
         lsa_info new_lsa = {
