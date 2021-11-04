@@ -378,22 +378,18 @@ void sim_village(struct Village *village)
    if (village == NULL) return;
 
    /* Traverse village hierarchy (lower level first)*/
-   #ifdef RACE_DETECTION
-      ds_hclib_ready(false);
-   #endif
    vlist = village->forward;
 
    #ifdef RACE_DETECTION
       ds_hclib_ready(false);
    #endif
-   
    std::vector<hclib::promise_t<void>*> pv;
+
    while(vlist)
    {
       #ifdef RACE_DETECTION
          ds_hclib_ready(false);
       #endif
-
       hclib::promise_t<void> *p = new hclib::promise_t<void>();
       pv.push_back(p);
       
@@ -406,7 +402,6 @@ void sim_village(struct Village *village)
 
          #ifdef RACE_DETECTION
             p->end_put();
-            ds_hclib_ready(false);
          #else
             p->put();
          #endif
@@ -445,6 +440,7 @@ void sim_village(struct Village *village)
    check_patients_population(village);
 
    #ifdef RACE_DETECTION
+      // this is necessary
       ds_hclib_ready(false);
    #endif
 }

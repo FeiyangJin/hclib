@@ -28,24 +28,22 @@ uint64_t fib_async_finish(uint64_t n) {
     hclib::async([n,&x]() {
       #ifdef RACE_DETECTION
         ds_hclib_ready(true);
-        ds_promise_task(true);
+        // ds_promise_task(true);
       #endif
 
       uint64_t value1 = fib_async_finish(n-1);
 
       #ifdef RACE_DETECTION
         x->end_put(value1);
-        ds_hclib_ready(false);
       #else
         x->put(value1);
       #endif
-      
     });
 
-    #ifdef RACE_DETECTION
-        ds_hclib_ready(true);
-        ds_promise_task(true);
-    #endif
+    // #ifdef RACE_DETECTION
+    //     ds_hclib_ready(true);
+    //     // ds_promise_task(true);
+    // #endif
 
     uint64_t value2 = fib_async_finish(n-2);
 

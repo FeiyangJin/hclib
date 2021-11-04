@@ -1386,21 +1386,21 @@ void *hclib_future_wait(hclib_future_t *future) {
         ds_update_task_state(future->corresponding_task_id,3);
     }
     else{
-        // because the corrsponding task is less than 0,
-        // the future is just an access to a promise, we do promise operations on disjoint set
+        // the corrsponding task is less than 0, the future is just an access to a promise, we do promise operations on disjoint set
         if(future->owner->end_task_put){
+            // case1: simulating finish
             int promise_setter = future->owner->setter_task_id;
             ds_merge(current_task->task_id, promise_setter, (void*)continuation, true);
         }
         else if(ds_dpst_precede((void*)future->owner->setter_node,(void*)get_current_step_node())){
+            // case2: if the putter already precedes getter in dpst, we do not add the empty to getter's nt
             // this if condition can reduce the overhead a lot
-            // if the putter already precedes getter in dpst, we do not add the empty to getter's nt
 
             // printf("not adding nt edge, current task %d, setter index %d, current step index %d \n",get_current_task_id(),
             // future->owner->setter_node->index,get_current_step_node()->index);
         }
         else if(future->owner->setter_task_id != current_task->task_id){
-            // add an empty future
+            // case3: add an empty future
             // see promise_put in hclib-promise.c for details
             // assert(future->corresponding_task_id == -1);
             // assert(future->owner->empty_future_id >= 0);

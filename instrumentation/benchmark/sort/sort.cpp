@@ -237,18 +237,15 @@ void cilkmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest) {
     ds_hclib_ready(false);  
   #endif
   hclib::promise_t<void> *p1 = new hclib::promise_t<void>();
+
   hclib::async([low1, split1, low2, split2, lowdest, &p1](){
     cilkmerge(low1, split1 - 1, low2, split2, lowdest);
     #ifdef RACE_DETECTION
         ds_hclib_ready(true);
-    #endif
-    #ifdef RACE_DETECTION
         p1->end_put();
+        ds_hclib_ready(false);
     #else
         p1->put();
-    #endif
-    #ifdef RACE_DETECTION
-        ds_hclib_ready(false); 
     #endif
   });
 
@@ -295,14 +292,10 @@ void cilksort(ELM *low, ELM *tmp, long size) {
     cilksort(A, tmpA, quarter);
     #ifdef RACE_DETECTION
         ds_hclib_ready(true);
-    #endif
-    #ifdef RACE_DETECTION
         p1->end_put();
+        ds_hclib_ready(false);
     #else
         p1->put();
-    #endif
-    #ifdef RACE_DETECTION
-        ds_hclib_ready(false);
     #endif
   });
 
@@ -310,14 +303,10 @@ void cilksort(ELM *low, ELM *tmp, long size) {
     cilksort(B, tmpB, quarter);
     #ifdef RACE_DETECTION
         ds_hclib_ready(true);
-    #endif
-    #ifdef RACE_DETECTION
         p2->end_put();
+        ds_hclib_ready(false);
     #else
         p2->put();
-    #endif
-    #ifdef RACE_DETECTION
-        ds_hclib_ready(false);
     #endif
   });
 
@@ -325,14 +314,10 @@ void cilksort(ELM *low, ELM *tmp, long size) {
     cilksort(C, tmpC, quarter);
     #ifdef RACE_DETECTION
         ds_hclib_ready(true);
-    #endif
-    #ifdef RACE_DETECTION
         p3->end_put();
+        ds_hclib_ready(false);
     #else
         p3->put();
-    #endif
-    #ifdef RACE_DETECTION
-        ds_hclib_ready(false);
     #endif
   });
 
@@ -347,9 +332,11 @@ void cilksort(ELM *low, ELM *tmp, long size) {
     ds_hclib_ready(false);
   #endif
   hclib::promise_t<void> *p4 = new hclib::promise_t<void>();
+
   hclib::async([A, quarter, B, tmpA, &p4](){
     cilkmerge(A, A + quarter - 1, B, B + quarter - 1, tmpA);
     #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
         p4->end_put();
     #else
         p4->put();
@@ -357,16 +344,10 @@ void cilksort(ELM *low, ELM *tmp, long size) {
   });
 
 
-  #ifdef RACE_DETECTION
-    ds_hclib_ready(false);
-  #endif
   cilkmerge(C, C + quarter - 1, D, low + size - 1, tmpC);
   p4->get_future()->wait();
 
   cilkmerge(tmpA, tmpC - 1, tmpC, tmpA + size - 1, A);
-  #ifdef RACE_DETECTION
-    ds_hclib_ready(false);
-  #endif
 
   return;
 }
@@ -477,9 +458,7 @@ int main(int argc, char* argv[]){
         // printf("sort time in sequential: %.3f for array of size %ld \n",dur,size);
 
         #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-        #endif
-        #ifdef RACE_DETECTION
+          ds_hclib_ready(false);
           printf("DPST height is: %d \n", get_dpst_height());
           printf("cache size is %d \n",ds_get_cache_size());
           printf("number of task is %d \n",get_task_id_unique());
