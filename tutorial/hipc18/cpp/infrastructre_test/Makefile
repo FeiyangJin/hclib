@@ -9,32 +9,29 @@ EXE=test7 life
 
 all: $(EXE)
 
-# test1: test1.cpp
-# 	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
+test1: test1.cpp
+	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
 
-# test2: test2.cpp
-# 	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
+test2: test2.cpp
+	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
 
-# test3: test3.cpp
-# 	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
+test3: test3.cpp
+	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
 
-# test4: test4.cpp
-# 	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
+test4: test4.cpp
+	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
 
-# update_test: update_test.cpp
-# 	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
+test5: test5.cpp
+	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
 
-# test5: test5.cpp
-# 	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
-
-# test6: test6.cpp
-# 	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
+test6: test6.cpp
+	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
 
 test7: test7.cpp
 	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
-
-life: life.cpp
-	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
 	
+update_test: update_test.cpp
+	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
+
 clean:
 	rm -rf $(EXE)

@@ -221,15 +221,8 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
     #ifdef LINK_READER
         MemAccess_t* reader = slot->readers[i];
         if (reader == nullptr) continue;
-        // std::unordered_set<int> past_ids;
 
         while(reader != nullptr){
-          // if(past_ids.find(reader->task_and_node.task_id) != past_ids.end()){
-          //   reader = reader->next;
-          //   continue;
-          // }
-          // past_ids.insert(reader->task_and_node.task_id);
-
           bool race = !precede(reader->task_and_node, current_task_and_step);
           if(race){
             printf("we find a write-read race !!!!!!!!!! \n");
@@ -335,19 +328,6 @@ extern "C" __attribute__((weak)) void asap_check_read(int *addr, int bytes) {
     if(!is_step){
       return;
     }
-
-    // int step_id = ((tree_node_cpp*)(current_task_and_step.node_in_dpst))->index;
-    // if(step_id == current_step_id){
-    //   if(address_already_visit.find(addr) != address_already_visit.end()){
-    //     a_count++;
-    //     return;
-    //   }
-    // }
-    // else{
-    //   current_step_id = step_id;
-    //   address_already_visit.clear();
-    // }
-    // address_already_visit.insert(addr);
 
     void *pc = __builtin_return_address(0);
     auto slot = shadow_mem->find(ADDR_TO_KEY(addr));

@@ -123,9 +123,6 @@ int get_dpst_height();
 int get_nt_count();
 extern struct dpst DPST;
 
-void promise_finish_start();
-void promise_finish_end();
-bool is_during_promise_finish();
 
 typedef struct _hclib_worker_state {
     // Global context for this instance of the runtime.

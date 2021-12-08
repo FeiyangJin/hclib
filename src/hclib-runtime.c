@@ -77,26 +77,15 @@ static int task_id_unique = 0;
 
 int nt_count = 0;
 
-// bool promise_finish = false;
-
-// bool is_during_promise_finish(){
-//     return promise_finish;
-// }
-
-// void promise_finish_start(){
-//     promise_finish = true;
-// }
-
-// void promise_finish_end(){
-//     promise_finish = false;
-// }
-
 /**
  * @brief  get the tree_node of current task
  * @note   this is a weak function, only be called from instrumentation when checking write and read
  * @retval the tree_node of current task in dpst
  */
 __attribute__((weak)) void* hclib_get_current_task_info(int* task_id, int* current_finish_id, bool* is_step, bool* is_future){
+    // TODO: reduce the use of current_ws()
+    // it is also used in get_current_step_node()
+
     hclib_worker_state *ws = current_ws();
     hclib_task_t *task = (hclib_task_t *) ws->curr_task;
 
@@ -107,28 +96,6 @@ __attribute__((weak)) void* hclib_get_current_task_info(int* task_id, int* curre
     *is_future = (task->node_in_dpst->this_node_type == FUTURE);
 
     return (void*)the_node;
-}
-
-/**
- * @brief  
- * @note   Not being used currently 
- * @retval 
- */
-__attribute__((weak)) bool ds_current_is_future(){
-    hclib_worker_state *ws = current_ws();
-    hclib_task_t *task = (hclib_task_t *) ws->curr_task;
-    return (task->node_in_dpst->this_node_type == FUTURE);
-}
-
-/**
- * @brief  
- * @note   Not being used currently
- * @retval 
- */
-__attribute__((weak)) int ds_get_current_finish(){
-    hclib_worker_state *ws = current_ws();
-    hclib_task_t *task = (hclib_task_t *) ws->curr_task;
-    return task->current_finish->node_in_dpst->index;
 }
 
 int get_dpst_height(){
@@ -1396,7 +1363,7 @@ void *hclib_future_wait(hclib_future_t *future) {
             // case2: if the putter already precedes getter in dpst, we do not add the empty to getter's nt
             // this if condition can reduce the overhead a lot
 
-            // printf("not adding nt edge, current task %d, setter index %d, current step index %d \n",get_current_task_id(),
+            // printf("not adding nt edge, current task %d, setter index %d, current step index %d \n",
             // future->owner->setter_node->index,get_current_step_node()->index);
         }
         else if(future->owner->setter_task_id != current_task->task_id){
