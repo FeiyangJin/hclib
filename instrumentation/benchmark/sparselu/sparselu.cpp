@@ -5,9 +5,7 @@
 
 void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
 {
-    #ifdef RACE_DETECTION
-        ds_promise_task(true);
-    #endif
+
 
     int ii, jj, kk;
 
@@ -214,8 +212,10 @@ void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
 
                     #ifdef RACE_DETECTION
                         ds_hclib_ready(false);
+                        promise_vector.at(index)->end_put();
+                    #else
+                        promise_vector.at(index)->put();
                     #endif
-                    promise_vector.at(index)->put();
                 });
                 #ifdef RACE_DETECTION
                     ds_hclib_ready(true);
@@ -247,8 +247,10 @@ void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
 
                     #ifdef RACE_DETECTION
                         ds_hclib_ready(false);
+                        promise_vector.at(index)->end_put();
+                    #else
+                        promise_vector.at(index)->put();
                     #endif
-                    promise_vector.at(index)->put();
                 });
                 #ifdef RACE_DETECTION
                     ds_hclib_ready(true);
@@ -297,8 +299,10 @@ void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
 
                             #ifdef RACE_DETECTION
                                 ds_hclib_ready(false);
+                                promise_vector.at(index)->end_put();
+                            #else
+                                promise_vector.at(index)->put();
                             #endif
-                            promise_vector.at(index)->put();
                         });
                         #ifdef RACE_DETECTION
                             ds_hclib_ready(true);
@@ -513,8 +517,8 @@ void run(int ms, int ss)
         ds_hclib_ready(true);
     #endif
 
-    sparselu_par_call(BENCH, matrix_size, submatrix_size);
-    // sparselu_par_call_dep(BENCH, matrix_size, submatrix_size);
+    // sparselu_par_call(BENCH, matrix_size, submatrix_size);
+    sparselu_par_call_dep(BENCH, matrix_size, submatrix_size);
 
     #ifdef RACE_DETECTION
         ds_hclib_ready(false);
@@ -535,7 +539,7 @@ void run(int ms, int ss)
 
 int main (int argc, char ** argv) {
     printf("sparselu benchmark from KASTORS\n");
-    int matrix_size = 64;
+    int matrix_size = 128;
     int submatrix_size = 16;
 
     if(argc == 3){

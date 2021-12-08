@@ -4,8 +4,6 @@
 #include "shadow_memory.h"
 #include "mem_access.h"
 #include "ds_to_hclib.h"
-#include <chrono>
-#include <ctime> 
 
 static ShadowMem<MemAccessList_t> *shadow_mem = new ShadowMem<MemAccessList_t>();
 access_info current_task_and_step;
@@ -16,6 +14,11 @@ static bool is_asap_promise_task = false;
 static unsigned long check_write_count = 0;
 static unsigned long check_read_count = 0;
 
+static int current_step_id = -1;
+std::unordered_set<int*> address_already_visit;
+static int a_count = 0;
+static int reachability_count = 0;
+
 extern "C" __attribute__((weak)) void ds_print_check_write_count(){
   printf("check write count: %lu \n", check_write_count);
 }
@@ -23,6 +26,8 @@ extern "C" __attribute__((weak)) void ds_print_check_write_count(){
 extern "C" __attribute__((weak)) void ds_print_check_read_count(){
   printf("check read count: %lu \n", check_read_count);
   printf("ds find count %d \n",ds->get_find_count());
+  // printf("duplicate read skipped count %d \n",a_count);
+  printf("reachability check %d \n",reachability_count);
 }
 
 extern "C" void ds_promise_task(bool b){
@@ -32,6 +37,7 @@ extern "C" void ds_promise_task(bool b){
 
 //int bool_count = 0;
 extern "C" bool precede(access_info previous_step, access_info current_step){
+  reachability_count++;
   // return true;
   int p_id = previous_step.task_id;
   tree_node_cpp *p_node = (tree_node_cpp*) previous_step.node_in_dpst;
@@ -66,9 +72,7 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
     }
   } // end of all grains writer
 
-  
   for(int i = start; i < (start + grains); i++) {
-      int c_id = current_task_and_step.task_id;
 
       #ifdef LINK_READER
           MemAccess_t* reader = slot->readers[i];
@@ -78,19 +82,19 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
             slot->readers_tail[i] = new_reader;
             continue;
           }
-          else if (reader->next == nullptr){ // 2. we only have one reader
-            if(reader->task_and_node.task_id == c_id){
-              reader->rip = rip;
-              reader->task_and_node = current_task_and_step;
-              continue;
-            }
-            // otherwise add the reader directly
-            MemAccess_t* new_reader = new MemAccess_t(current_task_and_step, rip, is_asap_promise_task);
-            slot->readers_tail[i]->next = new_reader;
-            new_reader->prev = slot->readers_tail[i];
+          // else if (reader->next == nullptr){ // 2. we only have one reader
+          //   if(reader->task_and_node.task_id == c_id){
+          //     reader->rip = rip;
+          //     reader->task_and_node = current_task_and_step;
+          //     continue;
+          //   }
+          //   // otherwise add the reader directly
+          //   MemAccess_t* new_reader = new MemAccess_t(current_task_and_step, rip, is_asap_promise_task);
+          //   slot->readers_tail[i]->next = new_reader;
+          //   new_reader->prev = slot->readers_tail[i];
 
-            slot->readers_tail[i] = new_reader;
-          }
+          //   slot->readers_tail[i] = new_reader;
+          // }
           else{ // 3. we have more than 1 reader
             bool update = true;
             // while(reader != nullptr){
@@ -114,6 +118,7 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
 
           if(reader == nullptr){
             slot->readers[i] = new std::vector<MemAccess_t>();
+            // slot->readers[i]->reserve(10);
             slot->readers[i]->push_back(MemAccess_t(current_task_and_step,rip,is_asap_promise_task));
           }
           else if (reader->size() == 1)
@@ -237,9 +242,9 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
           }
           
           reader = reader->next;
-          // if(reader != nullptr){
-          //   delete reader->prev;
-          // }
+          if(reader != nullptr){
+            delete reader->prev;
+          }
         }
         
         slot->readers[i] = nullptr;
@@ -300,15 +305,15 @@ extern "C" void asap_check_write(int *addr, int bytes) {
 
   if(hclib_ready == true){
     check_write_count++;
-    void *pc = __builtin_return_address(0);
-    auto slot = shadow_mem->find(ADDR_TO_KEY(addr));
 
-    bool is_step = false;
     current_task_and_step.node_in_dpst = hclib_get_current_task_info(&current_task_and_step.task_id,&current_finish_id, &is_step, &is_future);
 
     if(!is_step){
       return;
     }
+
+    void *pc = __builtin_return_address(0);
+    auto slot = shadow_mem->find(ADDR_TO_KEY(addr));
 
     if(slot == NULL){
       MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, false, current_task_and_step, (addr_t)pc, bytes, current_finish_id, is_asap_promise_task);
@@ -324,14 +329,28 @@ extern "C" void asap_check_write(int *addr, int bytes) {
 extern "C" __attribute__((weak)) void asap_check_read(int *addr, int bytes) {
   if(hclib_ready == true){
     check_read_count++;
-    void *pc = __builtin_return_address(0);
-    auto slot = shadow_mem->find(ADDR_TO_KEY(addr));
 
     current_task_and_step.node_in_dpst = hclib_get_current_task_info(&current_task_and_step.task_id,&current_finish_id, &is_step, &is_future);
 
     if(!is_step){
       return;
     }
+
+    // int step_id = ((tree_node_cpp*)(current_task_and_step.node_in_dpst))->index;
+    // if(step_id == current_step_id){
+    //   if(address_already_visit.find(addr) != address_already_visit.end()){
+    //     a_count++;
+    //     return;
+    //   }
+    // }
+    // else{
+    //   current_step_id = step_id;
+    //   address_already_visit.clear();
+    // }
+    // address_already_visit.insert(addr);
+
+    void *pc = __builtin_return_address(0);
+    auto slot = shadow_mem->find(ADDR_TO_KEY(addr));
 
     if(slot == nullptr){
       MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, true, current_task_and_step, (addr_t)pc, bytes, current_finish_id, is_asap_promise_task);

@@ -214,7 +214,7 @@ void mat_mul_par_promise(const REAL *const A, const REAL *const B, REAL *C, int 
         ds_hclib_ready(false);
     #endif
     hclib::async([&](){
-        mat_mul_par(A1,B2,C2,n>>1);
+        mat_mul_par_promise(A1,B2,C2,n>>1);
         #ifdef RACE_DETECTION
             ds_hclib_ready(true);
         #endif
@@ -225,7 +225,7 @@ void mat_mul_par_promise(const REAL *const A, const REAL *const B, REAL *C, int 
         ds_hclib_ready(false);
     #endif
     hclib::async([&](){
-        mat_mul_par(A3,B1,C3,n>>1);
+        mat_mul_par_promise(A3,B1,C3,n>>1);
         #ifdef RACE_DETECTION
             ds_hclib_ready(true);
         #endif
@@ -245,34 +245,50 @@ void mat_mul_par_promise(const REAL *const A, const REAL *const B, REAL *C, int 
     #ifdef RACE_DETECTION
         ds_hclib_ready(false);
     #endif
-    hclib::finish([&](){
+
+    hclib::promise_t<void> *p4 = new hclib::promise_t<void>();
+    hclib::promise_t<void> *p5 = new hclib::promise_t<void>();
+    hclib::promise_t<void> *p6 = new hclib::promise_t<void>();
+
+    // hclib::finish([&](){
+
         hclib::async([&](){
             #ifdef RACE_DETECTION
                 ds_hclib_ready(false);
             #endif
-            mat_mul_par(A2,B3,C1,n>>1);
+            // mat_mul_par(A2,B3,C1,n>>1);
+            mat_mul_par_promise(A2,B3,C1,n>>1);
+            p4->put();
         });
 
         #ifdef RACE_DETECTION
             ds_hclib_ready(false);
         #endif
         hclib::async([&](){
-            mat_mul_par(A2,B4,C2,n>>1);
+            // mat_mul_par(A2,B4,C2,n>>1);
+            mat_mul_par_promise(A2,B4,C2,n>>1);
+            p5->put();
         });
 
         #ifdef RACE_DETECTION
             ds_hclib_ready(false);
         #endif
         hclib::async([&](){
-            mat_mul_par(A4,B3,C3,n>>1);
+            // mat_mul_par(A4,B3,C3,n>>1);
+            mat_mul_par_promise(A4,B3,C3,n>>1);
+            p6->put();
         });
 
         #ifdef RACE_DETECTION
             ds_hclib_ready(false);
         #endif
-        mat_mul_par(A4,B4,C4,n>>1);
-    });
+        // mat_mul_par(A4,B4,C4,n>>1);
+        mat_mul_par_promise(A4,B4,C4,n>>1);
+    // });
 
+    p4->get_future()->wait();
+    p5->get_future()->wait();
+    p6->get_future()->wait();
     #ifdef RACE_DETECTION
         ds_hclib_ready(false);
     #endif
@@ -322,33 +338,33 @@ void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n){
     #ifdef RACE_DETECTION
         ds_hclib_ready(false);
     #endif
-    hclib::finish([A1,B1,B2,A3,&C1,&C2,&C3,&C4,n](){    
+    hclib::finish([A1,B1,B2,A3,&C1,&C2,&C3,&C4,n](){
         hclib::async([A1,B1,&C1,n](){
-            // mat_mul_par_promise(A1,B1,C1,n>>1);
-            mat_mul_par(A1,B1,C1,n>>1);
+            mat_mul_par_promise(A1,B1,C1,n>>1);
+            // mat_mul_par(A1,B1,C1,n>>1);
         });
 
         #ifdef RACE_DETECTION
             ds_hclib_ready(false);
         #endif
         hclib::async([A1,B2,&C2,n](){
-            // mat_mul_par_promise(A1,B2,C2,n>>1);
-            mat_mul_par(A1,B2,C2,n>>1);
+            mat_mul_par_promise(A1,B2,C2,n>>1);
+            // mat_mul_par(A1,B2,C2,n>>1);
         });
 
         #ifdef RACE_DETECTION
             ds_hclib_ready(false);
         #endif
         hclib::async([A3,B1,&C3,n](){
-            // mat_mul_par_promise(A3,B1,C3,n>>1);
-            mat_mul_par(A3,B1,C3,n>>1);
+            mat_mul_par_promise(A3,B1,C3,n>>1);
+            // mat_mul_par(A3,B1,C3,n>>1);
         });
 
         #ifdef RACE_DETECTION
             ds_hclib_ready(false);
         #endif
-        // mat_mul_par_promise(A3,B2,C4,n>>1);
-        mat_mul_par(A3,B2,C4,n>>1);
+        mat_mul_par_promise(A3,B2,C4,n>>1);
+        // mat_mul_par(A3,B2,C4,n>>1);
     });
 
 
@@ -389,7 +405,6 @@ void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n){
 }
 
 
-//prints the matrix
 void print_matrix(REAL *M, int n){
     int i,j;
     for(i = 0; i < n; i++){
@@ -418,7 +433,7 @@ int main(int argc, char *argv[]){
   int n = argc>1?atoi(argv[1]) : 512;
   printf("multiplying two matrices of size %d * %d \n", n, n);
 
-  POWER = 7;
+  POWER = 6;
   BASE_CASE = (int) pow(2.0, (double) POWER);
 
 

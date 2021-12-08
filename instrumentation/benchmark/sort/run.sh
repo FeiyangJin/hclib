@@ -15,7 +15,7 @@ if [ $# -lt 1 ]; then
 fi
 
 BENCHMARK_NAME="sort"
-DEFAULT_INPUT="3000000"
+DEFAULT_INPUT="500000"
 ORIGIN_EXE="${BENCHMARK_NAME}-origin.exe"
 RD_EXE="${BENCHMARK_NAME}-rd.exe"
 

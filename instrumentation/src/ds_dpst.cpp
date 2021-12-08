@@ -377,6 +377,18 @@ tree_node_cpp* DisjointSet::find_lca_left_child_cpp(tree_node_cpp* node1, tree_n
     return node2_last_node;
 }
 
+
+
+#define CACHE;
+bool return_false_directly = false;
+
+/**
+ * @brief  check if node1 precedes node2 in dpst
+ * @note   
+ * @param  node1: 
+ * @param  node2: 
+ * @retval true if node1 precdes node2 by tree edges 
+ */
 bool DisjointSet::precede_dpst(tree_node_cpp* node1, tree_node_cpp* node2){
     if(node1->parent->index == node2->parent->index){
         if(node1->is_parent_nth_child <= node2->is_parent_nth_child){
@@ -422,13 +434,25 @@ bool DisjointSet::precede_dpst(tree_node_cpp* node1, tree_node_cpp* node2){
         else{
             return true;
         }
-
     }
+    // else{
+    //     // some optimization can be done here
+    //     // if we find node2 actually precedes node1 in dpst by tree edges
+    //     // we can make a much stronger conclusion
+    //     if(node2_last_node->this_node_type == FUTURE || node2_last_node->this_node_type == ASYNC){
+    //         if(node2_last_node->inline_finish_step > 0 && node2_last_node->inline_finish_step <= node1_last_node->is_parent_nth_child){
+    //             return_false_directly = true;
+    //         }
+    //         return_false_directly = false;
+    //     }
+    //     else{
+    //         return_false_directly = true;
+    //     }
+    // }
 
     return false;
 }
 
-#define CACHE;
 bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b){
     if(step_a->index == step_b->index){
         return true;
@@ -441,6 +465,7 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task
             if(step_a->index <= cache.at(key)->index){
                 return true;
             }
+            // else if step_a->index > the furthest node in task a that precedes task_b, we cannot make a decision
         }
     #endif
 
@@ -461,9 +486,10 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task
 }
 
 bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b, unordered_set<int> visited){
+    bool in_cache;
     #ifdef CACHE
         cache_key key(task_a,task_b);
-        bool in_cache = cache.find(key) != cache.end();
+        in_cache = cache.find(key) != cache.end();
         if(in_cache){
             if(step_a->index <= cache.at(key)->index){
                 return true;
@@ -503,7 +529,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
         if(visit(step_a, last_step_node, task_a, task_id, visited)){
             #ifdef CACHE
                 cache_key key(task_a,task_id);
-                bool in_cache = cache.find(key) != cache.end();
+                in_cache = cache.find(key) != cache.end();
                 if(in_cache){
                     cache.at(key) = step_a;
                 }
@@ -538,7 +564,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
                 if(visit(step_a, last_step_node, task_a, task_id, visited)){
                     #ifdef CACHE
                         cache_key key(task_a,task_id);
-                        bool in_cache = cache.find(key) != cache.end();
+                        in_cache = cache.find(key) != cache.end();
                         if(in_cache){
                             cache.at(key) = step_a;
                         }
