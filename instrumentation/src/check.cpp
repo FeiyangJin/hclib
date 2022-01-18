@@ -97,13 +97,14 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
           // }
           else{ // 3. we have more than 1 reader
             bool update = true;
+            // int c_id = current_task_and_step.task_id;
             // while(reader != nullptr){
-              // if(reader->task_and_node.task_id == c_id){
-              //   reader->task_and_node = current_task_and_step;
-              //   update = false;
-              //   break;
-              // }
-              // reader = reader->next;
+            //   if(reader->task_and_node.task_id == c_id){
+            //     reader->task_and_node = current_task_and_step;
+            //     update = false;
+            //     break;
+            //   }
+            //   reader = reader->next;
             // }
             if(update){
               MemAccess_t* new_reader = new MemAccess_t(current_task_and_step, rip, is_asap_promise_task);

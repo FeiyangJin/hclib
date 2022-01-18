@@ -48,7 +48,8 @@ class DisjointSet
     // a map from finish dpst node id to finish
     unordered_map<int, hclib_finish*> all_finishes;
 
-    unordered_map<cache_key,tree_node_cpp*,CacheHashFunction> cache;
+    unordered_map<cache_key,int,CacheHashFunction> cache;
+    // unordered_map<cache_key,tree_node_cpp*,CacheHashFunction> cache;
 
     // a map from task_id to task
     unordered_map<int, hclib_task> all_tasks;
@@ -125,7 +126,7 @@ public:
 
     // reachability queries, return if step_a preceds step_b
     bool precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b);
-    bool visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b, unordered_set<int> visited);
+    bool visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b, unordered_set<int> &visited);
 
     tree_node_cpp* find_lca_left_child_cpp(tree_node_cpp* node1, tree_node_cpp* node2);
 

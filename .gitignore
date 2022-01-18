@@ -26,3 +26,5 @@ yield
 *.so
 eval-*
 latest-result
+hpctoolkit*
+.hpcstruct
