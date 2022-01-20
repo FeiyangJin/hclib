@@ -457,12 +457,14 @@ bool DisjointSet::precede_dpst(tree_node_cpp* node1, tree_node_cpp* node2){
 int cachehit = 0;
 int cachemiss = 0;
 int samestepcount = 0;
+int totalprecede = 0;
 bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b){
     if(step_a->index == step_b->index){
         samestepcount ++;
         return true;
     }
 
+    totalprecede ++;
     #ifdef CACHE
         cache_key key(task_a,task_b);
         bool in_cache = cache.count(key);
@@ -595,7 +597,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
 }
 
 int DisjointSet::get_cache_size(){
-    printf("cache hit %d, cache miss %d, hit rate = %f \n", cachehit, cachemiss, (double) cachehit / (double) (cachehit + cachemiss));
+    printf("cache hit %d, cache miss %d, hit rate = %f \n", cachehit, cachemiss, (double) cachehit / (double) totalprecede);
     printf("same step count: %d \n", samestepcount);
     return this->cache.size();
 }

@@ -27,4 +27,4 @@ yield
 eval-*
 latest-result
 hpctoolkit*
-.hpcstruct
+*.hpcstruct
