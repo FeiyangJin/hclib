@@ -16,7 +16,7 @@ void DisjointSet::add_task_to_finish(int finish_id, int task_id){
 }
 
 void DisjointSet::addFinish(int finish_id, hclib_finish *finish){
-    this->all_finishes.insert(pair<int, hclib_finish*>(finish_id, finish));
+    this->all_finishes.insert(robin_hood::pair<int, hclib_finish*>(finish_id, finish));
     // this->all_finishes[finish_id] = finish;
 }
 
@@ -38,7 +38,8 @@ void DisjointSet::end_finish_merge(int finish_id, tree_node_cpp* query_node){
  * @retval None
  */
 void DisjointSet::addTask(int task_id, hclib_task task, tree_node_cpp *last_node_reachable_in_parent){
-    this->all_tasks.insert(pair<int, hclib_task>(task_id, task));
+    // this->all_tasks.insert(pair<int, hclib_task>(task_id, task));
+    this->all_tasks.insert(robin_hood::pair<int, hclib_task>(task_id, task));
 
     if(task_id == 0){
         return;
@@ -74,10 +75,10 @@ void DisjointSet::update_task_dpst_node(int task_id, void *new_node){
 
 DisjointSet::DisjointSet(){
     this->all_finishes.reserve(1000);
-    this->cache.reserve(40000);
     this->all_tasks.reserve(5000);
     this->parent_aka_setnowin.reserve(5000);
-
+    // this->cache.set_empty_key(NULL);
+    this->cache.reserve(650000);
 }
 
 void DisjointSet::addSet(int task_index){
@@ -89,7 +90,8 @@ void DisjointSet::addSet(int task_index){
     vector<nt_info> *nontreejoins = new vector<nt_info>();
 
     set_info* new_set = new set_info(task_index,0,null_lsa,nontreejoins);
-    this->parent_aka_setnowin.insert(pair<int,set_info*>(task_index,new_set));
+    // this->parent_aka_setnowin.insert(pair<int,set_info*>(task_index,new_set));
+    this->parent_aka_setnowin.insert({task_index,new_set});
     // this->parent_aka_setnowin[task_index] = new_set;
 }
 
@@ -221,7 +223,7 @@ void DisjointSet::setlsa(int task_id, lsa_info new_lsa){
 string state_string[4] = {"Active", "Blocked", "Finished_not_Joined", "Joined"};
 
 void DisjointSet::print_all_tasks(){
-    for (std::pair<int, hclib_task> element: this->all_tasks) {
+    for (robin_hood::pair<int, hclib_task> element: this->all_tasks) {
         hclib_task task = element.second;
         int task_id = element.first;
         printf("task %d, parent is %d, has %d nt joins, lsa is %d, now in set: %d, task state is: ", 
@@ -250,7 +252,7 @@ void DisjointSet::print_nt(int set_id){
 }
 
 void DisjointSet::printds(){
-    for (std::pair<int, set_info*> element: parent_aka_setnowin) {
+    for (robin_hood::pair<int, set_info*> element: parent_aka_setnowin) {
         printf("%d is in set: %d, lsa is %d \n", element.first, Find(element.first),getlsa(element.first));
         printf("%d has nt joins: ", element.first);
         for(auto item = element.second->nt->begin(); item != element.second->nt->end(); ++item){
@@ -264,7 +266,7 @@ void DisjointSet::printds(){
 void DisjointSet::printdsbyset(){
     unordered_map<int, vector<int>> all_sets;
 
-    for (std::pair<int, set_info*> element: parent_aka_setnowin) {
+    for (robin_hood::pair<int, set_info*> element: parent_aka_setnowin) {
         int the_parent = Find(element.first);
         if(all_sets.count(the_parent) > 0){
             all_sets[the_parent].push_back(element.first);
@@ -298,7 +300,7 @@ void DisjointSet::printdsbyset(){
 void DisjointSet::print_table(){
     unordered_map<int, vector<int>> all_sets;
 
-    for (std::pair<int, set_info*> element: parent_aka_setnowin) {
+    for (robin_hood::pair<int, set_info*> element: parent_aka_setnowin) {
         int the_parent = Find(element.first);
         if(all_sets.count(the_parent) > 0){
             all_sets[the_parent].push_back(element.first);
@@ -380,7 +382,7 @@ tree_node_cpp* DisjointSet::find_lca_left_child_cpp(tree_node_cpp* node1, tree_n
 
 
 
-#define CACHE;
+#define CACHE ;
 // bool return_false_directly = false;
 
 /**
@@ -466,10 +468,12 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task
 
     totalprecede ++;
     #ifdef CACHE
-        cache_key key(task_a,task_b);
+        // cache_key key(task_a,task_b);
+        unsigned int key = (task_a << 18) | task_b;
         bool in_cache = cache.count(key);
         // bool in_cache = cache.find(key) != cache.end();
-        if(in_cache && step_a->index <= cache.at(key)){
+        // if(in_cache && step_a->index <= cache.at(key)){
+        if(in_cache && step_a->index <= cache[key]){
             cachehit ++;
             return true;
         }
@@ -479,7 +483,7 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task
         // else if step_a->index > the furthest node in task a that precedes task_b, we cannot make a decision
     #endif
 
-    unordered_set<int> visited;
+    robin_hood::unordered_set<int> visited;
     visited.reserve(10);
     bool result = this->visit(step_a,step_b,task_a,task_b,visited);
     // printf("visited size is %d \n", visited.size());
@@ -487,17 +491,22 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task
     #ifdef CACHE
         if(result == true){
             if(in_cache){
-                cache.at(key) = step_a->index;
+                cache[key] = step_a->index;
+                // cache.at(key) = step_a->index;
             }
             else{
-                cache.insert(std::pair<cache_key,int>(key,step_a->index));
+                cache.insert({key,step_a->index});
+                // cache.insert(std::pair<unsigned int,unsigned int>(key,step_a->index));
+                // cache[key] = step_a->index;
+                // cache.insert(std::pair<unsigned int,unsigned int>(key,step_a->index));
+                // cache.insert(std::pair<cache_key,int>(key,step_a->index));
             }
         }
     #endif
     return result;
 }
 
-bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b, unordered_set<int> &visited){
+bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b, robin_hood::unordered_set<int> &visited){
     bool in_cache;
     // #ifdef CACHE
     //     cache_key key(task_a,task_b);

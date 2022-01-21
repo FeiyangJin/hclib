@@ -7,6 +7,9 @@
 #include <map>
 #include "assert.h"
 #include "struct_def.h"
+#include <sparsehash/dense_hash_map>
+#include <boost/unordered_map.hpp>
+#include <robin_hood.h>
 
 using namespace std;
 
@@ -38,6 +41,14 @@ class CacheHashFunction {
     }
 };
 
+struct eqint
+{
+  bool operator()(unsigned int a, unsigned int b) const
+  {
+    return (a == b);
+  }
+};
+
 // A class to represent a disjoint set
 class DisjointSet
 {
@@ -46,16 +57,20 @@ class DisjointSet
     int tree_join_count = 0;
 
     // a map from finish dpst node id to finish
-    unordered_map<int, hclib_finish*> all_finishes;
+    robin_hood::unordered_map<int, hclib_finish*> all_finishes;
 
-    unordered_map<cache_key,int,CacheHashFunction> cache;
+    robin_hood::unordered_map<unsigned int, unsigned int> cache;
+    // boost::unordered_map<unsigned int, unsigned int> cache;
+    // google::dense_hash_map<unsigned int, unsigned int, hash<unsigned int>, eqint> cache = google::dense_hash_map<unsigned int, unsigned int, hash<unsigned int>, eqint>(100000);
+    // unordered_map<unsigned int,unsigned int> cache;
+    // unordered_map<cache_key,int,CacheHashFunction> cache;
     // unordered_map<cache_key,tree_node_cpp*,CacheHashFunction> cache;
 
     // a map from task_id to task
-    unordered_map<int, hclib_task> all_tasks;
+    robin_hood::unordered_map<int, hclib_task> all_tasks;
 
     // a map from task_index to the information of current set
-    unordered_map<int, set_info*> parent_aka_setnowin;
+    robin_hood::unordered_map<int, set_info*> parent_aka_setnowin;
 
 public:
     int get_find_count();
@@ -126,7 +141,7 @@ public:
 
     // reachability queries, return if step_a preceds step_b
     bool precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b);
-    bool visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b, unordered_set<int> &visited);
+    bool visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b, robin_hood::unordered_set<int> &visited);
 
     tree_node_cpp* find_lca_left_child_cpp(tree_node_cpp* node1, tree_node_cpp* node2);
 

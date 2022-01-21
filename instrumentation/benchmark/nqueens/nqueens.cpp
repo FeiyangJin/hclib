@@ -53,7 +53,6 @@ int ok(int n, char *a)
 int nqueens_fj(int n, int j, char *a){
     #ifdef RACE_DETECTION
         ds_hclib_ready(true);
-        ds_promise_task(true);
     #endif
 
     int solution = 0;
@@ -80,18 +79,17 @@ int nqueens_fj(int n, int j, char *a){
             hclib::promise_t<int>* p = new hclib::promise_t<int>();
             pv->push_back(p);
             int index = pv->size() - 1;
-
+           
             hclib::async([n, j, a, index, &pv](){
+
+                #ifdef RACE_DETECTION
+                    ds_hclib_ready(true);
+                #endif
 
                 int result = nqueens_fj(n, j + 1, a);
                 
                 #ifdef RACE_DETECTION
-                    ds_hclib_ready(true);
-                #endif
-                
-                #ifdef RACE_DETECTION
                     pv->at(index)->end_put(result);
-                    ds_hclib_ready(false);
                 #else
                     pv->at(index)->put(result);
                 #endif
@@ -100,9 +98,6 @@ int nqueens_fj(int n, int j, char *a){
         }
     }
 
-    #ifdef RACE_DETECTION
-        ds_hclib_ready(false);
-    #endif
     for(auto pi = pv->begin(); pi != pv->end(); pi++){
         #ifdef RACE_DETECTION
             ds_hclib_ready(true);

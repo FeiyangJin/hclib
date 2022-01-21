@@ -15,7 +15,7 @@ static unsigned long check_write_count = 0;
 static unsigned long check_read_count = 0;
 
 static int current_step_id = -1;
-std::unordered_set<int*> address_already_visit = unordered_set<int*>();
+robin_hood::unordered_set<int*> address_already_visit;
 bool step_first_write = true;
 static int a_count = 0;
 static int reachability_count = 0;
