@@ -444,19 +444,6 @@ int main(int argc, char* argv[]){
 
         printf("sort time in parallel: %.3f for array of size %ld \n",dur,size);
 
-        //seq sort
-        // fill_array(array,size);
-        // zero(tmp,size);
-
-        // start = hclib_current_time_ms();
-
-        // seqquick(array, array + size - 1);
-
-        // end = hclib_current_time_ms();
-        // dur = ((double)(end-start))/1000;
-
-        // printf("sort time in sequential: %.3f for array of size %ld \n",dur,size);
-
         #ifdef RACE_DETECTION
           ds_hclib_ready(false);
           printf("DPST height is: %d \n", get_dpst_height());

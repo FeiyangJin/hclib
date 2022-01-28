@@ -15,7 +15,8 @@ static unsigned long check_write_count = 0;
 static unsigned long check_read_count = 0;
 
 static int current_step_id = -1;
-std::unordered_set<int*> address_already_visit;
+robin_hood::unordered_set<int*> address_already_visit;
+bool step_first_write = true;
 static int a_count = 0;
 static int reachability_count = 0;
 
@@ -97,13 +98,14 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
           // }
           else{ // 3. we have more than 1 reader
             bool update = true;
+            // int c_id = current_task_and_step.task_id;
             // while(reader != nullptr){
-              // if(reader->task_and_node.task_id == c_id){
-              //   reader->task_and_node = current_task_and_step;
-              //   update = false;
-              //   break;
-              // }
-              // reader = reader->next;
+            //   if(reader->task_and_node.task_id == c_id){
+            //     reader->task_and_node = current_task_and_step;
+            //     update = false;
+            //     break;
+            //   }
+            //   reader = reader->next;
             // }
             if(update){
               MemAccess_t* new_reader = new MemAccess_t(current_task_and_step, rip, is_asap_promise_task);
@@ -305,6 +307,26 @@ extern "C" void asap_check_write(int *addr, int bytes) {
       return;
     }
 
+    // int stepid = ((tree_node_cpp*) current_task_and_step.node_in_dpst)->index;
+    // if(stepid != current_step_id){
+    //   current_step_id = stepid;
+    //   address_already_visit.clear();
+    //   address_already_visit.insert(addr);
+    //   step_first_write = true;
+    // }
+    // else{
+    //   if(address_already_visit.count(addr) > 0 && !step_first_write){
+    //     a_count ++;
+    //     return;
+    //   }
+    //   else if(address_already_visit.count(addr) > 0 && step_first_write){
+    //     step_first_write = false;
+    //   }
+    //   else{
+    //     address_already_visit.insert(addr);
+    //   }
+    // }
+
     void *pc = __builtin_return_address(0);
     auto slot = shadow_mem->find(ADDR_TO_KEY(addr));
 
@@ -328,6 +350,23 @@ extern "C" __attribute__((weak)) void asap_check_read(int *addr, int bytes) {
     if(!is_step){
       return;
     }
+
+    // int stepid = ((tree_node_cpp*) current_task_and_step.node_in_dpst)->index;
+    // if(stepid != current_step_id){
+    //   current_step_id = stepid;
+    //   address_already_visit.clear();
+    //   address_already_visit.insert(addr);
+    //   step_first_write = true;
+    // }
+    // else{
+    //   if(address_already_visit.count(addr) > 0){
+    //     a_count ++;
+    //     return;
+    //   }
+    //   else{
+    //     address_already_visit.insert(addr);
+    //   }
+    // }
 
     void *pc = __builtin_return_address(0);
     auto slot = shadow_mem->find(ADDR_TO_KEY(addr));

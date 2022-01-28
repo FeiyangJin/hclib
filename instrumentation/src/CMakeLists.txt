@@ -1,5 +1,8 @@
 # Set up include paths, library paths, and flags for the pass
 include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
+# include_directories("/home/fjin/sparselib/include")
+include_directories("/home/fjin/gitRepo/robin-hood-hashing/src/include")
+include_directories("/home/fjin/gitRepo/sparsehash-c11")
 link_directories(${LLVM_LIBRARY_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
