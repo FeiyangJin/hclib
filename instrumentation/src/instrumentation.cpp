@@ -1,4 +1,5 @@
 #include "instrumentation.h"
+#include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/IR/Attributes.h"
@@ -9,12 +10,46 @@
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Demangle/Demangle.h"
+#include "llvm/ProfileData/InstrProf.h"
 #include <cstdlib>
 
 using namespace llvm;
 
 namespace {
-  
+
+// Do not instrument known races/"benign races" that come from compiler
+// instrumentation. The user has no way of suppressing them.
+static bool shouldInstrumentReadWriteFromAddress(const Module *m, Value *addr) {
+  // Peel off GEPs and BitCasts.
+  addr = addr->stripInBoundsOffsets();
+
+  if (GlobalVariable *gv = dyn_cast<GlobalVariable>(addr)) {
+    if (gv->hasSection()) {
+      StringRef sectionName = gv->getSection();
+      // Check if the global is in the PGO counters section.
+      auto of = Triple(m->getTargetTriple()).getObjectFormat();
+      if (sectionName.endswith(
+              getInstrProfSectionName(IPSK_cnts, of, /*AddSegmentInfo=*/false)))
+        return false;
+    }
+
+    // Check if the global is private gcov data.
+    if (gv->getName().startswith("__llvm_gcov") ||
+        gv->getName().startswith("__llvm_gcda"))
+      return false;
+  }
+
+  // Do not instrument acesses from different address spaces; we cannot deal
+  // with them.
+  if (addr) {
+    Type *ptrTy = cast<PointerType>(addr->getType()->getScalarType());
+    if (ptrTy->getPointerAddressSpace() != 0)
+      return false;
+  }
+
+  return true;
+}
+
 class RaceDetector{
  public:
   RaceDetector(Function &f);
@@ -26,11 +61,14 @@ class RaceDetector{
   ItaniumPartialDemangler demangler;
   SmallVector<StringRef,10> nsBlackList;
   SmallVector<StringRef,10> funcWhiteList;
-  void instrumentLoadAndStore();
-  int getMemoryAccessSize(Value *Addr, const DataLayout &DL);
+  uint64_t skippedReads;
+  uint64_t skippedWrites; 
+  void instrumentLoadAndStore(Instruction *inst, const DataLayout &dl);
+  void chooseInstructiontoInstrument(SmallVectorImpl<Instruction *> &local, SmallVectorImpl<Instruction *> &all);
+  int getMemoryAccessSize(Value *addr, const DataLayout &dl);
 };
 
-RaceDetector::RaceDetector(Function &f) : fptr(&f), demangler(), nsBlackList(), funcWhiteList() {
+RaceDetector::RaceDetector(Function &f) : fptr(&f), demangler(), nsBlackList(), funcWhiteList(), skippedReads(0), skippedWrites(0) {
   Module *m = f.getParent();
   IRBuilder<> irb(m->getContext());
   AttributeList attr;
@@ -49,14 +87,13 @@ RaceDetector::RaceDetector(Function &f) : fptr(&f), demangler(), nsBlackList(), 
 }
 
 void RaceDetector::sanitizeFunction() {
-  this->instrumentLoadAndStore();
-}
-
-void RaceDetector::instrumentLoadAndStore() {
   const DataLayout &dl = fptr->getParent()->getDataLayout();
   size_t size = 100;
   char *buf1 = static_cast<char *>(std::malloc(size));
   char *buf2 = static_cast<char *>(std::malloc(size));
+  SmallVector<Instruction *, 8> localLoadsAndStores;
+  SmallVector<Instruction *, 8> allLoadsAndStores;
+
   if (!demangler.partialDemangle(fptr->getName().data())) {
     StringRef contextName = demangler.getFunctionDeclContextName(buf1, &size);
     StringRef baseName = demangler.getFunctionBaseName(buf2, &size);
@@ -78,23 +115,68 @@ void RaceDetector::instrumentLoadAndStore() {
       }
     }
   }
+
   //errs() << "Instrument " << fptr->getName() << "\n";
   for (auto &bb : *fptr) {
     for (auto &inst : bb) {
       if (isa<LoadInst>(inst) || isa<StoreInst>(inst)) {
-        IRBuilder<> irb(&inst);
-        bool isWrite = isa<StoreInst>(inst);
-        Value *addr = isWrite ? cast<StoreInst>(&inst)->getPointerOperand()
-                              : cast<LoadInst>(&inst)->getPointerOperand();
-        FunctionCallee func = isWrite ? checkWrite : checkRead;
-        int size = getMemoryAccessSize(addr, dl);
-        assert(size > 0);
-        irb.CreateCall(func, 
-                       {irb.CreatePointerCast(addr, irb.getInt8PtrTy()), 
-                        irb.getInt32(size)});
+        localLoadsAndStores.push_back(&inst);
+      } else if ((isa<CallInst>(inst) && !isa<DbgInfoIntrinsic>(inst)) ||
+                  isa<InvokeInst>(inst)) {
+        chooseInstructiontoInstrument(localLoadsAndStores, allLoadsAndStores);
       }
     }
+    chooseInstructiontoInstrument(localLoadsAndStores, allLoadsAndStores);
   }
+
+  for (Instruction *i : allLoadsAndStores) {
+    instrumentLoadAndStore(i, dl);
+  }
+}
+
+void RaceDetector::instrumentLoadAndStore(Instruction *inst, const DataLayout &dl) {
+  IRBuilder<> irb(inst);
+  bool isWrite = isa<StoreInst>(inst);
+  Value *addr = isWrite ? cast<StoreInst>(inst)->getPointerOperand()
+                        : cast<LoadInst>(inst)->getPointerOperand();
+  FunctionCallee func = isWrite ? checkWrite : checkRead;
+  int size = getMemoryAccessSize(addr, dl);
+  assert(size > 0);
+  irb.CreateCall(func, 
+                 {irb.CreatePointerCast(addr, irb.getInt8PtrTy()), 
+                  irb.getInt32(size)});
+}
+
+void RaceDetector::chooseInstructiontoInstrument(SmallVectorImpl<Instruction *> &local, 
+                                                 SmallVectorImpl<Instruction *> &all) {
+  DenseMap<Value *, size_t> writeTargets;
+  for (Instruction *i : reverse(local)) {
+    const bool isWrite = isa<StoreInst>(*i);
+    Value *addr = isWrite ? cast<StoreInst>(i)->getPointerOperand()
+                          : cast<LoadInst>(i)->getPointerOperand();
+    if (!shouldInstrumentReadWriteFromAddress(i->getModule(), addr)) {
+      continue;
+    }
+
+    // If there is a write operation, all prior write and read operations in the BasicBlock are skipped
+    // if (!isWrite) {
+    const auto writeEntry = writeTargets.find(addr);
+    if (writeEntry != writeTargets.end()) {
+      if (isWrite) {
+        skippedWrites++;
+      } else {
+        skippedReads++;
+      }
+      continue;
+    }
+    // }
+
+    all.push_back(i);
+    if (isWrite) {
+      writeTargets[addr] = all.size() - 1;
+    }
+  }
+  local.clear();
 }
 
 int RaceDetector::getMemoryAccessSize(Value *addr, const DataLayout &dl) {
