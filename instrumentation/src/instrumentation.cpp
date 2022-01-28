@@ -54,6 +54,12 @@ class RaceDetector{
  public:
   RaceDetector(Function &f);
   void sanitizeFunction();
+  uint64_t getSkippedReads() {
+    return this->skippedReads;
+  }
+  uint64_t getSkippedWrites() {
+    return this->skippedWrites;
+  }
  private:
   FunctionCallee checkRead;
   FunctionCallee checkWrite;
@@ -199,6 +205,8 @@ PreservedAnalyses InstrumentationPass::run(Function &F,
   
   RaceDetector rd(F);
   rd.sanitizeFunction();
+  errs() << "Skipped reads: " << rd.getSkippedReads() << "\n";
+  errs() << "Skipped writes: " << rd.getSkippedWrites() << "\n"; 
   return PreservedAnalyses::none();
 }
 
