@@ -204,6 +204,7 @@ PreservedAnalyses InstrumentationPass::run(Function &F,
                                            FunctionAnalysisManager &AM) {
   
   RaceDetector rd(F);
+  errs() << "Instrument " << F.getName() << "\n";
   rd.sanitizeFunction();
   errs() << "Skipped reads: " << rd.getSkippedReads() << "\n";
   errs() << "Skipped writes: " << rd.getSkippedWrites() << "\n"; 
