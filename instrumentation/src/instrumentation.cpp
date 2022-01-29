@@ -1,5 +1,6 @@
 #include "instrumentation.h"
 #include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/IR/Attributes.h"
@@ -65,16 +66,19 @@ class RaceDetector{
   FunctionCallee checkWrite;
   Function *fptr;
   ItaniumPartialDemangler demangler;
-  SmallVector<StringRef,10> nsBlackList;
-  SmallVector<StringRef,10> funcWhiteList;
+  DenseSet<StringRef> nsBlackList;;
+  DenseSet<StringRef> funcWhiteList;
+  DenseSet<StringRef> ignoredFuncCallSet;
   uint64_t skippedReads;
-  uint64_t skippedWrites; 
+  uint64_t skippedWrites;
   void instrumentLoadAndStore(Instruction *inst, const DataLayout &dl);
   void chooseInstructiontoInstrument(SmallVectorImpl<Instruction *> &local, SmallVectorImpl<Instruction *> &all);
   int getMemoryAccessSize(Value *addr, const DataLayout &dl);
+  StringRef getFunctionBaseName(StringRef func);
+  StringRef getNameSpace(StringRef func);
 };
 
-RaceDetector::RaceDetector(Function &f) : fptr(&f), demangler(), nsBlackList(), funcWhiteList(), skippedReads(0), skippedWrites(0) {
+RaceDetector::RaceDetector(Function &f) : fptr(&f), demangler(), nsBlackList(), funcWhiteList(), ignoredFuncCallSet(), skippedReads(0), skippedWrites(0) {
   Module *m = f.getParent();
   IRBuilder<> irb(m->getContext());
   AttributeList attr;
@@ -88,37 +92,34 @@ RaceDetector::RaceDetector(Function &f) : fptr(&f), demangler(), nsBlackList(), 
   checkWrite = m->getOrInsertFunction(writeFuncName, attr, 
                                       irb.getVoidTy(), irb.getInt8PtrTy(), 
                                       irb.getInt32Ty());
-  nsBlackList.append({"hclib"});
-  funcWhiteList.append({"call_lambda"});
+  nsBlackList.insert({"hclib"});
+  funcWhiteList.insert({"call_lambda"});
+  ignoredFuncCallSet.insert({"asap_check_read"});
+  ignoredFuncCallSet.insert({"asap_check_write"});
 }
 
 void RaceDetector::sanitizeFunction() {
   const DataLayout &dl = fptr->getParent()->getDataLayout();
-  size_t size = 100;
-  char *buf1 = static_cast<char *>(std::malloc(size));
-  char *buf2 = static_cast<char *>(std::malloc(size));
   SmallVector<Instruction *, 8> localLoadsAndStores;
   SmallVector<Instruction *, 8> allLoadsAndStores;
+  DenseSet<Instruction *> loadsForIgnoredFuncCall;
 
-  if (!demangler.partialDemangle(fptr->getName().data())) {
-    StringRef contextName = demangler.getFunctionDeclContextName(buf1, &size);
-    StringRef baseName = demangler.getFunctionBaseName(buf2, &size);
-    for (auto &item : nsBlackList) {
-      if (contextName.startswith(item)) {
-        bool isIgnore = true;
-        for (auto &item2 : funcWhiteList) {
-          if (item2 == baseName) {
-            isIgnore = false;
-            break;
-          }
-        }
-        if (isIgnore) {
-          errs() << "Ignored: " << contextName << "::" << baseName << "\n";
-          return;
-        } else {
-          break;
-        }
-      }
+  {
+    StringRef baseName = getFunctionBaseName(fptr->getName());
+    StringRef contextName = getNameSpace(fptr->getName());
+    bool ignore = false;
+    if (nsBlackList.contains(contextName) && !funcWhiteList.contains(baseName)) {
+      errs() << "Ignored: " << contextName << "::" << baseName << "\n";
+      ignore = true;
+    }
+    if (!contextName.empty()) {
+      delete[] contextName.data();
+    }
+    if (!baseName.empty()) {
+      delete[] baseName.data();
+    }
+    if (ignore) {
+      return;
     }
   }
 
@@ -129,7 +130,17 @@ void RaceDetector::sanitizeFunction() {
         localLoadsAndStores.push_back(&inst);
       } else if ((isa<CallInst>(inst) && !isa<DbgInfoIntrinsic>(inst)) ||
                   isa<InvokeInst>(inst)) {
+        // CallBase *cb = cast<CallBase>(&inst);
+        // StringRef baseName = getFunctionBaseName(cb.getCalledFunction()->getName());
+        // if (ignoredFuncCallSet.contains(baseName)) {
+        //   for (auto &param : cb->args()) {
+
+        //   }
+        // }
         chooseInstructiontoInstrument(localLoadsAndStores, allLoadsAndStores);
+        // if (!baseName.empty()) {
+        //   delete[] baseName.data();
+        // }
       }
     }
     chooseInstructiontoInstrument(localLoadsAndStores, allLoadsAndStores);
@@ -196,6 +207,28 @@ int RaceDetector::getMemoryAccessSize(Value *addr, const DataLayout &dl) {
     return -1;
   }
   return typeSize / 8;
+}
+
+StringRef RaceDetector::getFunctionBaseName(StringRef func) {
+  size_t size = func.size();
+  char *buf = new char[func.size()];
+  if (!demangler.partialDemangle(func.data())) {
+    return demangler.getFunctionBaseName(buf, &size);
+  } else {
+    delete[] buf;
+    return StringRef{};
+  }
+}
+
+StringRef RaceDetector::getNameSpace(StringRef func) {
+  size_t size = func.size();
+  char *buf = new char[func.size()];
+  if (!demangler.partialDemangle(func.data())) {
+    return demangler.getFunctionDeclContextName(buf, &size);
+  } else {
+    delete[] buf;
+    return StringRef{};
+  }
 }
 
 } // namespace
