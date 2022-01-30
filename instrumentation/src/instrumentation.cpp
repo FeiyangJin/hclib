@@ -108,7 +108,8 @@ void RaceDetector::sanitizeFunction() {
     StringRef baseName = getFunctionBaseName(fptr->getName());
     StringRef contextName = getNameSpace(fptr->getName());
     bool ignore = false;
-    if (nsBlackList.contains(contextName) && !funcWhiteList.contains(baseName)) {
+    if (nsBlackList.find(contextName) != nsBlackList.end() && 
+       funcWhiteList.find(baseName) == funcWhiteList.end()) {
       errs() << "Ignored: " << contextName << "::" << baseName << "\n";
       ignore = true;
     }
