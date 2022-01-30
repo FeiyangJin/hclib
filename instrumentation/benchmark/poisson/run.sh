@@ -15,7 +15,7 @@ if [ $# -lt 1 ]; then
 fi
 
 BENCHMARK_NAME="poisson"
-DEFAULT_INPUT="4096 128 4"
+DEFAULT_INPUT="4096 128 3"
 ORIGIN_EXE="${BENCHMARK_NAME}-origin.exe"
 RD_EXE="${BENCHMARK_NAME}-rd.exe"
 

@@ -14,8 +14,8 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 
-BENCHMARK_NAME="strassen"
-DEFAULT_INPUT="2048 128 4"
+BENCHMARK_NAME="knapsack"
+DEFAULT_INPUT="knapsack-024.input"
 ORIGIN_EXE="${BENCHMARK_NAME}-origin.exe"
 RD_EXE="${BENCHMARK_NAME}-rd.exe"
 

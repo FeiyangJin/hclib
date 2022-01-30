@@ -396,6 +396,23 @@ void lu0(float *diag, int submatrix_size)
 {
     int i, j, k;
 
+    // try to reduce overhead
+    int a;
+    int n = submatrix_size;
+
+    int result = 0;
+    for(a = 0; a <= n-1 ; a++){
+        result += diag[a];
+    }
+
+    for(a = n-2; a <= n*n-1; a++){
+        auto y = diag[a];
+        diag[a] = y;
+    }
+
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
     for (k=0; k<submatrix_size; k++)
         for (i=k+1; i<submatrix_size; i++)
         {
@@ -403,12 +420,26 @@ void lu0(float *diag, int submatrix_size)
             for (j=k+1; j<submatrix_size; j++)
                 diag[i*submatrix_size+j] = diag[i*submatrix_size+j] - diag[i*submatrix_size+k] * diag[k*submatrix_size+j];
         }
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
+
+    if(result < -100000){
+        printf("hello world \n");
+    }
 }
 
 
 void bdiv(float *diag, float *row, int submatrix_size)
 {
     int i, j, k;
+
+    // try to reduce overhead
+
+
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
     for (i=0; i<submatrix_size; i++)
         for (k=0; k<submatrix_size; k++)
         {
@@ -416,31 +447,52 @@ void bdiv(float *diag, float *row, int submatrix_size)
             for (j=k+1; j<submatrix_size; j++)
                 row[i*submatrix_size+j] = row[i*submatrix_size+j] - row[i*submatrix_size+k]*diag[k*submatrix_size+j];
         }
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
 }
 
 
 void bmod(float *row, float *col, float *inner, int submatrix_size)
 {
     int i, j, k;
+
+    // try to reduce overhead
+    int a;
+    for(a = 0; a <= submatrix_size *submatrix_size - 1; a++){
+        auto x = inner[a];
+        inner[a] = 0;
+        inner[a] = x;
+    }
+
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
     for (i=0; i<submatrix_size; i++)
         for (j=0; j<submatrix_size; j++)
             for (k=0; k<submatrix_size; k++){
-                // if(i == 31 && j == 30 && k == 0){
-                //     printf("address of element %d is %p \n", (i*submatrix_size+j), &inner[i*submatrix_size+j]);
-                // }
                 inner[i*submatrix_size+j] = inner[i*submatrix_size+j] - row[i*submatrix_size+k]*col[k*submatrix_size+j];
             }
-                
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
 }
 
 
 void fwd(float *diag, float *col, int submatrix_size)
 {
     int i, j, k;
+
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
     for (j=0; j<submatrix_size; j++)
         for (k=0; k<submatrix_size; k++)
             for (i=k+1; i<submatrix_size; i++)
                 col[i*submatrix_size+j] = col[i*submatrix_size+j] - diag[i*submatrix_size+k]*col[k*submatrix_size+j];
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
 }
 
 
@@ -556,6 +608,7 @@ int main (int argc, char ** argv) {
         long end = hclib_current_time_ms();
         double dur = ((double)(end-start))/1000;
         printf("Run Time = %f\n",dur);
+
     #ifdef RACE_DETECTION
         printf("DPST height is: %d \n", get_dpst_height());
         printf("cache size is %d \n",ds_get_cache_size());

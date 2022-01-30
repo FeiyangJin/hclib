@@ -43,50 +43,16 @@ int read_input(const char *filename, struct item *items, int *capacity, int *n)
      return 0;
 }
 
-void knapsack_par(struct item *e, int c, int n, int v, int *sol, int l)
-{
-     int with, without, best;
-     double ub;
-
-     /* base case: full knapsack or no items */
-     if (c < 0)
-     {
-         *sol = INT_MIN;
-         return;
-     }
-
-     /* feasible solution, with value v */
-     if (n == 0 || c == 0)
-     {
-         *sol = v;
-         return;
-     }
-
-     ub = (double) v + c * e->value / e->weight;
-
-     if (ub < best_so_far) {
-	  /* prune ! */
-          *sol = INT_MIN;
-          return;
-     }
-        
-     knapsack_par(e + 1, c, n - 1, v, &without,l+1);
-     knapsack_par(e + 1, c - e->weight, n - 1, v + e->value, &with,l+1);
-
-     best = with > without ? with : without;
-
-
-     if (best > best_so_far) best_so_far = best;
-
-     *sol = best;
-}
-
 /* 
  * return the optimal solution for n items (first is e) and
  * capacity c. Value so far is v.
  */
 void knapsack(struct item *e, int c, int n, int v, int *sol)
 {
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
+
     int with, without, best;
     double ub;
 
@@ -117,9 +83,26 @@ void knapsack(struct item *e, int c, int n, int v, int *sol)
     knapsack(e + 1, c, n - 1, v, &without);
 
     /* compute the best solution with the current item in the knapsack */
-    // hclib::async([&](){
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
+
+    hclib::promise_t<void> *p = new hclib::promise_t<void>();
+    hclib::async([&](){
         knapsack(e + 1, c - e->weight, n - 1, v + e->value, &with);
-    // });
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(false);
+            p->end_put();
+        #else
+            p->put();
+        #endif
+        
+    });
+
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
+    p->get_future()->wait();
 
     best = with > without ? with : without;
 
@@ -137,7 +120,6 @@ void knapsack(struct item *e, int c, int n, int v, int *sol)
 
 
 int main(int argc, char** argv) {
-    printf("hello world \n");
     if(argc < 2){
         printf("usage: ./knapsack.exe input_file.input \n");
         return 0;
@@ -160,23 +142,19 @@ int main(int argc, char** argv) {
         long end = hclib_current_time_ms();
         double dur = ((double)(end-start))/1000;
         printf("Knapsack Time = %f \n",dur);
-        printf("DPST height is: %d \n", get_dpst_height());
-        printf("cache size is %d \n",ds_get_cache_size());
-        printf("number of task is %d \n",get_task_id_unique());
-        printf("number of nt join %d \n", get_nt_count());
-        printf("number of tree joins %d \n", ds_get_tree_join_count());
+
+        #ifdef RACE_DETECTION
+            printf("DPST height is: %d \n", get_dpst_height());
+            printf("cache size is %d \n",ds_get_cache_size());
+            printf("number of task is %d \n",get_task_id_unique());
+            printf("number of nt join %d \n", get_nt_count());
+            printf("number of tree joins %d \n", ds_get_tree_join_count());
+            ds_print_check_write_count();
+            ds_print_check_read_count();
+        #endif
     });
     
     return 0;
-}
-
-void knapsack_main_par(struct item *e, int c, int n, int *sol)
-{
-    best_so_far = INT_MIN;
-
-    knapsack_par(e, c, n, 0, sol, 0);
-
-    printf("Best value for parallel execution is %d\n\n", *sol);
 }
 
 void knapsack_main(struct item *e, int c, int n, int *sol)

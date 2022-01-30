@@ -61,51 +61,60 @@ int nqueens_fj(int n, int j, char *a){
         return 1;
     }
 
+
     #ifdef RACE_DETECTION
         ds_hclib_ready(false);
     #endif
     std::vector<hclib::promise_t<int>*> *pv = new std::vector<hclib::promise_t<int>*>();
-
-    #ifdef RACE_DETECTION
-            ds_hclib_ready(true);
-    #endif
     for (i = 0; i < n; i++) {
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(false);
+        #endif
+
+        hclib::promise_t<int>* p = new hclib::promise_t<int>(); 
+
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(true);
+        #endif
+        pv->push_back(p);
+    }
+
+    for (i = 0; i < n; i++) {
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(true);
+        #endif
+
         a[j] = (char) i;
         if (ok(j + 1, a)) {
+     
             #ifdef RACE_DETECTION
                 ds_hclib_ready(false);
             #endif
+            hclib::promise_t<int>* p = pv->at(i);
 
-            hclib::promise_t<int>* p = new hclib::promise_t<int>();
-            pv->push_back(p);
-            int index = pv->size() - 1;
-           
-            hclib::async([n, j, a, index, &pv](){
-
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(true);
-                #endif
+            hclib::async([n, j, a, &p,pv](){
 
                 int result = nqueens_fj(n, j + 1, a);
-                
+              
                 #ifdef RACE_DETECTION
-                    pv->at(index)->end_put(result);
+                    ds_hclib_ready(true);
+                    // printf("address of p %p and pv %p \n",&p,&pv);
+                    p->end_put(result);
                 #else
-                    pv->at(index)->put(result);
+                    p->put(result);
                 #endif
             });
 
         }
     }
 
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
     for(auto pi = pv->begin(); pi != pv->end(); pi++){
-        #ifdef RACE_DETECTION
-            ds_hclib_ready(true);
-        #endif
+        if((*pi)->satisfied){
             solution += (*pi)->get_future()->wait();
-        #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-        #endif
+        }
     }
 
     return solution;

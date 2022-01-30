@@ -59,8 +59,8 @@ public:
   addr_t start_addr;
 
   #ifdef LINK_READER
-    MemAccess_t* readers[NUM_SLOTS] = {};
-    MemAccess_t* readers_tail[NUM_SLOTS] = {};
+    MemAccess_t* readers[NUM_SLOTS] = {nullptr, nullptr, nullptr, nullptr};
+    MemAccess_t* readers_tail[NUM_SLOTS] = {nullptr, nullptr, nullptr, nullptr};
   #elif defined(VECTOR_READER_LIST)
     std::vector<MemAccess_t>* readers[NUM_SLOTS] = {};
   #else
@@ -68,7 +68,7 @@ public:
   #endif
 
 
-  MemAccess_t* writers[NUM_SLOTS] = {};
+  MemAccess_t* writers[NUM_SLOTS] = {nullptr, nullptr, nullptr, nullptr};
 
   MemAccessList_t(addr_t addr, bool is_read, access_info task_and_node, addr_t rip, std::size_t mem_size, int first_finish_id, bool is_promise);
   ~MemAccessList_t();

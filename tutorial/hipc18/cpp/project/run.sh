@@ -6,8 +6,8 @@
 
 # LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./randomized.exe
 
-# LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./knapsack.exe knapsack-032.input
+LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./knapsack.exe knapsack-036.input
 
-LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./nqueens.exe 12
+# LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./nqueens.exe 12
 
 # LD_LIBRARY_PATH="/home/fjin/gitRepo/hclib/instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 ./sort_finish.exe 1000000

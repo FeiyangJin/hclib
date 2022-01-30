@@ -15,7 +15,7 @@ if [ $# -lt 1 ]; then
 fi
 
 BENCHMARK_NAME="sparselu"
-DEFAULT_INPUT=""
+DEFAULT_INPUT="128 16"
 ORIGIN_EXE="${BENCHMARK_NAME}-origin.exe"
 RD_EXE="${BENCHMARK_NAME}-rd.exe"
 

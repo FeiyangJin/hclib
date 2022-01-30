@@ -1,12 +1,12 @@
 include ../common/make.inc
 
-all: matmul-rd.exe matmul-origin.exe
+all: knapsack-rd.exe knapsack-origin.exe
 
-matmul-rd.exe: matmul.cpp 
+knapsack-rd.exe: knapsack.cpp 
 	$(INST) $^ -DRACE_DETECTION $(TEST_RD_OPTIONS)
-	mv matmul.exe matmul-rd.exe
+	mv knapsack.exe knapsack-rd.exe
 
-matmul-origin.exe: matmul.cpp
+knapsack-origin.exe: knapsack.cpp
 	${CXX} -o $@ $^ $(TEST_ORIGIN_OPTIONS)
 
 .PHONY: clean

@@ -307,16 +307,16 @@ void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n){
     #endif
     hclib::finish([A1,B1,B2,A3,&C1,&C2,&C3,&C4,n](){
         hclib::async([A1,B1,&C1,n](){
-            mat_mul_par_promise(A1,B1,C1,n>>1);
-            // mat_mul_par(A1,B1,C1,n>>1);
+            // mat_mul_par_promise(A1,B1,C1,n>>1);
+            mat_mul_par(A1,B1,C1,n>>1);
         });
 
         #ifdef RACE_DETECTION
             ds_hclib_ready(false);
         #endif
         hclib::async([A1,B2,&C2,n](){
-            mat_mul_par_promise(A1,B2,C2,n>>1);
-            // mat_mul_par(A1,B2,C2,n>>1);
+            // mat_mul_par_promise(A1,B2,C2,n>>1);
+            mat_mul_par(A1,B2,C2,n>>1);
         });
 
         #ifdef RACE_DETECTION
