@@ -16,38 +16,22 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
     for (kk=0; kk<matrix_size; kk++){
 
         // at the beginning of for loop, initialize promise array
-        #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-        #endif
         for(int index=0; index < array_size; index++){
             hclib::promise_t<void> *p = new hclib::promise_t<void>();
             promise_array[index] = p;
         }
 
         // #pragma omp task firstprivate(kk) shared(BENCH) depend(inout: BENCH[kk*matrix_size+kk:submatrix_size*submatrix_size])
-        #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-        #endif
         task_vector.push_back(new hclib::promise_t<void>());
 
         hclib::async([kk, matrix_size, submatrix_size, &BENCH, &promise_array, &task_vector]() {
-            #ifdef RACE_DETECTION
-                ds_hclib_ready(true);
-                ds_promise_task(true);
-            #endif
 
             lu0(BENCH[kk*matrix_size+kk], submatrix_size);
 
             promise_array[kk*matrix_size+kk]->put();
 
-            #ifdef RACE_DETECTION
-                ds_hclib_ready(false);
-            #endif
             task_vector.at(0)->put();
         });
-        #ifdef RACE_DETECTION
-            ds_hclib_ready(true);
-        #endif
         
         for (jj=kk+1; jj<matrix_size; jj++){
             if (BENCH[kk*matrix_size+jj] != NULL)
@@ -56,30 +40,18 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
                 // depend(in: BENCH[kk*matrix_size+kk:submatrix_size*submatrix_size]) \
                 // depend(inout: BENCH[kk*matrix_size+jj:submatrix_size*submatrix_size])
 
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(false);
-                #endif
                 task_vector.push_back(new hclib::promise_t<void>());
                 int task_index = task_vector.size() - 1;
                 hclib::async([kk, matrix_size, submatrix_size, jj, task_index, &BENCH, &promise_array, &task_vector]() {
-                    #ifdef RACE_DETECTION
-                        ds_hclib_ready(true);
-                        ds_promise_task(true);
-                    #endif
+
                     promise_array[kk*matrix_size+kk]->get_future()->wait();
 
                     fwd(BENCH[kk*matrix_size+kk], BENCH[kk*matrix_size+jj], submatrix_size);
 
                     promise_array[kk*matrix_size+jj]->put();
 
-                    #ifdef RACE_DETECTION
-                        ds_hclib_ready(false);
-                    #endif
                     task_vector.at(task_index)->put();
                 });
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(true);
-                #endif
                 
             }
         }
@@ -91,29 +63,16 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
                 // depend(in: BENCH[kk*matrix_size+kk:submatrix_size*submatrix_size]) \
                 // depend(inout: BENCH[ii*matrix_size+kk:submatrix_size*submatrix_size])
 
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(false);
-                #endif
                 task_vector.push_back(new hclib::promise_t<void>());
                 int task_index = task_vector.size() - 1;
                 hclib::async([kk, matrix_size, submatrix_size, ii, task_index, &BENCH, &promise_array, &task_vector]() {
-                    #ifdef RACE_DETECTION
-                        ds_hclib_ready(true);
-                        ds_promise_task(true);
-                    #endif
                     promise_array[kk*matrix_size+kk]->get_future()->wait();
 
                     bdiv (BENCH[kk*matrix_size+kk], BENCH[ii*matrix_size+kk], submatrix_size);
 
-                    #ifdef RACE_DETECTION
-                        ds_hclib_ready(false);
-                    #endif
                     promise_array[ii*matrix_size+kk]->put();
                     task_vector.at(task_index)->put();
                 });
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(true);
-                #endif
             }
         }
 
@@ -127,31 +86,17 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
                         // depend(in: BENCH[ii*matrix_size+kk:submatrix_size*submatrix_size], BENCH[kk*matrix_size+jj:submatrix_size*submatrix_size]) \
                         // depend(inout: BENCH[ii*matrix_size+jj:submatrix_size*submatrix_size])
 
-                        #ifdef RACE_DETECTION
-                            ds_hclib_ready(false);
-                        #endif
                         task_vector.push_back(new hclib::promise_t<void>());
                         int task_index = task_vector.size() - 1;
                         hclib::async([kk, matrix_size, submatrix_size, ii, jj, task_index, &BENCH, &promise_array, &task_vector](){
                             promise_array[ii*matrix_size+kk]->get_future()->wait();
                             promise_array[kk*matrix_size+jj]->get_future()->wait();
 
-                            #ifdef RACE_DETECTION
-                                ds_hclib_ready(true);
-                                ds_promise_task(true);
-                            #endif
-
                             bmod(BENCH[ii*matrix_size+kk], BENCH[kk*matrix_size+jj], BENCH[ii*matrix_size+jj], submatrix_size);
 
-                            #ifdef RACE_DETECTION
-                                ds_hclib_ready(false);
-                            #endif
                             promise_array[ii*matrix_size+jj]->put();
                             task_vector.at(task_index)->put();
                         });
-                        #ifdef RACE_DETECTION
-                            ds_hclib_ready(true);
-                        #endif
                     }
                 }
             }
@@ -159,9 +104,6 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
 
 
         // at the end of for loop, reset all promise
-        #ifdef RACE_DETECTION
-                ds_hclib_ready(false);
-        #endif
         for(int index=0; index < array_size; index++){
             delete promise_array[index];
         }
@@ -194,7 +136,7 @@ void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
                 #endif
                 promise_vector.push_back(new hclib::promise_t<void>());
                 #ifdef RACE_DETECTION
-                    ds_hclib_ready(true);
+                    // ds_hclib_ready(true);
                 #endif
 
                 int index = promise_vector.size() - 1;
@@ -204,8 +146,8 @@ void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
                 #endif
                 hclib::async([=, &BENCH, &promise_vector]() {
                     #ifdef RACE_DETECTION
-                        ds_hclib_ready(true);
-                        ds_promise_task(true);
+                        // ds_hclib_ready(true);
+                        // ds_promise_task(true);
                     #endif
 
                     fwd(BENCH[kk*matrix_size+kk], BENCH[kk*matrix_size+jj], submatrix_size);
@@ -218,7 +160,7 @@ void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
                     #endif
                 });
                 #ifdef RACE_DETECTION
-                    ds_hclib_ready(true);
+                    // ds_hclib_ready(true);
                 #endif
             }
             
@@ -230,7 +172,7 @@ void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
                 #endif
                 promise_vector.push_back(new hclib::promise_t<void>());
                 #ifdef RACE_DETECTION
-                    ds_hclib_ready(true);
+                    // ds_hclib_ready(true);
                 #endif
 
                 int index = promise_vector.size() - 1;
@@ -240,8 +182,8 @@ void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
                 #endif
                 hclib::async([=, &BENCH, &promise_vector]() {
                     #ifdef RACE_DETECTION
-                        ds_hclib_ready(true);
-                        ds_promise_task(true);
+                        // ds_hclib_ready(true);
+                        // ds_promise_task(true);
                     #endif
                     bdiv (BENCH[kk*matrix_size+kk], BENCH[ii*matrix_size+kk], submatrix_size);
 
@@ -253,7 +195,7 @@ void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
                     #endif
                 });
                 #ifdef RACE_DETECTION
-                    ds_hclib_ready(true);
+                    // ds_hclib_ready(true);
                 #endif
             }
 
@@ -265,7 +207,7 @@ void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
         }
         promise_vector.empty();
         #ifdef RACE_DETECTION
-            ds_hclib_ready(true);
+            // ds_hclib_ready(true);
         #endif
 
 
@@ -279,7 +221,7 @@ void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
                         #endif
                         promise_vector.push_back(new hclib::promise_t<void>());
                         #ifdef RACE_DETECTION
-                            ds_hclib_ready(true);
+                            // ds_hclib_ready(true);
                         #endif
 
                         int index = promise_vector.size() - 1;
@@ -290,8 +232,8 @@ void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
 
                         hclib::async([=, &BENCH, &promise_vector](){
                             #ifdef RACE_DETECTION
-                                ds_hclib_ready(true);
-                                ds_promise_task(true);
+                                // ds_hclib_ready(true);
+                                // ds_promise_task(true);
                             #endif
 
                             if (BENCH[ii*matrix_size+jj]==NULL) BENCH[ii*matrix_size+jj] = allocate_clean_block(submatrix_size);
@@ -305,7 +247,7 @@ void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
                             #endif
                         });
                         #ifdef RACE_DETECTION
-                            ds_hclib_ready(true);
+                            // ds_hclib_ready(true);
                         #endif
                     }
 
@@ -317,7 +259,7 @@ void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
         }
         promise_vector.empty();
         #ifdef RACE_DETECTION
-            ds_hclib_ready(true);
+            // ds_hclib_ready(true);
         #endif
     }
 }
@@ -397,22 +339,28 @@ void lu0(float *diag, int submatrix_size)
     int i, j, k;
 
     // try to reduce overhead
-    int a;
-    int n = submatrix_size;
-
-    int result = 0;
-    for(a = 0; a <= n-1 ; a++){
-        result += diag[a];
-    }
-
-    for(a = n-2; a <= n*n-1; a++){
-        auto y = diag[a];
-        diag[a] = y;
-    }
-
     #ifdef RACE_DETECTION
         ds_hclib_ready(false);
+        int n = submatrix_size;
+        int* p;
+
+        for(int a = 0; a <= n*n - 1 ; a++){
+            p = (int*) &diag[a];
+
+            ds_hclib_ready(true);
+            if(a <= n - 1){
+                asap_check_read(p, 4);
+            }
+            else{
+                asap_check_write(p, 4);
+            }
+            
+            ds_hclib_ready(false);
+        }
+
+        ds_hclib_ready(false);
     #endif
+
     for (k=0; k<submatrix_size; k++)
         for (i=k+1; i<submatrix_size; i++)
         {
@@ -420,13 +368,7 @@ void lu0(float *diag, int submatrix_size)
             for (j=k+1; j<submatrix_size; j++)
                 diag[i*submatrix_size+j] = diag[i*submatrix_size+j] - diag[i*submatrix_size+k] * diag[k*submatrix_size+j];
         }
-    #ifdef RACE_DETECTION
-        ds_hclib_ready(true);
-    #endif
 
-    if(result < -100000){
-        printf("hello world \n");
-    }
 }
 
 
@@ -435,11 +377,30 @@ void bdiv(float *diag, float *row, int submatrix_size)
     int i, j, k;
 
     // try to reduce overhead
-
-
     #ifdef RACE_DETECTION
         ds_hclib_ready(false);
+
+        int n = submatrix_size;
+        int* p;
+        int* p2;
+
+        for(int a = 0; a <= n*n - 1 ; a++){
+            p = (int*) &diag[a];
+            p2 = (int*) &row[a];
+
+            ds_hclib_ready(true);
+            asap_check_read(p,4);
+            asap_check_write(p2,4);
+            ds_hclib_ready(false);
+        }
+
+        // read diag[i], 0 <= i <= n^2 - 1
+
+        // write row[j], 0 <= j <= n^2 - 1
+
+        ds_hclib_ready(false);
     #endif
+
     for (i=0; i<submatrix_size; i++)
         for (k=0; k<submatrix_size; k++)
         {
@@ -447,9 +408,6 @@ void bdiv(float *diag, float *row, int submatrix_size)
             for (j=k+1; j<submatrix_size; j++)
                 row[i*submatrix_size+j] = row[i*submatrix_size+j] - row[i*submatrix_size+k]*diag[k*submatrix_size+j];
         }
-    #ifdef RACE_DETECTION
-        ds_hclib_ready(true);
-    #endif
 }
 
 
@@ -458,24 +416,37 @@ void bmod(float *row, float *col, float *inner, int submatrix_size)
     int i, j, k;
 
     // try to reduce overhead
-    int a;
-    for(a = 0; a <= submatrix_size *submatrix_size - 1; a++){
-        auto x = inner[a];
-        inner[a] = 0;
-        inner[a] = x;
-    }
-
     #ifdef RACE_DETECTION
         ds_hclib_ready(false);
+
+        int n = submatrix_size;
+        int* p;
+        int* p2;
+        int* p3;
+
+        for(int a = 0; a <= n*n - 1 ; a++){
+            p = (int*) &inner[a];
+            p2 = (int*) &row[a];
+            p3 = (int*) &col[a];
+
+            ds_hclib_ready(true);
+            asap_check_write(p,4);
+            asap_check_read(p2,4);
+            asap_check_read(p3,4);
+            ds_hclib_ready(false);
+        }
+
+        ds_hclib_ready(false);
     #endif
+    // write inner[i] 0 <= i <= n*n - 1
+    // read row[i] 0 <= i <= n*n - 1
+    // read col[i] 0 <= i <= n*n - 1
+
     for (i=0; i<submatrix_size; i++)
         for (j=0; j<submatrix_size; j++)
             for (k=0; k<submatrix_size; k++){
                 inner[i*submatrix_size+j] = inner[i*submatrix_size+j] - row[i*submatrix_size+k]*col[k*submatrix_size+j];
             }
-    #ifdef RACE_DETECTION
-        ds_hclib_ready(true);
-    #endif
 }
 
 
@@ -483,16 +454,41 @@ void fwd(float *diag, float *col, int submatrix_size)
 {
     int i, j, k;
 
+    // try to reduce overhead
     #ifdef RACE_DETECTION
         ds_hclib_ready(false);
+
+        int n = submatrix_size;
+        int* p;
+        int* p2;
+
+        for(int a = 0; a <= n*n - 1 ; a++){
+            p = (int*) &col[a];
+            p2 = (int*) &diag[a];
+
+            ds_hclib_ready(true);
+            asap_check_read(p2,4);
+            
+            if(a <= n-1){
+                asap_check_read(p,4);
+            }
+            else{
+                asap_check_write(p,4);
+            }
+
+            ds_hclib_ready(false);
+        }
+
+        ds_hclib_ready(false);
     #endif
+    // write col[i] n <= i <= n*n - 1
+    // only read col[i]  0 <= i <= n - 1
+    // read diag[i] n <= i <= n*n - 1
+     
     for (j=0; j<submatrix_size; j++)
         for (k=0; k<submatrix_size; k++)
             for (i=k+1; i<submatrix_size; i++)
                 col[i*submatrix_size+j] = col[i*submatrix_size+j] - diag[i*submatrix_size+k]*col[k*submatrix_size+j];
-    #ifdef RACE_DETECTION
-        ds_hclib_ready(true);
-    #endif
 }
 
 
@@ -555,7 +551,7 @@ void run(int ms, int ss)
     }
     int submatrix_size = ss;
     if (submatrix_size <= 0) {
-        submatrix_size = 64;
+        submatrix_size = 16;
     }
 
     
@@ -566,7 +562,7 @@ void run(int ms, int ss)
     long start = hclib_current_time_ms();
 
     #ifdef RACE_DETECTION
-        ds_hclib_ready(true);
+        // ds_hclib_ready(true);
     #endif
 
     // sparselu_par_call(BENCH, matrix_size, submatrix_size);

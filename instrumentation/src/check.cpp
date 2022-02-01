@@ -22,8 +22,9 @@ static int a_count = 0;
 static int reachability_count = 0;
 static unsigned long handle_read_count = 0;
 static unsigned long handle_write_count = 0;
-// #define STEPSKIP ;
-// #define CONSTQUERY ;
+// #define STEPSKIP
+// #define CONSTQUERY
+#define REPORT
 
 int stepid = -1;
 bool in_set;
@@ -83,15 +84,17 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
     }
 
     bool race = !precede(writer->task_and_node, current_task_and_step);
-    if(race){
-      printf("we find a read-write race !!!!!!!!!! \n");
-      tree_node_cpp* p_node = (tree_node_cpp*)writer->task_and_node.node_in_dpst;
-      tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
-      printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, writer->task_and_node.task_id, current_task_and_step.task_id);
-      printf("addr %lx, mem_size %zu \n",addr,mem_size);
-      printf("previous op is %lx, current op is %lx\n", writer->rip, rip);
-      assert(0);
-    }
+    #ifdef REPORT
+      if(race){
+        printf("we find a read-write race !!!!!!!!!! \n");
+        tree_node_cpp* p_node = (tree_node_cpp*)writer->task_and_node.node_in_dpst;
+        tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
+        printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, writer->task_and_node.task_id, current_task_and_step.task_id);
+        printf("addr %lx, mem_size %zu \n",addr,mem_size);
+        printf("previous op is %lx, current op is %lx\n", writer->rip, rip);
+        // assert(0);
+      }
+    #endif
   } // end of all grains writer
 
   for(int i = start; i < (start + grains); i++) {
@@ -226,15 +229,17 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
     }
 
     bool race = !precede(writer->task_and_node, current_task_and_step); 
-    if(race){
-      printf("we find a write-write race !!!!!!!!!! \n");
-      tree_node_cpp* p_node = (tree_node_cpp*)writer->task_and_node.node_in_dpst;
-      tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
-      printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, writer->task_and_node.task_id, current_task_and_step.task_id);
-      printf("addr %lx, mem_size %zu \n",addr,mem_size);
-      printf("previous op is %lx, current op is %lx\n", writer->rip, rip);
-      assert(0);
-    }
+    #ifdef REPORT
+      if(race){
+        printf("we find a write-write race !!!!!!!!!! \n");
+        tree_node_cpp* p_node = (tree_node_cpp*)writer->task_and_node.node_in_dpst;
+        tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
+        printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, writer->task_and_node.task_id, current_task_and_step.task_id);
+        printf("addr %lx, mem_size %zu \n",addr,mem_size);
+        printf("previous op is %lx, current op is %lx\n", writer->rip, rip);
+        // assert(0);
+      }
+    #endif
 
     // update writer
     writer->task_and_node = current_task_and_step;
@@ -249,15 +254,17 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
 
         while(reader != nullptr){
           bool race = !precede(reader->task_and_node, current_task_and_step);
-          if(race){
-            printf("we find a write-read race !!!!!!!!!! \n");
-            tree_node_cpp* p_node = (tree_node_cpp*)reader->task_and_node.node_in_dpst;
-            tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
-            printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, reader->task_and_node.task_id, current_task_and_step.task_id);
-            printf("addr %lx, mem_size %zu \n",addr,mem_size);
-            printf("previous op is %lx, current op is %lx\n", reader->rip, rip);
-            assert(0);
-          }
+          #ifdef REPORT
+            if(race){
+              printf("we find a write-read race !!!!!!!!!! \n");
+              tree_node_cpp* p_node = (tree_node_cpp*)reader->task_and_node.node_in_dpst;
+              tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
+              printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, reader->task_and_node.task_id, current_task_and_step.task_id);
+              printf("addr %lx, mem_size %zu \n",addr,mem_size);
+              printf("previous op is %lx, current op is %lx\n", reader->rip, rip);
+              // assert(0);
+            }
+          #endif
           
           reader = reader->next;
           if(reader != nullptr){

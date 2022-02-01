@@ -462,6 +462,7 @@ int totalprecede = 0;
 int visitmax = 0;
 int visittotalsize = 0;
 int visitcount = 0;
+int visitmin = 1000;
 
 bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b){
     if(step_a->index == step_b->index){
@@ -511,6 +512,7 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task
         visittotalsize += visited.size();
         visitcount ++;
         visitmax = visitmax > visited.size() ? visitmax : visited.size();
+        visitmin = visitmin < visited.size() ? visitmin : visited.size();
     }
     return result;
 }
@@ -590,14 +592,13 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
 
                 if(visit(step_a, last_step_node, task_a, task_id, visited)){
                     // #ifdef CACHE
-                    //     cache_key key(task_a,task_id);
-                    //     in_cache = cache.count(key);
-                    //     // in_cache = cache.find(key) != cache.end();
+                    //     unsigned int key = (task_a << 18) | task_b;
+                    //     bool in_cache = cache.count(key);
                     //     if(in_cache){
-                    //         cache.at(key) = step_a;
+                    //         cache[key] = step_a->index;
                     //     }
                     //     else{
-                    //         cache.insert(std::pair<cache_key,tree_node_cpp*>(key,step_a));
+                    //         cache.insert({key,step_a->index});
                     //     }
                     // #endif
                     return true;
@@ -615,7 +616,7 @@ int DisjointSet::get_cache_size(){
     printf("cache hit %d, cache miss %d, hit rate = %f \n", cachehit, cachemiss, (double) cachehit / (double) totalprecede);
     printf("same step count: %d \n", samestepcount);
     if(visitcount > 0){
-        printf("max visited size: %d , average nt visit size %f \n", visitmax, (double) visittotalsize / (double) visitcount);
+        printf("min visited size: %d, max visited size: %d , average nt visit size %f \n", visitmin, visitmax, (double) visittotalsize / (double) visitcount);
     }
     return this->cache.size();
 }
