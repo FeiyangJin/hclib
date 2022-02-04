@@ -553,7 +553,6 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
         int task_id = (*nt_join).task_id;
         tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
         tree_node_cpp* last_step_node = task_node->children_list_tail;
-        // assert(last_step_node->this_node_type == STEP);
 
         if(visit(step_a, last_step_node, task_a, task_id, visited)){
             // #ifdef CACHE

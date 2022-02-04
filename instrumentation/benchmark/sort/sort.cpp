@@ -75,6 +75,7 @@ static inline ELM choose_pivot(ELM *low, ELM *high) {
 
 
 static ELM *seqpart(ELM *low, ELM *high) {
+  // a lot of duplicate access
 
   ELM pivot;
   ELM h, l;
@@ -105,6 +106,8 @@ static ELM *seqpart(ELM *low, ELM *high) {
 
 
 static void insertion_sort(ELM *low, ELM *high) {
+  // no duplicate access
+
   ELM *p, *q;
   ELM a, b;
 
@@ -120,6 +123,7 @@ static void insertion_sort(ELM *low, ELM *high) {
 
 
 void seqquick(ELM *low, ELM *high) {
+  // some duplicate access
 
   ELM *p;
 
@@ -134,7 +138,8 @@ void seqquick(ELM *low, ELM *high) {
 
 
 void seqmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest) {
-
+  // some duplicate access
+  
   ELM a1, a2;
 
   if (low1 < high1 && low2 < high2) {
@@ -223,7 +228,54 @@ void cilkmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest) {
   }
 
   if (high2 - low2 < MERGESIZE) {
+    
+    #ifdef RACE_DETECTION
+      // try to reduce overhead
+      // write lowdest
+      // read low1~high1, low2~high2
+      ds_hclib_ready(false);
+
+      // access skip count should be 44108
+      ELM *p;
+      for(p = low1; p <= high1; p++){
+        ds_hclib_ready(true);
+
+        asap_check_read((int*)p, 4);
+
+        ds_hclib_ready(false);
+      }
+
+      for(p = low2; p <= high2; p++){
+        ds_hclib_ready(true);
+
+        asap_check_read((int*)p, 4);
+
+        ds_hclib_ready(false);
+      }
+
+      // check write to lowdest
+      p = lowdest;
+      int count = high1 - low1 + high2 - low2;
+      while(count > 0){
+        ds_hclib_ready(true);
+
+        asap_check_write((int*)p, 4);
+
+        ds_hclib_ready(false);
+
+        p++;
+        count--;
+      }
+
+      ds_hclib_ready(false);
+    #endif
+
     seqmerge(low1, high1, low2, high2, lowdest);
+
+    #ifdef RACE_DETECTION
+      ds_hclib_ready(true);
+    #endif
+
     return;
   }
 
@@ -265,7 +317,27 @@ void cilksort(ELM *low, ELM *tmp, long size) {
   ELM *A, *B, *C, *D, *tmpA, *tmpB, *tmpC, *tmpD;
 
   if (size < QUICKSIZE) {
+      #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+
+        // try to reduce overhead
+        for(ELM* p = low; p <= low + size - 1; p++){
+          ds_hclib_ready(true);
+
+          asap_check_write((int*) p, 4);
+
+          ds_hclib_ready(false);
+        }
+
+        ds_hclib_ready(false);
+      #endif
+
     seqquick(low, low + size - 1);
+
+    #ifdef RACE_DETECTION
+      ds_hclib_ready(true);
+    #endif
+
     return;
   }
 

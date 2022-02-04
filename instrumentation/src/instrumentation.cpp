@@ -110,7 +110,7 @@ void RaceDetector::sanitizeFunction() {
     bool ignore = false;
     if (nsBlackList.find(contextName) != nsBlackList.end() && 
        funcWhiteList.find(baseName) == funcWhiteList.end()) {
-      errs() << "Ignored: " << contextName << "::" << baseName << "\n";
+      // errs() << "Ignored: " << contextName << "::" << baseName << "\n";
       ignore = true;
     }
     if (!contextName.empty()) {
@@ -238,10 +238,10 @@ PreservedAnalyses InstrumentationPass::run(Function &F,
                                            FunctionAnalysisManager &AM) {
   
   RaceDetector rd(F);
-  errs() << "Instrument " << F.getName() << "\n";
+  // errs() << "Instrument " << F.getName() << "\n";
   rd.sanitizeFunction();
-  errs() << "Skipped reads: " << rd.getSkippedReads() << "\n";
-  errs() << "Skipped writes: " << rd.getSkippedWrites() << "\n"; 
+  // errs() << "Skipped reads: " << rd.getSkippedReads() << "\n";
+  // errs() << "Skipped writes: " << rd.getSkippedWrites() << "\n"; 
   return PreservedAnalyses::none();
 }
 

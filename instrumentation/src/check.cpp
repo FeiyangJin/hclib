@@ -22,7 +22,7 @@ static int a_count = 0;
 static int reachability_count = 0;
 static unsigned long handle_read_count = 0;
 static unsigned long handle_write_count = 0;
-// #define STEPSKIP
+#define STEPSKIP
 // #define CONSTQUERY
 #define REPORT
 
