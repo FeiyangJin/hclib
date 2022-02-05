@@ -142,6 +142,9 @@ tree_node* insert_tree_node(enum node_type nodeType, tree_node *parent){
         node->parent = parent;
         node->depth = node->parent->depth + 1;
         node->is_parent_nth_child = parent->number_of_child;
+        if(nodeType == FINISH){
+            node->corresponding_task_id = parent->corresponding_task_id;
+        }
         parent->number_of_child += 1;
 
         if(node->parent->children_list_head == NULL){
@@ -173,6 +176,8 @@ tree_node* insert_leaf(tree_node *task_node){
     new_step->parent = task_node;
     new_step->depth = task_node->depth + 1;
     new_step->is_parent_nth_child = task_node->number_of_child;
+    new_step->corresponding_task_id = task_node->corresponding_task_id;
+
     task_node->number_of_child += 1;
     
     if(task_node->children_list_head == NULL){

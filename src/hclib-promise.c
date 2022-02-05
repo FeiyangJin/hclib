@@ -279,6 +279,8 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put, void *datum_to_be_put
         tree_node* current_step_node = get_current_step_node();
 
         tree_node *empty_future_node = insert_tree_node(FUTURE,current_step_node->parent);
+        empty_future_node->corresponding_task_id = empty_future_id;
+        
         insert_leaf(empty_future_node);
         insert_leaf(empty_future_node->parent);
 

@@ -547,76 +547,184 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
         return true;
     }
 
-    // nt joins
-    // deque<std::pair<tree_node_cpp*, int>> steps;
-    // deque<set_info*> set;
-    // set.push_front(b_set_info);
-    // #ifdef BFS
-    // #else
-    // #endif
+    // bfs nt joins
+    deque<tree_node_cpp*> steps;
+    steps.push_back(step_b);
+    int last_push_task = -1;
 
-    // for(auto nt_join = b_set_info->nt->begin(); nt_join != b_set_info->nt->end(); nt_join++){
-    for(auto nt_join = b_set_info->nt->rbegin(); nt_join != b_set_info->nt->rend(); ++nt_join){
-        int task_id = (*nt_join).task_id;
-        tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
-        tree_node_cpp* last_step_node = task_node->children_list_tail;
+    // prepare for lsa
+    deque<tree_node_cpp*> all_lsa_query_node;
+    robin_hood::unordered_set<int> lsa_added_to_q;
 
-        if(precede_dpst(step_a,last_step_node)){
+    while(steps.size() > 0){
+        tree_node_cpp* step = steps.front();
+        steps.pop_front();
+        if(precede_dpst(step_a,step)){
             return true;
         }
-        // if(visit(step_a, last_step_node, task_a, task_id, visited)){
-        //     // #ifdef CACHE
-        //     //     unsigned int key = (task_a << 18) | task_b;
-        //     //     bool in_cache = cache.count(key);
-        //     //     if(in_cache){
-        //     //         cache[key] = step_a->index;
-        //     //     }
-        //     //     else{
-        //     //         cache.insert({key,step_a->index});
-        //     //     }
-        //     // #endif
-        //     return true;
-        // }
+
+        // loop through its nt joins
+        int step_task = step->corresponding_task_id;
+
+        if(step_task != last_push_task){
+            set_info* step_set = find_helper(step_task);
+            for(auto nt_join = step_set->nt->rbegin(); nt_join != step_set->nt->rend(); nt_join++){
+                int task_id = (*nt_join).task_id;
+
+                if(!visited.count(task_id)){
+                    tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
+                    tree_node_cpp* last_step_node = task_node->children_list_tail;
+
+                    steps.push_back(last_step_node);
+                } 
+            }
+            last_push_task = step_task;
+        }
+
+        visited.insert(step_task);
+
+        // prepare for lsa
+        set_info* step_set = find_helper(step_task);
+        lsa_info one_lsa = step_set->lsa;
+        if(one_lsa.task_id != -1 && !lsa_added_to_q.count(one_lsa.task_id)){
+            all_lsa_query_node.push_back(one_lsa.last_node_reachable_in_lsa);
+            lsa_added_to_q.insert(one_lsa.task_id);
+        }
     }
 
-    // lsa
-    lsa_info one_lsa = b_set_info->lsa;
+    // bfs lsa
+    // check nt in lsa and goes up until lsa become null
+    // TODO: if lsa in visited, do not check its nt, just check the new lsa and add it to the dequeue.
+    int last_check_lsa = -1;
+
+    while(all_lsa_query_node.size() > 0){
+        tree_node_cpp* lsa_deepest_reachable_node = all_lsa_query_node.front();
+        all_lsa_query_node.pop_front();
+
+        int lsa_task = lsa_deepest_reachable_node->corresponding_task_id;
+        set_info* lsa_set_info = find_helper(lsa_task);
+
+        if(lsa_task == last_check_lsa){
+            continue;
+        }
+
+        // add its lsa to the dequeue
+        lsa_info one_lsa = lsa_set_info->lsa;
+        if(one_lsa.task_id != -1 && !lsa_added_to_q.count(one_lsa.task_id)){
+            all_lsa_query_node.push_back(one_lsa.last_node_reachable_in_lsa);
+
+            lsa_added_to_q.insert(one_lsa.task_id);
+        }
+
     
-    while (one_lsa.task_id != -1)
-    {
-        tree_node_cpp* lsa_deepest_reachable_node = one_lsa.last_node_reachable_in_lsa;
-        
-        set_info* lsa_set_info = find_helper(one_lsa.task_id);
-        for(auto lsa_nt = lsa_set_info->nt->rbegin(); lsa_nt != lsa_set_info->nt->rend(); ++lsa_nt){
-        // for(auto lsa_nt = lsa_set_info->nt->begin(); lsa_nt != lsa_set_info->nt->end(); lsa_nt++){
-            tree_node_cpp* step_before_this_nt = (*lsa_nt).last_node_before_this_nt;
+        if(!visited.count(lsa_task)){
+            // check its nt and add nt's lsa to the dequeue
+            for(auto nt_join = lsa_set_info->nt->rbegin(); nt_join != lsa_set_info->nt->rend(); nt_join++){
+                int task_id = (*nt_join).task_id;
+                if(!visited.count(task_id)){
+                    tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
+                    tree_node_cpp* last_step_node = task_node->children_list_tail;
 
-            // assert(lsa_deepest_reachable_node != NULL);
-            // if(precede_dpst(step_before_this_nt,lsa_deepest_reachable_node)){
-            if(step_before_this_nt->is_parent_nth_child <= lsa_deepest_reachable_node->is_parent_nth_child){
-                int task_id = (*lsa_nt).task_id;
-                tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
-                tree_node_cpp* last_step_node = task_node->children_list_tail;
-                // assert(last_step_node->this_node_type == STEP);
+                    if(precede_dpst(step_a,last_step_node)){
+                        return true;
+                    }
 
-                if(visit(step_a, last_step_node, task_a, task_id, visited)){
-                    // #ifdef CACHE
-                    //     unsigned int key = (task_a << 18) | task_b;
-                    //     bool in_cache = cache.count(key);
-                    //     if(in_cache){
-                    //         cache[key] = step_a->index;
-                    //     }
-                    //     else{
-                    //         cache.insert({key,step_a->index});
-                    //     }
-                    // #endif
-                    return true;
+                    visited.insert(task_id);
+                }
+
+                set_info* nt_set_info = find_helper(task_id);
+                lsa_info nt_lsa = nt_set_info->lsa;
+
+                if(nt_lsa.task_id != -1 && !lsa_added_to_q.count(nt_lsa.task_id)){
+                    all_lsa_query_node.push_back(nt_lsa.last_node_reachable_in_lsa);
+                    lsa_added_to_q.insert(nt_lsa.task_id);
+                }
+            }
+        }
+        else{
+            // already check nt, just add nt's lsa to the dequeue
+            for(auto nt_join = lsa_set_info->nt->rbegin(); nt_join != lsa_set_info->nt->rend(); nt_join++){
+                int task_id = (*nt_join).task_id;
+                set_info* nt_set_info = find_helper(task_id);
+                lsa_info nt_lsa = nt_set_info->lsa;
+
+                if(nt_lsa.task_id != -1 && !lsa_added_to_q.count(nt_lsa.task_id)){
+                    all_lsa_query_node.push_back(nt_lsa.last_node_reachable_in_lsa);
+                    lsa_added_to_q.insert(nt_lsa.task_id);
                 }
             }
 
         }
-        one_lsa = lsa_set_info->lsa;
+
+        last_check_lsa = lsa_task;
     }
+
+
+    // // for(auto nt_join = b_set_info->nt->begin(); nt_join != b_set_info->nt->end(); nt_join++){
+    // for(auto nt_join = b_set_info->nt->rbegin(); nt_join != b_set_info->nt->rend(); ++nt_join){
+    //     int task_id = (*nt_join).task_id;
+    //     tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
+    //     tree_node_cpp* last_step_node = task_node->children_list_tail;
+
+    //     // if(precede_dpst(step_a,last_step_node)){
+    //     //     return true;
+    //     // }
+
+    //     if(visit(step_a, last_step_node, task_a, task_id, visited)){
+    //         // #ifdef CACHE
+    //         //     unsigned int key = (task_a << 18) | task_b;
+    //         //     bool in_cache = cache.count(key);
+    //         //     if(in_cache){
+    //         //         cache[key] = step_a->index;
+    //         //     }
+    //         //     else{
+    //         //         cache.insert({key,step_a->index});
+    //         //     }
+    //         // #endif
+    //         return true;
+    //     }
+    // }
+
+
+    // lsa
+    // lsa_info one_lsa = b_set_info->lsa;
+    
+    // while (one_lsa.task_id != -1)
+    // {
+    //     tree_node_cpp* lsa_deepest_reachable_node = one_lsa.last_node_reachable_in_lsa;
+        
+    //     set_info* lsa_set_info = find_helper(one_lsa.task_id);
+    //     for(auto lsa_nt = lsa_set_info->nt->rbegin(); lsa_nt != lsa_set_info->nt->rend(); ++lsa_nt){
+    //     // for(auto lsa_nt = lsa_set_info->nt->begin(); lsa_nt != lsa_set_info->nt->end(); lsa_nt++){
+    //         tree_node_cpp* step_before_this_nt = (*lsa_nt).last_node_before_this_nt;
+
+    //         // assert(lsa_deepest_reachable_node != NULL);
+    //         // if(precede_dpst(step_before_this_nt,lsa_deepest_reachable_node)){
+    //         if(step_before_this_nt->is_parent_nth_child <= lsa_deepest_reachable_node->is_parent_nth_child){
+    //             int task_id = (*lsa_nt).task_id;
+    //             tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
+    //             tree_node_cpp* last_step_node = task_node->children_list_tail;
+    //             // assert(last_step_node->this_node_type == STEP);
+
+    //             if(visit(step_a, last_step_node, task_a, task_id, visited)){
+    //                 // #ifdef CACHE
+    //                 //     unsigned int key = (task_a << 18) | task_b;
+    //                 //     bool in_cache = cache.count(key);
+    //                 //     if(in_cache){
+    //                 //         cache[key] = step_a->index;
+    //                 //     }
+    //                 //     else{
+    //                 //         cache.insert({key,step_a->index});
+    //                 //     }
+    //                 // #endif
+    //                 // printf("return in lsa \n");
+    //                 return true;
+    //             }
+    //         }
+
+    //     }
+    //     one_lsa = lsa_set_info->lsa;
+    // }
     
     return false;
 }

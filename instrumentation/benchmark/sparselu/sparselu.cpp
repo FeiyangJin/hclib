@@ -93,13 +93,13 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
             if (BENCH[ii*matrix_size+kk] != NULL){
 
                 hclib::async([kk, matrix_size, submatrix_size, ii, &BENCH, &promise_array, &task_vector](){
+                    task_vector.push_back(new hclib::promise_t<void>());
+                    int task_index = task_vector.size() - 1;
+
                     for (int jj=kk+1; jj<matrix_size; jj++){
                         if (BENCH[kk*matrix_size+jj] != NULL)
                         {
                             if (BENCH[ii*matrix_size+jj]==NULL) BENCH[ii*matrix_size+jj] = allocate_clean_block(submatrix_size);
-
-                            task_vector.push_back(new hclib::promise_t<void>());
-                            int task_index = task_vector.size() - 1;
 
                             promise_array[ii*matrix_size+kk]->get_future()->wait();
                             promise_array[kk*matrix_size+jj]->get_future()->wait();
@@ -107,14 +107,14 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
                             bmod(BENCH[ii*matrix_size+kk], BENCH[kk*matrix_size+jj], BENCH[ii*matrix_size+jj], submatrix_size);
 
                             promise_array[ii*matrix_size+jj]->put();
-                            #ifdef RACE_DETECTION
-                                task_vector.at(task_index)->end_put();
-                            #else
-                                task_vector.at(task_index)->put();
-                            #endif
-
                         }
                     }
+
+                    #ifdef RACE_DETECTION
+                        task_vector.at(task_index)->end_put();
+                    #else
+                        task_vector.at(task_index)->put();
+                    #endif
                 });
             }
         }
