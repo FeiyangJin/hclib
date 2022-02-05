@@ -548,25 +548,35 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
     }
 
     // nt joins
+    // deque<std::pair<tree_node_cpp*, int>> steps;
+    // deque<set_info*> set;
+    // set.push_front(b_set_info);
+    // #ifdef BFS
+    // #else
+    // #endif
+
     // for(auto nt_join = b_set_info->nt->begin(); nt_join != b_set_info->nt->end(); nt_join++){
     for(auto nt_join = b_set_info->nt->rbegin(); nt_join != b_set_info->nt->rend(); ++nt_join){
         int task_id = (*nt_join).task_id;
         tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
         tree_node_cpp* last_step_node = task_node->children_list_tail;
 
-        if(visit(step_a, last_step_node, task_a, task_id, visited)){
-            // #ifdef CACHE
-            //     unsigned int key = (task_a << 18) | task_b;
-            //     bool in_cache = cache.count(key);
-            //     if(in_cache){
-            //         cache[key] = step_a->index;
-            //     }
-            //     else{
-            //         cache.insert({key,step_a->index});
-            //     }
-            // #endif
+        if(precede_dpst(step_a,last_step_node)){
             return true;
         }
+        // if(visit(step_a, last_step_node, task_a, task_id, visited)){
+        //     // #ifdef CACHE
+        //     //     unsigned int key = (task_a << 18) | task_b;
+        //     //     bool in_cache = cache.count(key);
+        //     //     if(in_cache){
+        //     //         cache[key] = step_a->index;
+        //     //     }
+        //     //     else{
+        //     //         cache.insert({key,step_a->index});
+        //     //     }
+        //     // #endif
+        //     return true;
+        // }
     }
 
     // lsa

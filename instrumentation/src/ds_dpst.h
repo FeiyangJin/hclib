@@ -10,6 +10,7 @@
 #include <sparsehash/dense_hash_map>
 #include <boost/unordered_map.hpp>
 #include <robin_hood.h>
+#include <deque>
 
 using namespace std;
 

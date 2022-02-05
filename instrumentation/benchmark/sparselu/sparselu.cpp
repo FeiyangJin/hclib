@@ -5,8 +5,6 @@
 
 void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
 {
-
-
     int ii, jj, kk;
 
     int array_size = matrix_size*matrix_size;
@@ -30,9 +28,14 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
 
             promise_array[kk*matrix_size+kk]->put();
 
-            task_vector.at(0)->put();
+            #ifdef RACE_DETECTION
+                task_vector.at(0)->end_put();
+            #else
+                task_vector.at(0)->put();
+            #endif
         });
         
+        // fwd
         for (jj=kk+1; jj<matrix_size; jj++){
             if (BENCH[kk*matrix_size+jj] != NULL)
             {
@@ -50,12 +53,17 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
 
                     promise_array[kk*matrix_size+jj]->put();
 
-                    task_vector.at(task_index)->put();
+                    #ifdef RACE_DETECTION
+                        task_vector.at(task_index)->end_put();
+                    #else
+                        task_vector.at(task_index)->put();
+                    #endif
                 });
                 
             }
         }
 
+        // bdiv
         for (ii=kk+1; ii<matrix_size; ii++){
             if (BENCH[ii*matrix_size+kk] != NULL)
             {
@@ -71,36 +79,77 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
                     bdiv (BENCH[kk*matrix_size+kk], BENCH[ii*matrix_size+kk], submatrix_size);
 
                     promise_array[ii*matrix_size+kk]->put();
-                    task_vector.at(task_index)->put();
+                    #ifdef RACE_DETECTION
+                        task_vector.at(task_index)->end_put();
+                    #else
+                        task_vector.at(task_index)->put();
+                    #endif
                 });
             }
         }
 
+        // bmod parallelize outer loop
         for (ii=kk+1; ii<matrix_size; ii++){
             if (BENCH[ii*matrix_size+kk] != NULL){
-                for (jj=kk+1; jj<matrix_size; jj++){
-                    if (BENCH[kk*matrix_size+jj] != NULL)
-                    {
-                        if (BENCH[ii*matrix_size+jj]==NULL) BENCH[ii*matrix_size+jj] = allocate_clean_block(submatrix_size);
-                        // #pragma omp task firstprivate(kk, jj, ii) shared(BENCH) \
-                        // depend(in: BENCH[ii*matrix_size+kk:submatrix_size*submatrix_size], BENCH[kk*matrix_size+jj:submatrix_size*submatrix_size]) \
-                        // depend(inout: BENCH[ii*matrix_size+jj:submatrix_size*submatrix_size])
 
-                        task_vector.push_back(new hclib::promise_t<void>());
-                        int task_index = task_vector.size() - 1;
-                        hclib::async([kk, matrix_size, submatrix_size, ii, jj, task_index, &BENCH, &promise_array, &task_vector](){
+                hclib::async([kk, matrix_size, submatrix_size, ii, &BENCH, &promise_array, &task_vector](){
+                    for (int jj=kk+1; jj<matrix_size; jj++){
+                        if (BENCH[kk*matrix_size+jj] != NULL)
+                        {
+                            if (BENCH[ii*matrix_size+jj]==NULL) BENCH[ii*matrix_size+jj] = allocate_clean_block(submatrix_size);
+
+                            task_vector.push_back(new hclib::promise_t<void>());
+                            int task_index = task_vector.size() - 1;
+
                             promise_array[ii*matrix_size+kk]->get_future()->wait();
                             promise_array[kk*matrix_size+jj]->get_future()->wait();
 
                             bmod(BENCH[ii*matrix_size+kk], BENCH[kk*matrix_size+jj], BENCH[ii*matrix_size+jj], submatrix_size);
 
                             promise_array[ii*matrix_size+jj]->put();
-                            task_vector.at(task_index)->put();
-                        });
+                            #ifdef RACE_DETECTION
+                                task_vector.at(task_index)->end_put();
+                            #else
+                                task_vector.at(task_index)->put();
+                            #endif
+
+                        }
                     }
-                }
+                });
             }
         }
+
+        
+        // bmod parallelize inner loop
+        // for (ii=kk+1; ii<matrix_size; ii++){
+        //     if (BENCH[ii*matrix_size+kk] != NULL){
+        //         for (jj=kk+1; jj<matrix_size; jj++){
+        //             if (BENCH[kk*matrix_size+jj] != NULL)
+        //             {
+        //                 if (BENCH[ii*matrix_size+jj]==NULL) BENCH[ii*matrix_size+jj] = allocate_clean_block(submatrix_size);
+        //                 // #pragma omp task firstprivate(kk, jj, ii) shared(BENCH) \
+        //                 // depend(in: BENCH[ii*matrix_size+kk:submatrix_size*submatrix_size], BENCH[kk*matrix_size+jj:submatrix_size*submatrix_size]) \
+        //                 // depend(inout: BENCH[ii*matrix_size+jj:submatrix_size*submatrix_size])
+
+        //                 task_vector.push_back(new hclib::promise_t<void>());
+        //                 int task_index = task_vector.size() - 1;
+        //                 hclib::async([kk, matrix_size, submatrix_size, ii, jj, task_index, &BENCH, &promise_array, &task_vector](){
+        //                     promise_array[ii*matrix_size+kk]->get_future()->wait();
+        //                     promise_array[kk*matrix_size+jj]->get_future()->wait();
+
+        //                     bmod(BENCH[ii*matrix_size+kk], BENCH[kk*matrix_size+jj], BENCH[ii*matrix_size+jj], submatrix_size);
+
+        //                     promise_array[ii*matrix_size+jj]->put();
+        //                     #ifdef RACE_DETECTION
+        //                         task_vector.at(task_index)->end_put();
+        //                     #else
+        //                         task_vector.at(task_index)->put();
+        //                     #endif
+        //                 });
+        //             }
+        //         }
+        //     }
+        // }
 
 
         // at the end of for loop, reset all promise
