@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+__attribute__((weak)) void set_current_dpst_node(void* node);
 __attribute__((weak)) void asap_check_read(int *addr, int bytes);
 __attribute__((weak)) void asap_check_write(int *addr, int bytes);
 

@@ -167,8 +167,6 @@ void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itn
                         // 1. access unew
                         ds_hclib_ready(true);
                         asap_check_write(p, 8);
-                        // asap_check_write((int*) &unew[index], 4);
-                        // asap_check_write(((int*)&unew[index2d(ny, i, k)]), 4);
                         ds_hclib_ready(false);
 
                         // 2. access f
@@ -176,7 +174,6 @@ void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itn
 
                         ds_hclib_ready(true);
                         asap_check_read(p2, 8);
-                        // asap_check_read(((int*)&f[index2d(ny, i, k)]), 4);
                         ds_hclib_ready(false);
 
                         
@@ -194,8 +191,6 @@ void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itn
                             ds_hclib_ready(true);
                             asap_check_read(p3, 8);
                             asap_check_read(p4, 8);
-                            // asap_check_read(((int*) &u[index2d(ny, i-1, k)]), 4);
-                            // asap_check_read(((int*) &u[index2d(ny, i+1, k)]), 4);
                             ds_hclib_ready(false);
                         }
                     }

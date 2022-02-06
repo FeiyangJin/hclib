@@ -565,9 +565,9 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
 
         // loop through its nt joins
         int step_task = step->corresponding_task_id;
+        set_info* step_set = find_helper(step_task);
 
         if(step_task != last_push_task){
-            set_info* step_set = find_helper(step_task);
             for(auto nt_join = step_set->nt->rbegin(); nt_join != step_set->nt->rend(); nt_join++){
                 int task_id = (*nt_join).task_id;
 
@@ -584,7 +584,6 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
         visited.insert(step_task);
 
         // prepare for lsa
-        set_info* step_set = find_helper(step_task);
         lsa_info one_lsa = step_set->lsa;
         if(one_lsa.task_id != -1 && !lsa_added_to_q.count(one_lsa.task_id)){
             all_lsa_query_node.push_back(one_lsa.last_node_reachable_in_lsa);
@@ -594,7 +593,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
 
     // bfs lsa
     // check nt in lsa and goes up until lsa become null
-    // TODO: if lsa in visited, do not check its nt, just check the new lsa and add it to the dequeue.
+    // if lsa in visited, do not check its nt, just check the new lsa and add it to the dequeue.
     int last_check_lsa = -1;
 
     while(all_lsa_query_node.size() > 0){

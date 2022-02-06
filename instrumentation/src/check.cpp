@@ -333,6 +333,9 @@ extern "C" __attribute__((weak)) void asap_check_write(int *addr, int bytes) {
     check_write_count++;
 
     current_task_and_step.node_in_dpst = hclib_get_current_task_info(&current_task_and_step.task_id,&current_finish_id, &is_step, &is_future);
+    // current_task_and_step.node_in_dpst = (void*) current_dpst_node;
+    // current_task_and_step.task_id = current_dpst_node->corresponding_task_id;
+    // is_step = (current_dpst_node->this_node_type == STEP);
 
     if(!is_step){
       return;
@@ -389,6 +392,9 @@ extern "C" __attribute__((weak)) void asap_check_read(int *addr, int bytes) {
     check_read_count++;
 
     current_task_and_step.node_in_dpst = hclib_get_current_task_info(&current_task_and_step.task_id,&current_finish_id, &is_step, &is_future);
+    // current_task_and_step.node_in_dpst = (void*) current_dpst_node;
+    // current_task_and_step.task_id = current_dpst_node->corresponding_task_id;
+    // is_step = (current_dpst_node->this_node_type == STEP);
 
     if(!is_step){
       return;
