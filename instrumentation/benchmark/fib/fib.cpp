@@ -7,14 +7,20 @@
 
 using namespace std;
 
+uint64_t cache[200001];
+
 uint64_t fib_serial(uint64_t n) {
     if (n < 2) return n;
     return fib_serial(n-1) + fib_serial(n-2);
 }
 
 uint64_t fib_async_finish(uint64_t n) {
+  if(cache[n] != -1){
+    return cache[n];
+  }
+
   if (n < THRESHOLD) {
-    int result = fib_serial(n);
+    uint64_t result = fib_serial(n);
     return result;
   }
 
@@ -27,33 +33,42 @@ uint64_t fib_async_finish(uint64_t n) {
 
     hclib::async([n,&x]() {
       #ifdef RACE_DETECTION
-        ds_hclib_ready(true);
+        ds_hclib_ready(false);
       #endif
 
       uint64_t value1 = fib_async_finish(n-1);
 
       #ifdef RACE_DETECTION
-        x->put(value1);
-      #else
-        x->put(value1);
+        ds_hclib_ready(true);
       #endif
+      x->put(value1);
     });
 
+    #ifdef RACE_DETECTION
+      ds_hclib_ready(false);
+    #endif
     uint64_t value2 = fib_async_finish(n-2);
 
     #ifdef RACE_DETECTION
-      y->put(value2);
-    #else
-      y->put(value2);
-    #endif
+      ds_hclib_ready(true);
+    #endif     
+    y->put(value2);
 
-    return x->get_future()->wait() + y->get_future()->wait();
+    uint64_t result = x->get_future()->wait() + y->get_future()->wait();
+    cache[n] = result;
+
+    return result;
 }
 
 
 
 int main(int argc, char** argv) {
   uint64_t n = argc>1?atoi(argv[1]) : 40;
+
+  for(int i = 0; i < n + 1; i++){
+    cache[i] = -1;
+  }
+  // printf("%d \n",cache[n]);
 
   char const *deps[] = { "system" }; 
   hclib::launch(deps, 1, [&]() {

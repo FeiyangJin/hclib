@@ -8,10 +8,6 @@ export HCLIB_WORKERS=$1
 SIZE=$2
 export HCLIB_STATS=1
 
-#SIZE=tiny
-#SIZE=medium
-#SIZE=large
-
 INPUT_FILE_1="./input/string1-$SIZE.txt"
 INPUT_FILE_2="./input/string2-$SIZE.txt"
 

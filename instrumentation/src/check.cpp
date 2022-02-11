@@ -22,7 +22,7 @@ static int a_count = 0;
 static int reachability_count = 0;
 static unsigned long handle_read_count = 0;
 static unsigned long handle_write_count = 0;
-// #define STEPSKIP
+#define STEPSKIP
 // #define CONSTQUERY
 #define REPORT
 
@@ -237,6 +237,7 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
         printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, writer->task_and_node.task_id, current_task_and_step.task_id);
         printf("addr %lx, mem_size %zu \n",addr,mem_size);
         printf("previous op is %lx, current op is %lx\n", writer->rip, rip);
+        // hclib_print_dpst();
         // assert(0);
       }
     #endif
@@ -262,6 +263,7 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
               printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, reader->task_and_node.task_id, current_task_and_step.task_id);
               printf("addr %lx, mem_size %zu \n",addr,mem_size);
               printf("previous op is %lx, current op is %lx\n", reader->rip, rip);
+              // hclib_print_dpst();
               // assert(0);
             }
           #endif

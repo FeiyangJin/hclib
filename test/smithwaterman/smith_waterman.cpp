@@ -83,7 +83,9 @@ typedef struct {
 int main ( int argc, char* argv[] ) {
     char const *deps[] = { "system" };
     hclib::launch(deps, 1, [&]() {
-        ds_hclib_ready(false);
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(false);
+        #endif
         int i, j;
 
         int tile_width = (int) atoi (argv[3]);
@@ -171,8 +173,9 @@ int main ( int argc, char* argv[] ) {
         struct timeval begin,end;
         gettimeofday(&begin,0);
 
-        ds_hclib_ready(false);
-        ds_promise_task(true);
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(false);
+        #endif
         hclib::finish([=]() {
             for (int i = 1; i < n_tiles_height+1; ++i ) {
                 for (int j = 1; j < n_tiles_width+1; ++j ) {
@@ -240,9 +243,9 @@ int main ( int argc, char* argv[] ) {
                             tile_matrix[i][j].bottom_row->put(curr_bottom_row);
                         // });
 
-                        ds_hclib_ready(false);
-                        // ds_free(curr_tile);
-                        // ds_free(curr_tile_tmp);
+                        #ifdef RACE_DETECTION
+                            ds_hclib_ready(false);
+                        #endif
                         free(curr_tile);
                         free(curr_tile_tmp);
                     });
@@ -253,12 +256,14 @@ int main ( int argc, char* argv[] ) {
             }
         });
 
-        ds_hclib_ready(false);
-        printf("DPST height is: %d \n", get_dpst_height());
-        printf("cache size is %d \n",ds_get_cache_size());
-        printf("number of task is %d \n",get_task_id_unique());
-        printf("number of nt join %d \n", get_nt_count());
-        printf("number of tree joins %d \n", ds_get_tree_join_count());
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(false);
+            printf("DPST height is: %d \n", get_dpst_height());
+            printf("cache size is %d \n",ds_get_cache_size());
+            printf("number of task is %d \n",get_task_id_unique());
+            printf("number of nt join %d \n", get_nt_count());
+            printf("number of tree joins %d \n", ds_get_tree_join_count());
+        #endif
         
         gettimeofday(&end,0);
         fprintf(stdout, "The computation took %f seconds\n",((end.tv_sec - begin.tv_sec)*1000000+(end.tv_usec - begin.tv_usec))*1.0/1000000);
