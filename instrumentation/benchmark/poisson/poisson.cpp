@@ -6,23 +6,23 @@
 
 #define index2d(ny,i,j) (((i)*(ny))+(j))
 
-double r8mat_rms(int nx, int ny, double *a_);
-void rhs(int nx, int ny, double *f_, int block_size);
+float r8mat_rms(int nx, int ny, float *a_);
+void rhs(int nx, int ny, float *f_, int block_size);
 void timestamp(void);
-double u_exact(double x, double y);
-double uxxyy_exact(double x, double y);
+float u_exact(float x, float y);
+float uxxyy_exact(float x, float y);
 
-void sweep_seq(int nx, int ny, double dx, double dy, double *f_, int itold, int itnew, double *u_, double *unew_)
+void sweep_seq(int nx, int ny, float dx, float dy, float *f_, int itold, int itnew, float *u_, float *unew_)
 {
     int i;
     int it;
     int j;
-    double *f = f_;
-    double *u = u_;
-    double *unew = unew_;
-    // double (*f)[nx][ny] = (double (*)[nx][ny])f_;
-    // double (*u)[nx][ny] = (double (*)[nx][ny])u_;
-    // double (*unew)[nx][ny] = (double (*)[nx][ny])unew_;
+    float *f = f_;
+    float *u = u_;
+    float *unew = unew_;
+    // float (*f)[nx][ny] = (float (*)[nx][ny])f_;
+    // float (*u)[nx][ny] = (float (*)[nx][ny])u_;
+    // float (*unew)[nx][ny] = (float (*)[nx][ny])unew_;
 
     for (it = itold + 1; it <= itnew; it++) {
         for (i = 0; i < nx; i++) {
@@ -49,7 +49,7 @@ void sweep_seq(int nx, int ny, double dx, double dy, double *f_, int itold, int 
 }
 
 
-void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itnew, double *u_, double *unew_, int block_size)
+void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew, float *u_, float *unew_, int block_size)
 {
     #ifdef RACE_DETECTION
         ds_hclib_ready(true);
@@ -58,9 +58,9 @@ void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itn
     int i;
     int it;
     int j;
-    double *f = f_;
-    double *u = u_;
-    double *unew = unew_;
+    float *f = f_;
+    float *u = u_;
+    float *unew = unew_;
 
     // TODO: allocate unew_p[], 1-D array of nx promises that are all initialized = ready
     #ifdef RACE_DETECTION
@@ -106,14 +106,16 @@ void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itn
                 }
 
                 #ifdef RACE_DETECTION
+                    ds_hclib_ready(false);
+
                     for(int k=0; k<ny; k++){
                         int index = index2d(ny,i,k);
                         int* p = (int*) &u[index];
                         int* p2 = (int*) &unew[index];
 
                         ds_hclib_ready(true);
-                        asap_check_write(p,8);
-                        asap_check_read(p2,8);
+                        asap_check_write(p,4);
+                        asap_check_read(p2,4);
                         ds_hclib_ready(false);
                     }
 
@@ -126,10 +128,10 @@ void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itn
  
                 #ifdef RACE_DETECTION
                     ds_hclib_ready(false);
-                    ds_promise_task(false);
+                    promise_u[i]->put();
+                #else
+                    promise_u[i]->put();
                 #endif
-
-                promise_u[i]->put();
                 // delete promise_unew[i];
                 // promise_unew[i] = new hclib::promise_t<void>();
             }); // end of async
@@ -157,6 +159,7 @@ void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itn
                 }
 
                 #ifdef RACE_DETECTION
+                    ds_hclib_ready(false);
 
                     // try to reduce overhead
                     for (int k=0; k<ny; k++){
@@ -166,14 +169,14 @@ void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itn
 
                         // 1. access unew
                         ds_hclib_ready(true);
-                        asap_check_write(p, 8);
+                        asap_check_write(p, 4);
                         ds_hclib_ready(false);
 
                         // 2. access f
                         int* p2 = ((int*)&f[index]);
 
                         ds_hclib_ready(true);
-                        asap_check_read(p2, 8);
+                        asap_check_read(p2, 4);
                         ds_hclib_ready(false);
 
                         
@@ -189,8 +192,8 @@ void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itn
                             int* p4 = ((int*) &u[index4]);
 
                             ds_hclib_ready(true);
-                            asap_check_read(p3, 8);
-                            asap_check_read(p4, 8);
+                            asap_check_read(p3, 4);
+                            asap_check_read(p4, 4);
                             ds_hclib_ready(false);
                         }
                     }
@@ -208,8 +211,10 @@ void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itn
                 }
                 #ifdef RACE_DETECTION
                     ds_hclib_ready(false);
+                    promise_unew[i]->put();
+                #else
+                    promise_unew[i]->put();
                 #endif
-                promise_unew[i]->put();
 
             }); // end of async
         }
@@ -217,12 +222,12 @@ void sweep (int nx, int ny, double dx, double dy, double *f_, int itold, int itn
 }
 
 /* R8MAT_RMS returns the RMS norm of a vector stored as a matrix. */
-double r8mat_rms(int nx, int ny, double *a_) {
-    double *a = a_;
-    // double (*a)[nx][ny] = (double (*)[nx][ny])a_;
+float r8mat_rms(int nx, int ny, float *a_) {
+    float *a = a_;
+    // float (*a)[nx][ny] = (float (*)[nx][ny])a_;
     int i;
     int j;
-    double v;
+    float v;
 
     v = 0.0;
 
@@ -232,21 +237,21 @@ double r8mat_rms(int nx, int ny, double *a_) {
             // v = v + (*a)[i][j] * (*a)[i][j];
         }
     }
-    v = sqrt(v / (double) (nx * ny));
+    v = sqrt(v / (float) (nx * ny));
 
     return v;
 }
 
 /* RHS initializes the right hand side "vector". */
-void rhs(const int nx, const int ny, double *f_, int block_size)
+void rhs(const int nx, const int ny, float *f_, int block_size)
 {
-    double *f = f_;
-    // double (*f)[nx][ny] = (double (*)[nx][ny])f_;
+    float *f = f_;
+    // float (*f)[nx][ny] = (float (*)[nx][ny])f_;
 
     int i,ii;
     int j,jj;
-    double x;
-    double y;
+    float x;
+    float y;
 
     // The "boundary" entries of F store the boundary values of the solution.
     // The "interior" entries of F store the right hand sides of the Poisson equation.
@@ -261,10 +266,10 @@ void rhs(const int nx, const int ny, double *f_, int block_size)
 // #pragma omp task firstprivate(block_size,i,j,nx,ny) private(ii,jj,x,y) shared(f)
             for (jj=j; jj<j+block_size; ++jj)
             {
-                y = (double) (jj) / (double) (ny - 1);
+                y = (float) (jj) / (float) (ny - 1);
                 for (ii=i; ii<i+block_size; ++ii)
                 {
-                    x = (double) (ii) / (double) (nx - 1);
+                    x = (float) (ii) / (float) (nx - 1);
                     if (ii == 0 || ii == nx - 1 || jj == 0 || jj == ny - 1){
                         f[index2d(ny, ii, jj)] = u_exact(x,y);
                         // (*f)[ii][jj] = u_exact(x, y);
@@ -280,9 +285,9 @@ void rhs(const int nx, const int ny, double *f_, int block_size)
 }
 
 /* Evaluates the exact solution. */
-double u_exact(double x, double y) {
-    double pi = 3.141592653589793;
-    double value;
+float u_exact(float x, float y) {
+    float pi = 3.141592653589793;
+    float value;
 
     value = sin(pi * x * y);
 
@@ -290,9 +295,9 @@ double u_exact(double x, double y) {
 }
 
 /* Evaluates (d/dx d/dx + d/dy d/dy) of the exact solution. */
-double uxxyy_exact(double x, double y) {
-    double pi = 3.141592653589793;
-    double value;
+float uxxyy_exact(float x, float y) {
+    float pi = 3.141592653589793;
+    float value;
 
     value = - pi * pi * (x * x + y * y) * sin(pi * x * y);
 
@@ -308,22 +313,22 @@ void run(int ms, int bs, int nit)
     int matrix_size = ms;
     int block_size = bs;
     int niter = nit;
-    double dx;
-    double dy;
-    double error;
+    float dx;
+    float dy;
+    float error;
     int ii,i;
     int jj,j;
     int nx = matrix_size;
     int ny = matrix_size;
 
-    double *f_ = (double*) malloc(nx * nx * sizeof(double));
+    float *f_ = (float*) malloc(nx * nx * sizeof(float));
     if (f_ == 0){
         printf("malloc error \n");
     }
-    double *f = f_;
-    double *u_ = (double*) malloc(nx * nx * sizeof(double));
-    double *unew_ = (double*) malloc(nx * ny * sizeof(double));
-    double *unew = unew_;
+    float *f = f_;
+    float *u_ = (float*) malloc(nx * nx * sizeof(float));
+    float *unew_ = (float*) malloc(nx * ny * sizeof(float));
+    float *unew = unew_;
 
     if( (nx % block_size) || (ny % block_size) )
     {
@@ -333,8 +338,8 @@ void run(int ms, int bs, int nit)
 
 
     /// INITIALISATION
-    dx = 1.0 / (double) (nx - 1);
-    dy = 1.0 / (double) (ny - 1);
+    dx = 1.0 / (float) (nx - 1);
+    dy = 1.0 / (float) (ny - 1);
 
     // Set the right hand side array F.
     rhs(nx, ny, f_, block_size);
@@ -361,7 +366,7 @@ void run(int ms, int bs, int nit)
         }
 
     /// KERNEL INTENSIVE COMPUTATION
-    long start = hclib_current_time_ms();
+    // long start = hclib_current_time_ms();
     
     #ifdef RACE_DETECTION
         ds_hclib_ready(true);
@@ -371,29 +376,29 @@ void run(int ms, int bs, int nit)
         ds_hclib_ready(false);
     #endif
 
-    long end = hclib_current_time_ms();
-    double dur = ((double)(end-start))/1000;
-    printf("Sweep time = %f\n",dur);
+    // long end = hclib_current_time_ms();
+    // float dur = ((float)(end-start))/1000;
+    // printf("Sweep time = %f\n",dur);
 
     #ifdef CHECK
-        double x;
-        double y;
-        double *udiff_ = (double*) malloc(nx * ny * sizeof(double));
-        double *udiff = udiff_;
-        //double (*udiff)[nx][ny] = (double (*)[nx][ny])udiff_;
+        float x;
+        float y;
+        float *udiff_ = (float*) malloc(nx * ny * sizeof(float));
+        float *udiff = udiff_;
+        //float (*udiff)[nx][ny] = (float (*)[nx][ny])udiff_;
         /// CHECK OUTPUT
         // Check for convergence.
         for (j = 0; j < ny; j++) {
-            y = (double) (j) / (double) (ny - 1);
+            y = (float) (j) / (float) (ny - 1);
             for (i = 0; i < nx; i++) {
-                x = (double) (i) / (double) (nx - 1);
+                x = (float) (i) / (float) (nx - 1);
                 udiff[index2d(ny, i, j)] = unew[index2d(ny, i, j)] - u_exact(x,y);
                 // (*udiff)[i][j] = (*unew)[i][j] - u_exact(x, y);
             }
         }
         error = r8mat_rms(nx, ny, udiff_);
 
-        double error1;
+        float error1;
         // Set the right hand side array F.
         rhs(nx, ny, f_, block_size);
 
@@ -417,9 +422,9 @@ void run(int ms, int bs, int nit)
 
         // Check for convergence.
         for (j = 0; j < ny; j++) {
-            y = (double) (j) / (double) (ny - 1);
+            y = (float) (j) / (float) (ny - 1);
             for (i = 0; i < nx; i++) {
-                x = (double) (i) / (double) (nx - 1);
+                x = (float) (i) / (float) (nx - 1);
                 udiff[index2d(ny, i, j)] = unew[index2d(ny, i, j)] - u_exact(x, y);
                 // (*udiff)[i][j] = (*unew)[i][j] - u_exact(x, y);
             }
@@ -452,13 +457,13 @@ int main (int argc, char ** argv) {
 
     char const *deps[] = { "system" }; 
     hclib::launch(deps, 1, [&]() {
-        long start = hclib_current_time_ms();
+        // long start = hclib_current_time_ms();
         
         run(matrix_size, block_size, niter);
 
-        long end = hclib_current_time_ms();
-        double dur = ((double)(end-start))/1000;
-        printf("Run Time = %f\n",dur);
+        // long end = hclib_current_time_ms();
+        // float dur = ((float)(end-start))/1000;
+        // printf("Run Time = %f\n",dur);
 
     #ifdef RACE_DETECTION
         printf("DPST height is: %d \n", get_dpst_height());

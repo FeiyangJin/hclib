@@ -463,12 +463,13 @@ int visitmax = 0;
 int visittotalsize = 0;
 int visitcount = 0;
 int visitmin = 1000;
+robin_hood::unordered_set<int> visited;
 
 bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b){
-    if(step_a->index == step_b->index){
-        samestepcount ++;
-        return true;
-    }
+    // if(step_a->index == step_b->index){
+    //     samestepcount ++;
+    //     return true;
+    // }
 
     totalprecede ++;
     #ifdef CACHE
@@ -477,7 +478,8 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task
         bool in_cache = cache.count(key);
         // bool in_cache = cache.find(key) != cache.end();
         // if(in_cache && step_a->index <= cache.at(key)){
-        if(in_cache && step_a->index <= cache[key]){
+        // int cache_record = cache[key];
+        if(in_cache){
             cachehit ++;
             return true;
         }
@@ -487,8 +489,8 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task
         // else if step_a->index > the furthest node in task a that precedes task_b, we cannot make a decision
     #endif
 
-    robin_hood::unordered_set<int> visited;
-    visited.reserve(15);
+    visited.clear();
+    visited.reserve(10);
     bool result = this->visit(step_a,step_b,task_a,task_b,visited);
     // printf("visited size is %d \n", visited.size());
 
@@ -508,12 +510,12 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task
         }
     #endif
 
-    if(visited.size() > 1){
-        visittotalsize += visited.size();
-        visitcount ++;
-        visitmax = visitmax > visited.size() ? visitmax : visited.size();
-        visitmin = visitmin < visited.size() ? visitmin : visited.size();
-    }
+    // if(visited.size() > 1){
+    //     visittotalsize += visited.size();
+    //     visitcount ++;
+    //     visitmax = visitmax > visited.size() ? visitmax : visited.size();
+    //     visitmin = visitmin < visited.size() ? visitmin : visited.size();
+    // }
     return result;
 }
 
@@ -551,10 +553,13 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
     deque<tree_node_cpp*> steps;
     steps.push_back(step_b);
     int last_push_task = -1;
+    tree_node_cpp* task_node;
+    tree_node_cpp* last_step_node;
 
     // prepare for lsa
     deque<tree_node_cpp*> all_lsa_query_node;
     robin_hood::unordered_set<int> lsa_added_to_q;
+    lsa_info one_lsa;
 
     while(steps.size() > 0){
         tree_node_cpp* step = steps.front();
@@ -571,9 +576,10 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
             for(auto nt_join = step_set->nt->rbegin(); nt_join != step_set->nt->rend(); nt_join++){
                 int task_id = (*nt_join).task_id;
 
+
                 if(!visited.count(task_id)){
-                    tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
-                    tree_node_cpp* last_step_node = task_node->children_list_tail;
+                    task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
+                    last_step_node = task_node->children_list_tail;
 
                     steps.push_back(last_step_node);
                 } 
@@ -584,10 +590,11 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
         visited.insert(step_task);
 
         // prepare for lsa
-        lsa_info one_lsa = step_set->lsa;
-        if(one_lsa.task_id != -1 && !lsa_added_to_q.count(one_lsa.task_id)){
+        one_lsa = step_set->lsa;
+        // if(one_lsa.task_id != -1 && !lsa_added_to_q.count(one_lsa.task_id)){
+        if(one_lsa.task_id != -1){
             all_lsa_query_node.push_back(one_lsa.last_node_reachable_in_lsa);
-            lsa_added_to_q.insert(one_lsa.task_id);
+            // lsa_added_to_q.insert(one_lsa.task_id);
         }
     }
 
@@ -595,24 +602,26 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
     // check nt in lsa and goes up until lsa become null
     // if lsa in visited, do not check its nt, just check the new lsa and add it to the dequeue.
     int last_check_lsa = -1;
+    set_info* lsa_set_info;
 
     while(all_lsa_query_node.size() > 0){
         tree_node_cpp* lsa_deepest_reachable_node = all_lsa_query_node.front();
         all_lsa_query_node.pop_front();
 
         int lsa_task = lsa_deepest_reachable_node->corresponding_task_id;
-        set_info* lsa_set_info = find_helper(lsa_task);
+        lsa_set_info = find_helper(lsa_task);
 
         if(lsa_task == last_check_lsa){
             continue;
         }
 
         // add its lsa to the dequeue
-        lsa_info one_lsa = lsa_set_info->lsa;
-        if(one_lsa.task_id != -1 && !lsa_added_to_q.count(one_lsa.task_id)){
+        one_lsa = lsa_set_info->lsa;
+        // if(one_lsa.task_id != -1 && !lsa_added_to_q.count(one_lsa.task_id)){
+        if(one_lsa.task_id != -1){
             all_lsa_query_node.push_back(one_lsa.last_node_reachable_in_lsa);
 
-            lsa_added_to_q.insert(one_lsa.task_id);
+            // lsa_added_to_q.insert(one_lsa.task_id);
         }
 
     
@@ -621,8 +630,8 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
             for(auto nt_join = lsa_set_info->nt->rbegin(); nt_join != lsa_set_info->nt->rend(); nt_join++){
                 int task_id = (*nt_join).task_id;
                 if(!visited.count(task_id)){
-                    tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
-                    tree_node_cpp* last_step_node = task_node->children_list_tail;
+                    task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
+                    last_step_node = task_node->children_list_tail;
 
                     if(precede_dpst(step_a,last_step_node)){
                         return true;
@@ -634,9 +643,10 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
                 set_info* nt_set_info = find_helper(task_id);
                 lsa_info nt_lsa = nt_set_info->lsa;
 
-                if(nt_lsa.task_id != -1 && !lsa_added_to_q.count(nt_lsa.task_id)){
+                // if(nt_lsa.task_id != -1 && !lsa_added_to_q.count(nt_lsa.task_id)){
+                if(nt_lsa.task_id != -1){
                     all_lsa_query_node.push_back(nt_lsa.last_node_reachable_in_lsa);
-                    lsa_added_to_q.insert(nt_lsa.task_id);
+                    // lsa_added_to_q.insert(nt_lsa.task_id);
                 }
             }
         }
@@ -647,9 +657,10 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
                 set_info* nt_set_info = find_helper(task_id);
                 lsa_info nt_lsa = nt_set_info->lsa;
 
-                if(nt_lsa.task_id != -1 && !lsa_added_to_q.count(nt_lsa.task_id)){
+                // if(nt_lsa.task_id != -1 && !lsa_added_to_q.count(nt_lsa.task_id)){
+                if(nt_lsa.task_id != -1){
                     all_lsa_query_node.push_back(nt_lsa.last_node_reachable_in_lsa);
-                    lsa_added_to_q.insert(nt_lsa.task_id);
+                    // lsa_added_to_q.insert(nt_lsa.task_id);
                 }
             }
 

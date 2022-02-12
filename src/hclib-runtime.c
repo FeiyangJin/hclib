@@ -267,27 +267,29 @@ tree_node* find_lca_left_child(tree_node *node1,tree_node *node2){
  * @retval current step node
  */
 tree_node* get_current_step_node(){
-    hclib_worker_state *ws = current_ws();
-    hclib_task_t *task = (hclib_task_t *) ws->curr_task;
-    finish_t *task_finish = task->current_finish;
-    finish_t *ws_finish = ws->current_finish;
+    return DPST.current_step_node;
 
-    if(task_finish->node_in_dpst->index == ws_finish->node_in_dpst->index){
-        if(task->task_id == 0){
-            // special case, for main task, the finish is under it in DPST
-            // for other tasks, the finish is above it in DPST
-            //HASSERT(task_finish->node_in_dpst->children_list_tail->this_node_type == STEP);
-            return task_finish->node_in_dpst->children_list_tail;
-        }
-        //HASSERT(task->node_in_dpst->children_list_tail->this_node_type == STEP);
-        return task->node_in_dpst->children_list_tail;
-    }
-    else{
-        // current task has at least one finish inside it
-        // we are at a subtree of a FINISH node
-        //HASSERT(ws_finish->node_in_dpst->children_list_tail->this_node_type == STEP);
-        return ws_finish->node_in_dpst->children_list_tail;
-    }
+    // hclib_worker_state *ws = current_ws();
+    // hclib_task_t *task = (hclib_task_t *) ws->curr_task;
+    // finish_t *task_finish = task->current_finish;
+    // finish_t *ws_finish = ws->current_finish;
+
+    // if(task_finish->node_in_dpst->index == ws_finish->node_in_dpst->index){
+    //     if(task->task_id == 0){
+    //         // special case, for main task, the finish is under it in DPST
+    //         // for other tasks, the finish is above it in DPST
+    //         //HASSERT(task_finish->node_in_dpst->children_list_tail->this_node_type == STEP);
+    //         return task_finish->node_in_dpst->children_list_tail;
+    //     }
+    //     //HASSERT(task->node_in_dpst->children_list_tail->this_node_type == STEP);
+    //     return task->node_in_dpst->children_list_tail;
+    // }
+    // else{
+    //     // current task has at least one finish inside it
+    //     // we are at a subtree of a FINISH node
+    //     //HASSERT(ws_finish->node_in_dpst->children_list_tail->this_node_type == STEP);
+    //     return ws_finish->node_in_dpst->children_list_tail;
+    // }
 }
 
 /**
@@ -757,6 +759,19 @@ static inline void execute_task(hclib_task_t *task) {
     hclib_worker_state *ws = CURRENT_WS_INTERNAL;
     ws->current_finish = current_finish;
     ws->curr_task = task;
+
+    // fj: update current dpst node
+    if(task->node_in_dpst == NULL){
+        
+    }
+    else if(task->node_in_dpst->depth == 0 || task->node_in_dpst->depth < current_finish->node_in_dpst->depth){
+        set_current_dpst_node((void*) current_finish->node_in_dpst->children_list_tail);
+        DPST.current_step_node = current_finish->node_in_dpst->children_list_tail;
+    }   
+    else{
+        set_current_dpst_node((void*) task->node_in_dpst->children_list_tail);
+        DPST.current_step_node = task->node_in_dpst->children_list_tail;
+    }
 
 #ifdef VERBOSE
     fprintf(stderr, "execute_task: setting current finish of %p to %p for task "
@@ -1383,6 +1398,9 @@ void *hclib_future_wait(hclib_future_t *future) {
         }
     }
 
+    set_current_dpst_node((void*) continuation);
+    DPST.current_step_node = continuation;
+
     // end fj
     return future->owner->datum;
 }
@@ -1611,7 +1629,11 @@ void hclib_start_finish() {
         // if it is not the finish for main task, we have a continuation step
         insert_leaf(finish->node_in_dpst->parent);
     }
-    insert_leaf(finish->node_in_dpst);
+
+    // fj: update current dpst node
+    tree_node* new_step = insert_leaf(finish->node_in_dpst);
+    set_current_dpst_node((void*) new_step);
+    DPST.current_step_node = new_step;
 
     // ds operation
     ds_addFinish(finish->node_in_dpst->index, finish->belong_to_task_id, finish->node_in_dpst, finish);
@@ -1678,6 +1700,19 @@ void hclib_end_finish() {
     ws->current_finish = current_finish->parent;
     ws->curr_task = current_task;
     free(current_finish);
+
+    // fj: update current node in dpst
+    if(current_task == NULL || current_task->node_in_dpst == NULL){
+        
+    }
+    else if(current_task->node_in_dpst->depth == 0 || current_task->node_in_dpst->depth < ws->current_finish->node_in_dpst->depth){
+        set_current_dpst_node((void*) ws->current_finish->node_in_dpst->children_list_tail);
+        DPST.current_step_node = ws->current_finish->node_in_dpst->children_list_tail;
+    }   
+    else{
+        set_current_dpst_node((void*) current_task->node_in_dpst->children_list_tail);
+        DPST.current_step_node = current_task->node_in_dpst->children_list_tail;
+    }
 }
 
 // Based on help_finish
