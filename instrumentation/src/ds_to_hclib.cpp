@@ -8,7 +8,7 @@ using namespace std;
 extern "C" {
 #endif
 
-tree_node_cpp* current_dpst_node = NULL;
+// tree_node_cpp* current_dpst_node = NULL;
 
 DisjointSet *ds = new DisjointSet();
 bool hclib_ready = false;
@@ -17,9 +17,9 @@ hclib_function hclib_current_task_id = NULL;
 hclib_function_dpst hclib_current_step_node = NULL;
 hclib_function_dpst hclib_print_dpst = NULL;
 
-void set_current_dpst_node(void* node){
-    current_dpst_node = (tree_node_cpp*) node;
-}
+// void set_current_dpst_node(void* node){
+//     current_dpst_node = (tree_node_cpp*) node;
+// }
 
 
 hclib_task test_get_task_info(int task_id){

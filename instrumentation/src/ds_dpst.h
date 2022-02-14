@@ -14,6 +14,8 @@
 
 using namespace std;
 
+// #define DEBUG
+
 // this key means the furtherest step in task_a that precedes task_b
 // notice that key(a,b) != key(b,a)
 typedef struct cache_key{
@@ -60,7 +62,7 @@ class DisjointSet
     // a map from finish dpst node id to finish
     robin_hood::unordered_map<int, hclib_finish*> all_finishes;
 
-    robin_hood::unordered_map<unsigned int, unsigned int> cache;
+    robin_hood::unordered_map<double, unsigned int> cache;
     // boost::unordered_map<unsigned int, unsigned int> cache;
     // google::dense_hash_map<unsigned int, unsigned int, hash<unsigned int>, eqint> cache = google::dense_hash_map<unsigned int, unsigned int, hash<unsigned int>, eqint>(100000);
     // unordered_map<unsigned int,unsigned int> cache;

@@ -100,7 +100,10 @@ int DisjointSet::get_find_count(){
 }
 
 set_info* DisjointSet::find_helper(int k){
-    this->find_count++;
+    #ifdef DEBUG
+        this->find_count++;
+    #endif
+
     assert(k != -1);
     set_info* current_set_info = parent_aka_setnowin.at(k);
     if (current_set_info->set_id != k)
@@ -122,7 +125,9 @@ int DisjointSet::Find(int k){
  * @retval None
  */
 void DisjointSet::mergeBtoA(int a, int b, tree_node_cpp* query_node, bool update_inline_finish){
-    this->tree_join_count++;
+    #ifdef DEBUG
+        this->tree_join_count++;
+    #endif
     
     if(update_inline_finish){
         tree_node_cpp* node = (tree_node_cpp*) this->all_tasks.at(b).node_in_dpst;
@@ -470,21 +475,26 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task
     //     samestepcount ++;
     //     return true;
     // }
+    #ifdef DEBUG
+        totalprecede ++;
+    #endif
 
-    totalprecede ++;
     #ifdef CACHE
         // cache_key key(task_a,task_b);
-        unsigned int key = (task_a << 18) | task_b;
-        bool in_cache = cache.count(key);
-        // bool in_cache = cache.find(key) != cache.end();
+        double key = (task_a << 32) | task_b;
+        // bool in_cache = cache.count(key);
         // if(in_cache && step_a->index <= cache.at(key)){
-        // int cache_record = cache[key];
-        if(in_cache){
-            cachehit ++;
+        unsigned int& in_cache = cache[key];
+        if(in_cache != 0){
+            #ifdef DEBUG
+                cachehit ++;
+            #endif
             return true;
         }
-        else if( !in_cache ){
-            cachemiss ++;
+        else{
+            #ifdef DEBUG
+                cachemiss ++;
+            #endif
         }
         // else if step_a->index > the furthest node in task a that precedes task_b, we cannot make a decision
     #endif
@@ -492,30 +502,33 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task
     visited.clear();
     visited.reserve(10);
     bool result = this->visit(step_a,step_b,task_a,task_b,visited);
-    // printf("visited size is %d \n", visited.size());
 
     #ifdef CACHE
         if(result == true){
-            if(in_cache){
-                cache[key] = step_a->index;
-                // cache.at(key) = step_a->index;
-            }
-            else{
-                cache.insert({key,step_a->index});
-                // cache.insert(std::pair<unsigned int,unsigned int>(key,step_a->index));
-                // cache[key] = step_a->index;
-                // cache.insert(std::pair<unsigned int,unsigned int>(key,step_a->index));
-                // cache.insert(std::pair<cache_key,int>(key,step_a->index));
-            }
+            in_cache = step_a->index;
+            // if(in_cache){
+            //     cache[key] = step_a->index;
+            //     // cache.at(key) = step_a->index;
+            // }
+            // else{
+            //     cache.insert({key,step_a->index});
+            //     // cache.insert(std::pair<unsigned int,unsigned int>(key,step_a->index));
+            //     // cache[key] = step_a->index;
+            //     // cache.insert(std::pair<unsigned int,unsigned int>(key,step_a->index));
+            //     // cache.insert(std::pair<cache_key,int>(key,step_a->index));
+            // }
         }
     #endif
 
-    // if(visited.size() > 1){
-    //     visittotalsize += visited.size();
-    //     visitcount ++;
-    //     visitmax = visitmax > visited.size() ? visitmax : visited.size();
-    //     visitmin = visitmin < visited.size() ? visitmin : visited.size();
-    // }
+    #ifdef DEBUG
+        if(visited.size() > 1){
+            visittotalsize += visited.size();
+            visitcount ++;
+            visitmax = visitmax > visited.size() ? visitmax : visited.size();
+            visitmin = visitmin < visited.size() ? visitmin : visited.size();
+        }
+    #endif
+
     return result;
 }
 

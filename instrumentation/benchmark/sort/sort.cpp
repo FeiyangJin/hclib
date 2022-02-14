@@ -107,6 +107,7 @@ static ELM *seqpart(ELM *low, ELM *high) {
 
 static void insertion_sort(ELM *low, ELM *high) {
   // no duplicate access
+  // check duplicate using dummy loop
 
   ELM *p, *q;
   ELM a, b;

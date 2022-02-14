@@ -3,7 +3,7 @@ set -e
 
 ROOT=$(readlink -f $(dirname $0)/..)
 CURRENT_DIR=$(pwd)
-BENCHMARKS="sparselu poisson"
+BENCHMARKS="poisson sparselu"
 # BENCHMARKS="health life knapsack matmul_promise sort sparselu poisson"
 EXPERIMENTS="orig rd"
 TIMES='5'

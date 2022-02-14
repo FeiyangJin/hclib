@@ -19,8 +19,6 @@ extern hclib_function_dpst hclib_print_dpst;
 hclib_task test_get_task_info(int task_id);
 __attribute__((weak)) void* hclib_get_current_task_info(int* task_id, int* current_finish_id, bool* is_step, bool* is_future);
 
-extern tree_node_cpp* current_dpst_node;
-
 #ifdef __cplusplus
 }
 #endif

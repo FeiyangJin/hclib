@@ -115,9 +115,11 @@ void increase_task_id_unique(){
 }
 
 int get_current_task_id(){
-    hclib_worker_state *ws = current_ws();
-    hclib_task_t *task = (hclib_task_t *) ws->curr_task;
-    return task->task_id;
+    return DPST.current_step_node->corresponding_task_id;
+
+    // hclib_worker_state *ws = current_ws();
+    // hclib_task_t *task = (hclib_task_t *) ws->curr_task;
+    // return task->task_id;
 }
 
 /**
@@ -618,9 +620,9 @@ static void hclib_entrypoint(const char **module_dependencies,
     HASSERT(sizeof(worker_done_t) == 64);
 
     // fj: send function pointer to shadow memory instrumentation
-    ds_set_task_id_pointer(&get_current_task_id);
-    ds_set_step_node_pointer(&get_current_step_node);
-    ds_set_print_dpst_pointer(&printDPST);
+    // ds_set_task_id_pointer(&get_current_task_id);
+    // ds_set_step_node_pointer(&get_current_step_node);
+    // ds_set_print_dpst_pointer(&printDPST);
 
     load_dependencies(module_dependencies, n_module_dependencies);
 
@@ -1367,7 +1369,7 @@ void *hclib_future_wait(hclib_future_t *future) {
             // add future task to current tasks' nt
             void* current_step_node = (void*) get_current_step_node();
             ds_addnt(current_task->task_id,future_task_id,current_step_node);
-            nt_count++;
+            // nt_count++;
         //}
         // mark the future task joined
         ds_update_task_state(future->corresponding_task_id,3);
@@ -1394,7 +1396,7 @@ void *hclib_future_wait(hclib_future_t *future) {
             // assert(future->owner->setter_task_id >= 0);
             void* current_step_node = (void*) get_current_step_node();
             ds_addnt(current_task->task_id,future->owner->empty_future_id,current_step_node);
-            nt_count++;
+            // nt_count++;
         }
     }
 

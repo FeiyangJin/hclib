@@ -126,12 +126,7 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                     u[index2d(ny,i,ja)] = unew[index2d(ny,i,ja)];
                 }
  
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(false);
-                    promise_u[i]->put();
-                #else
-                    promise_u[i]->put();
-                #endif
+                promise_u[i]->put();
                 // delete promise_unew[i];
                 // promise_unew[i] = new hclib::promise_t<void>();
             }); // end of async
@@ -209,12 +204,8 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                                                 + f[index2d(ny, i, jb)] * dx * dy);
                     }
                 }
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(false);
-                    promise_unew[i]->put();
-                #else
-                    promise_unew[i]->put();
-                #endif
+ 
+                promise_unew[i]->put();
 
             }); // end of async
         }
@@ -457,13 +448,13 @@ int main (int argc, char ** argv) {
 
     char const *deps[] = { "system" }; 
     hclib::launch(deps, 1, [&]() {
-        // long start = hclib_current_time_ms();
+        long start = hclib_current_time_ms();
         
         run(matrix_size, block_size, niter);
 
-        // long end = hclib_current_time_ms();
-        // float dur = ((float)(end-start))/1000;
-        // printf("Run Time = %f\n",dur);
+        long end = hclib_current_time_ms();
+        float dur = ((float)(end-start))/1000;
+        printf("Run Time = %f \n \n",dur);
 
     #ifdef RACE_DETECTION
         printf("DPST height is: %d \n", get_dpst_height());

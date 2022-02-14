@@ -2,11 +2,29 @@
 
 #include "mem_access.h"
 
+MemAccess_t::MemAccess_t(tree_node_cpp* step_node){
+  this->step_node = step_node;
+
+  #ifdef LINK_READER
+    this->next = nullptr;
+    this->prev = nullptr;
+  #endif
+}
+
+MemAccess_t::MemAccess_t(access_info t_a_n){
+  this->task_and_node.node_in_dpst = t_a_n.node_in_dpst;
+
+  #ifdef LINK_READER
+    this->next = nullptr;
+    this->prev = nullptr;
+  #endif
+}
+
 MemAccess_t::MemAccess_t(access_info t_a_n, addr_t r, bool is_promise){
   this->task_and_node.node_in_dpst = t_a_n.node_in_dpst;
-  this->task_and_node.task_id = t_a_n.task_id;
-  this->rip = r;
-  this->promise_task = is_promise;
+  // this->task_and_node.task_id = t_a_n.task_id;
+  // this->rip = r;
+  // this->promise_task = is_promise;
 
 #ifdef LINK_READER
   this->next = nullptr;
@@ -22,6 +40,26 @@ MemAccess_t::~MemAccess_t(){
   #endif
 }
 
+MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read, tree_node_cpp* step_node, std::size_t mem_size){
+  const int start = ADDR_TO_MEM_INDEX(addr);
+  const int grains = SIZE_TO_NUM_GRAINS(mem_size);
+
+  if (is_read){
+    for (int i=start; i < (start + grains); ++i){
+        // MemAccess_t* first_reader = new MemAccess_t(task_and_node);
+        MemAccess_t* first_reader = new MemAccess_t(step_node);
+        this->readers[i] = first_reader;
+        this->readers_tail[i] = first_reader;
+    }
+  }
+  else{
+    for (int i=start; i < (start + grains); ++i){
+      // this->writers[i] = new MemAccess_t(task_and_node);
+      this->writers[i] = new MemAccess_t(step_node);
+    }
+  }
+}
+
 MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read, 
                                  access_info task_and_node,
                                  addr_t rip, std::size_t mem_size,
@@ -34,7 +72,8 @@ MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read,
   if (is_read){
     for (int i=start; i < (start + grains); ++i){
       #ifdef LINK_READER
-        MemAccess_t* first_reader = new MemAccess_t(task_and_node, rip, is_promise);
+        // MemAccess_t* first_reader = new MemAccess_t(task_and_node, rip, is_promise);
+        MemAccess_t* first_reader = new MemAccess_t(task_and_node);
         this->readers[i] = first_reader;
         this->readers_tail[i] = first_reader;
       #elif defined(VECTOR_READER_LIST)
@@ -48,7 +87,8 @@ MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read,
   }
   else{
     for (int i=start; i < (start + grains); ++i){
-      this->writers[i] = new MemAccess_t(task_and_node, rip, is_promise);
+      // this->writers[i] = new MemAccess_t(task_and_node, rip, is_promise);
+      this->writers[i] = new MemAccess_t(task_and_node);
     }
   }
 
