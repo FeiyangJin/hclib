@@ -76,7 +76,7 @@ void DisjointSet::update_task_dpst_node(int task_id, void *new_node){
 
 
 DisjointSet::DisjointSet(){
-    this->all_finishes.reserve(1000);
+    this->all_finishes.reserve(100);
     this->all_tasks.reserve(5000);
     this->parent_aka_setnowin.reserve(5000);
     this->cache.reserve(650000);
@@ -442,20 +442,6 @@ bool DisjointSet::precede_dpst(tree_node_cpp* node1, tree_node_cpp* node2){
             return true;
         }
     }
-    // else{
-    //     // some optimization can be done here
-    //     // if we find node2 actually precedes node1 in dpst by tree edges
-    //     // we can make a much stronger conclusion
-    //     if(node2_last_node->this_node_type == FUTURE || node2_last_node->this_node_type == ASYNC){
-    //         if(node2_last_node->inline_finish_step > 0 && node2_last_node->inline_finish_step <= node1_last_node->is_parent_nth_child){
-    //             return_false_directly = true;
-    //         }
-    //         return_false_directly = false;
-    //     }
-    //     else{
-    //         return_false_directly = true;
-    //     }
-    // }
 
     return false;
 }
@@ -470,7 +456,7 @@ int visitcount = 0;
 int visitmin = 1000;
 robin_hood::unordered_set<int> visited;
 
-bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b){
+bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned int task_a, unsigned int task_b){
     // if(step_a->index == step_b->index){
     //     samestepcount ++;
     //     return true;
@@ -480,27 +466,25 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task
     #endif
 
     #ifdef CACHE
-        // cache_key key(task_a,task_b);
-        double key = (task_a << 32) | task_b;
+        unsigned long int key = (((unsigned long int)task_a) << 17) | task_b;
         // bool in_cache = cache.count(key);
         // if(in_cache && step_a->index <= cache.at(key)){
         unsigned int& in_cache = cache[key];
-        if(in_cache != 0){
+        if(in_cache >= (unsigned) step_a->index){
             #ifdef DEBUG
                 cachehit ++;
             #endif
             return true;
         }
-        else{
-            #ifdef DEBUG
-                cachemiss ++;
-            #endif
-        }
+        // #ifdef DEBUG 
+        //     else{ cachemiss ++; }
+        // #endif
         // else if step_a->index > the furthest node in task a that precedes task_b, we cannot make a decision
     #endif
 
     visited.clear();
-    visited.reserve(10);
+    visited.reserve(5);
+    // robin_hood::unordered_set<int> visited;
     bool result = this->visit(step_a,step_b,task_a,task_b,visited);
 
     #ifdef CACHE
@@ -532,7 +516,7 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task
     return result;
 }
 
-bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b, robin_hood::unordered_set<int> &visited){
+bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned int task_a, unsigned int task_b, robin_hood::unordered_set<int> &visited){
     // #ifdef CACHE
     //     unsigned int key = (task_a << 18) | task_b;
     //     bool in_cache = cache.count(key);
@@ -541,11 +525,11 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
     //     }
     // #endif
     
-    bool b_in_visited = visited.count(task_b);
-    if(b_in_visited){
-        return false;
-    }
-    visited.insert(task_b);
+    // bool b_in_visited = visited.count(task_b);
+    // if(b_in_visited){
+    //     return false;
+    // }
+    // visited.insert(task_b);
 
 
     // this covers ancestor in DPST
@@ -564,7 +548,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
 
     // bfs nt joins
     deque<tree_node_cpp*> steps;
-    steps.push_back(step_b);
+    // steps.push_back(step_b);
     int last_push_task = -1;
     tree_node_cpp* task_node;
     tree_node_cpp* last_step_node;
@@ -573,6 +557,15 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
     deque<tree_node_cpp*> all_lsa_query_node;
     robin_hood::unordered_set<int> lsa_added_to_q;
     lsa_info one_lsa;
+
+    for(auto nt_join = b_set_info->nt->rbegin(); nt_join != b_set_info->nt->rend(); nt_join++){
+        int task_id = (*nt_join).task_id;
+
+        task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
+        last_step_node = task_node->children_list_tail;
+
+        steps.push_back(last_step_node);
+    }
 
     while(steps.size() > 0){
         tree_node_cpp* step = steps.front();
@@ -590,12 +583,12 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a
                 int task_id = (*nt_join).task_id;
 
 
-                if(!visited.count(task_id)){
+                // if(!visited.count(task_id)){
                     task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
                     last_step_node = task_node->children_list_tail;
 
                     steps.push_back(last_step_node);
-                } 
+                // } 
             }
             last_push_task = step_task;
         }

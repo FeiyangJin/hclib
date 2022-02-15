@@ -115,7 +115,8 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
     }
 
     // bool race = !precede(writer->task_and_node, current_task_and_step);
-    bool race = !precede(writer->step_node, current_dpst_node);
+    // bool race = !precede(writer->step_node, current_dpst_node);
+    bool race = !ds->precede(writer->step_node,current_dpst_node,writer->step_node->corresponding_task_id,current_dpst_node->corresponding_task_id);
     #ifdef REPORT
       if(race){
         printf("we find a read-write race !!!!!!!!!! \n");
@@ -138,8 +139,8 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
             // MemAccess_t* new_reader = new MemAccess_t(current_task_and_step);
             MemAccess_t* new_reader = new MemAccess_t(current_dpst_node);
             slot->readers[i] = new_reader;
-            slot->readers_tail[i] = new_reader;
-            continue;
+            // slot->readers_tail[i] = new_reader;
+            // continue;
           }
           // else if (reader->next == nullptr){ // 2. we only have one reader
           //   if(reader->task_and_node.task_id == c_id){
@@ -169,10 +170,14 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
               // MemAccess_t* new_reader = new MemAccess_t(current_task_and_step, rip, is_asap_promise_task);
               // MemAccess_t* new_reader = new MemAccess_t(current_task_and_step);
               MemAccess_t* new_reader = new MemAccess_t(current_dpst_node);
-              slot->readers_tail[i]->next = new_reader;
-              new_reader->prev = slot->readers_tail[i];
+              new_reader->next = reader->next;
+              // new_reader->prev = reader;
+              reader->next = new_reader;
 
-              slot->readers_tail[i] = new_reader;
+              // slot->readers_tail[i]->next = new_reader;
+              // new_reader->prev = slot->readers_tail[i];
+
+              // slot->readers_tail[i] = new_reader;
             // }
           }
       #elif defined(VECTOR_READER_LIST)
@@ -261,7 +266,7 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
   const int grains = SIZE_TO_NUM_GRAINS(mem_size);
   for (int i=start; i < (start + grains); ++i) {
     MemAccess_t *writer = slot->writers[i];
-    if(writer == NULL) {
+    if(writer == nullptr) {
       // slot->writers[i] = new MemAccess_t(current_task_and_step, rip, is_asap_promise_task);
       // slot->writers[i] = new MemAccess_t(current_task_and_step);
       slot->writers[i] = new MemAccess_t(current_dpst_node);
@@ -269,7 +274,8 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
     }
 
     // bool race = !precede(writer->task_and_node, current_task_and_step);
-    bool race = !precede(writer->step_node, current_dpst_node);  
+    // bool race = !precede(writer->step_node, current_dpst_node);  
+    bool race = !ds->precede(writer->step_node,current_dpst_node,writer->step_node->corresponding_task_id,current_dpst_node->corresponding_task_id);
     #ifdef REPORT
       if(race){
         printf("we find a write-write race !!!!!!!!!! \n");
@@ -297,7 +303,8 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
 
         while(reader != nullptr){
           // bool race = !precede(reader->task_and_node, current_task_and_step);
-          bool race = !precede(reader->step_node, current_dpst_node);
+          // bool race = !precede(reader->step_node, current_dpst_node);
+          bool race = !ds->precede(reader->step_node,current_dpst_node,reader->step_node->corresponding_task_id,current_dpst_node->corresponding_task_id);
           #ifdef REPORT
             if(race){
               printf("we find a write-read race !!!!!!!!!! \n");
@@ -320,7 +327,7 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
         }
         
         slot->readers[i] = nullptr;
-        slot->readers_tail[i] = nullptr;
+        // slot->readers_tail[i] = nullptr;
     #elif defined(VECTOR_READER_LIST)
       vector<MemAccess_t>* reader = slot->readers[i];
       if (reader == nullptr) continue;
@@ -436,6 +443,7 @@ extern "C" __attribute__((weak)) void asap_check_write(int *addr, int bytes) {
     }
 
     handle_write(slot, (addr_t)nullptr, (addr_t)addr, bytes);
+    return;
   }
 
 }
@@ -498,6 +506,7 @@ extern "C" __attribute__((weak)) void asap_check_read(int *addr, int bytes) {
     }
 
     handle_read(slot,(addr_t)nullptr,(addr_t)addr,bytes);
+    return;
   }
     
 }

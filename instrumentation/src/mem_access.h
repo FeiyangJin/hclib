@@ -43,17 +43,17 @@ using addr_t = uint64_t;
 #define SIZE_TO_NUM_GRAINS(size) (size >> LOG_GRAIN_SIZE)
 class MemAccess_t {
 public:
-  bool promise_task;
-  access_info task_and_node;
+  // bool promise_task;
+  // access_info task_and_node;
   tree_node_cpp* step_node;
   addr_t rip;
 #ifdef LINK_READER
   MemAccess_t* next;
-  MemAccess_t* prev;
+  // MemAccess_t* prev;
 #endif
   MemAccess_t(tree_node_cpp* step_node);
-  MemAccess_t(access_info t_a_n);
-  MemAccess_t(access_info t_a_n, addr_t r, bool is_promise);
+  // MemAccess_t(access_info t_a_n);
+  // MemAccess_t(access_info t_a_n, addr_t r, bool is_promise);
   ~MemAccess_t();
 };
 
@@ -63,7 +63,7 @@ public:
 
   #ifdef LINK_READER
     MemAccess_t* readers[NUM_SLOTS] = {nullptr, nullptr, nullptr, nullptr};
-    MemAccess_t* readers_tail[NUM_SLOTS] = {nullptr, nullptr, nullptr, nullptr};
+    // MemAccess_t* readers_tail[NUM_SLOTS] = {nullptr, nullptr, nullptr, nullptr};
   #elif defined(VECTOR_READER_LIST)
     std::vector<MemAccess_t>* readers[NUM_SLOTS] = {};
   #else
@@ -74,7 +74,7 @@ public:
   MemAccess_t* writers[NUM_SLOTS] = {nullptr, nullptr, nullptr, nullptr};
 
   MemAccessList_t(addr_t addr, bool is_read, tree_node_cpp* step_node, std::size_t mem_size);
-  MemAccessList_t(addr_t addr, bool is_read, access_info task_and_node, addr_t rip, std::size_t mem_size, int first_finish_id, bool is_promise);
+  // MemAccessList_t(addr_t addr, bool is_read, access_info task_and_node, addr_t rip, std::size_t mem_size, int first_finish_id, bool is_promise);
   ~MemAccessList_t();
   
 }; // end class MemAccessList_t

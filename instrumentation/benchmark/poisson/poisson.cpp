@@ -105,11 +105,9 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                     promise_unew[i+1]->get_future()->wait();
                 }
 
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(false);
-
-                    for(int k=0; k<ny; k++){
-                        int index = index2d(ny,i,k);
+                for (int ja = 0; ja < ny; ja++) {
+                    #ifdef RACE_DETECTION
+                        int index = index2d(ny,i,ja);
                         int* p = (int*) &u[index];
                         int* p2 = (int*) &unew[index];
 
@@ -117,12 +115,7 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                         asap_check_write(p,4);
                         asap_check_read(p2,4);
                         ds_hclib_ready(false);
-                    }
-
-                    ds_hclib_ready(false);
-                #endif
-
-                for (int ja = 0; ja < ny; ja++) {
+                    #endif
                     u[index2d(ny,i,ja)] = unew[index2d(ny,i,ja)];
                 }
  
@@ -177,7 +170,7 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                         
                         // 3. access u under some condition
                         if (i == 0 || k == 0 || i == nx - 1 || k == ny - 1) {
-
+                            unew[index] = f[index];
                         }
                         else{
                             // access u
@@ -190,20 +183,25 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                             asap_check_read(p3, 4);
                             asap_check_read(p4, 4);
                             ds_hclib_ready(false);
+
+                            unew[index] = 0.25 * (u[index3] + u[index2d(ny, i, k+1)] + u[index2d(ny, i, k-1)] + u[index4] 
+                                        + f[index] * dx * dy);
                         }
                     }
 
                     ds_hclib_ready(false);
-                #endif
+                #else
 
-                for (int jb = 0; jb < ny; jb++) {
-                    if (i == 0 || jb == 0 || i == nx - 1 || jb == ny - 1) {
-                        unew[index2d(ny, i, jb)] = f[index2d(ny, i, jb)];
-                    } else {
-                        unew[index2d(ny, i, jb)] = 0.25 * (u[index2d(ny, i-1, jb)] + u[index2d(ny, i, jb+1)] + u[index2d(ny, i, jb-1)] + u[index2d(ny, i+1, jb)]
-                                                + f[index2d(ny, i, jb)] * dx * dy);
+                    for (int jb = 0; jb < ny; jb++) {
+                        if (i == 0 || jb == 0 || i == nx - 1 || jb == ny - 1) {
+                            unew[index2d(ny, i, jb)] = f[index2d(ny, i, jb)];
+                        } else {
+                            unew[index2d(ny, i, jb)] = 0.25 * (u[index2d(ny, i-1, jb)] + u[index2d(ny, i, jb+1)] + u[index2d(ny, i, jb-1)] + u[index2d(ny, i+1, jb)]
+                                                    + f[index2d(ny, i, jb)] * dx * dy);
+                        }
                     }
-                }
+
+                #endif
  
                 promise_unew[i]->put();
 
@@ -456,15 +454,15 @@ int main (int argc, char ** argv) {
         float dur = ((float)(end-start))/1000;
         printf("Run Time = %f \n \n",dur);
 
-    #ifdef RACE_DETECTION
-        printf("DPST height is: %d \n", get_dpst_height());
-        printf("cache size is %d \n",ds_get_cache_size());
-        printf("number of task is %d \n",get_task_id_unique());
-        printf("number of nt join %d \n", get_nt_count());
-        printf("number of tree joins %d \n", ds_get_tree_join_count());
-        ds_print_check_write_count();
-        ds_print_check_read_count();
-    #endif
+    // #ifdef RACE_DETECTION
+    //     printf("DPST height is: %d \n", get_dpst_height());
+    //     printf("cache size is %d \n",ds_get_cache_size());
+    //     printf("number of task is %d \n",get_task_id_unique());
+    //     printf("number of nt join %d \n", get_nt_count());
+    //     printf("number of tree joins %d \n", ds_get_tree_join_count());
+    //     ds_print_check_write_count();
+    //     ds_print_check_read_count();
+    // #endif
     });
 
     return 0;
