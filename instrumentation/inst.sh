@@ -17,6 +17,7 @@ ROOT=$(readlink -f $(dirname $0))
 PASS_LIB="libinstrumentation.so"
 DETECTOR="asap"
 DETECTOR_LIB="lib${DETECTOR}.so"
+LINK_OPTION="-lLLVMSymbolize -lLLVMDebugInfoDWARF -lLLVMDebugInfoPDB -lLLVMDebugInfoMSF -lLLVMObject -lLLVMBitReader -lLLVMCore -lLLVMRemarks -lLLVMBitstreamReader -lLLVMMCParser -lLLVMMC -lLLVMDebugInfoCodeView -lLLVMTextAPI -lLLVMBinaryFormat -lLLVMSupport -lLLVMDemangle -lrt -ldl -lpthread -lm /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/x86_64-linux-gnu/libtinfo.so"
 DEFAULT_OPTIONS="-g"
 
 if [ $# -lt "1" ]; then
@@ -71,6 +72,7 @@ if [ ! -e ${CLANG} ]; then
     report_error "clang is not available"
 fi
 
+LLVM_LIB="${CLANG/bin\/clang/lib}"
 echo "================== Install Instrumentation Pass ==============================="
 pushd ${ROOT} > /dev/null 2>&1
 if [ ! -e "${PASS_LIB}" ]; then
@@ -113,8 +115,8 @@ else
     ${CLANGPP} -c -g -emit-llvm ${DEFAULT_OPTIONS} ${OPTIONS} -o ${BC} ${SOURCE_FILE}
     echo "${OPT} -load-pass-plugin ${ROOT}/${PASS_LIB} --passes=\"asap-inst\" -o ${INST_BC} ${BC}"
     ${OPT} -load-pass-plugin ${ROOT}/${PASS_LIB} --passes="asap-inst" -o ${INST_BC} ${BC}
-    echo "${CLANGPP} -L${ROOT} ${INST_BC} -lasap ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}"
-    ${CLANGPP} -L${ROOT} ${INST_BC} -lasap ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}
+    echo "${CLANGPP} -L${ROOT} -L${LLVM_LIB} ${INST_BC} -lasap ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}"
+    ${CLANGPP} -L${ROOT} -L${LLVM_LIB} ${INST_BC} -lasap ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}
 fi
 
 echo "==============================================================================="

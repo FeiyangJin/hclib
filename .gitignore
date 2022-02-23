@@ -14,7 +14,7 @@
 *.csv
 
 ### Above combination will ignore all files without extension ###
-build
+build*
 hclib-install
 compileTree
 config
@@ -28,3 +28,7 @@ eval-*
 latest-result
 hpctoolkit*
 *.hpcstruct
+*.pdf
+*.a
+*.o
+.vscode/

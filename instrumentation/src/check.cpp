@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <typeinfo>
+#include "llvm/DebugInfo/Symbolize/Symbolize.h"
 #include "assert.h"
 #include "shadow_memory.h"
 #include "mem_access.h"
@@ -36,6 +37,28 @@ static unsigned long handle_write_count = 0;
 
 extern "C" __attribute__((weak)) void set_current_dpst_node(void* node){
     current_dpst_node = (tree_node_cpp*) node;
+}
+
+static llvm::symbolize::LLVMSymbolizer::Options opts{};
+static llvm::symbolize::LLVMSymbolizer symbolizer{opts};
+static string moduleName;
+
+extern "C" void print_debug_info(addr_t previous, addr_t current) {
+  using namespace llvm;
+  Expected<DILineInfo> prev_info = symbolizer.symbolizeCode(
+        moduleName, {previous, object::SectionedAddress::UndefSection});
+  Expected<DILineInfo> curr_info = symbolizer.symbolizeCode(
+      moduleName, {current, object::SectionedAddress::UndefSection});
+  if (prev_info) {
+    printf("Previous memory access:\n");
+    printf("%s %s %d %d\n", prev_info->FileName.c_str(), prev_info->FunctionName.c_str(), prev_info->Line, prev_info->Column);
+  }
+
+  if (curr_info) {
+    printf("Current memory access:\n");
+    printf("%s %s %d %d\n", curr_info->FileName.c_str(), curr_info->FunctionName.c_str(), curr_info->Line, curr_info->Column);
+  }
+  
 }
 
 extern "C" __attribute__((weak)) void ds_print_check_write_count(){
@@ -127,6 +150,7 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
         // printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, writer->task_and_node.task_id, current_task_and_step.task_id);
         // printf("addr %lx, mem_size %zu \n",addr,mem_size);
         // printf("previous op is %lx, current op is %lx\n", writer->rip, rip);
+        print_debug_info(writer->rip, rip);
         // assert(0);
       }
     #endif
@@ -290,6 +314,7 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
         // printf("addr %lx, mem_size %zu \n",addr,mem_size);
         // printf("previous op is %lx, current op is %lx\n", writer->rip, rip);
         // hclib_print_dpst();
+        print_debug_info(writer->rip, rip);
         // assert(0);
       }
     #endif
@@ -322,6 +347,7 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
               // printf("addr %lx, mem_size %zu \n",addr,mem_size);
               // printf("previous op is %lx, current op is %lx\n", reader->rip, rip);
               // hclib_print_dpst();
+              print_debug_info(reader->rip, rip);
               // assert(0);
             }
           #endif
@@ -395,7 +421,7 @@ extern "C" __attribute__((weak)) void asap_check_write(int *addr, int bytes) {
     #ifdef DEBUG
       check_write_count++;
     #endif
-
+    
     if(!(current_dpst_node->this_node_type == STEP)){
       return;
     }
@@ -450,7 +476,7 @@ extern "C" __attribute__((weak)) void asap_check_write(int *addr, int bytes) {
       return;
     }
 
-    handle_write(slot, (addr_t)nullptr, (addr_t)addr, bytes);
+    handle_write(slot, (addr_t)__builtin_return_address(0), (addr_t)addr, bytes);
     return;
   }
 
@@ -513,8 +539,14 @@ extern "C" __attribute__((weak)) void asap_check_read(int *addr, int bytes) {
       return;
     }
 
-    handle_read(slot,(addr_t)nullptr,(addr_t)addr,bytes);
+    handle_read(slot,(addr_t)__builtin_return_address(0),(addr_t)addr,bytes);
     return;
   }
     
+}
+
+extern "C" __attribute__((weak)) void asap_start(int argc, char *argv[]) {
+  printf("ASAP race detector start\n");
+  printf("Program to conduct race detection: %s\n", argv[0]);
+  moduleName = argv[0];
 }

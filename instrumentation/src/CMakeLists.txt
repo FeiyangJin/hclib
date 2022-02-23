@@ -5,6 +5,7 @@ include_directories("/home/fjin/gitRepo/robin-hood-hashing/src/include")
 include_directories("/home/fjin/gitRepo/sparsehash-c11")
 link_directories(${LLVM_LIBRARY_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
+add_definitions(-DREPORT)
 
 set(CMAKE_CXX_STANDARD 14 CACHE STRING "")
 
