@@ -4,7 +4,6 @@
 #include "shadow_memory.h"
 #include "mem_access.h"
 #include "ds_to_hclib.h"
-#include <sstream>
 
 extern tree_node_cpp* current_dpst_node = nullptr;
 static ShadowMem<MemAccessList_t> *shadow_mem = new ShadowMem<MemAccessList_t>();
@@ -21,7 +20,7 @@ static unsigned long handle_read_count = 0;
 static unsigned long handle_write_count = 0;
 // #define STEPSKIP
 // #define CONSTQUERY
-// #define REPORT
+#define REPORT
 
 #ifdef STEPSKIP
   static int current_step_id = -1;
@@ -116,6 +115,9 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
 
     // bool race = !precede(writer->task_and_node, current_task_and_step);
     // bool race = !precede(writer->step_node, current_dpst_node);
+    #ifdef DEBUG
+      reachability_count ++;
+    #endif
     bool race = !ds->precede(writer->step_node,current_dpst_node,writer->step_node->corresponding_task_id,current_dpst_node->corresponding_task_id);
     #ifdef REPORT
       if(race){
@@ -274,7 +276,10 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
     }
 
     // bool race = !precede(writer->task_and_node, current_task_and_step);
-    // bool race = !precede(writer->step_node, current_dpst_node);  
+    // bool race = !precede(writer->step_node, current_dpst_node);
+    #ifdef DEBUG
+      reachability_count++;
+    #endif  
     bool race = !ds->precede(writer->step_node,current_dpst_node,writer->step_node->corresponding_task_id,current_dpst_node->corresponding_task_id);
     #ifdef REPORT
       if(race){
@@ -305,6 +310,9 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
           // bool race = !precede(reader->task_and_node, current_task_and_step);
           // bool race = !precede(reader->step_node, current_dpst_node);
           bool race = !ds->precede(reader->step_node,current_dpst_node,reader->step_node->corresponding_task_id,current_dpst_node->corresponding_task_id);
+          #ifdef DEBUG
+            reachability_count ++;
+          #endif
           #ifdef REPORT
             if(race){
               printf("we find a write-read race !!!!!!!!!! \n");

@@ -261,6 +261,31 @@ tree_node* find_lca_left_child(tree_node *node1,tree_node *node2){
     return node2_last_node;
 }
 
+__attribute__((weak)) void* hclib_get_current_step_node(){
+    hclib_worker_state *ws = current_ws();
+    hclib_task_t *task = (hclib_task_t *) ws->curr_task;
+    finish_t *task_finish = task->current_finish;
+    finish_t *ws_finish = ws->current_finish;
+
+    if(task_finish->node_in_dpst->index == ws_finish->node_in_dpst->index){
+        if(task->task_id == 0){
+            // special case, for main task, the finish is under it in DPST
+            // for other tasks, the finish is above it in DPST
+            //HASSERT(task_finish->node_in_dpst->children_list_tail->this_node_type == STEP);
+            return task_finish->node_in_dpst->children_list_tail;
+        }
+        //HASSERT(task->node_in_dpst->children_list_tail->this_node_type == STEP);
+        return task->node_in_dpst->children_list_tail;
+    }
+    else{
+        // current task has at least one finish inside it
+        // we are at a subtree of a FINISH node
+        //HASSERT(ws_finish->node_in_dpst->children_list_tail->this_node_type == STEP);
+        return ws_finish->node_in_dpst->children_list_tail;
+    }
+}
+
+
 /**
  * @brief  Get current step node in DPST
  * @note   First case: ws_finish == task_finish, return the last node of task children list
@@ -762,9 +787,21 @@ static inline void execute_task(hclib_task_t *task) {
     ws->current_finish = current_finish;
     ws->curr_task = task;
 
+    // printf("task id is %d, dpst node is %p \n", task->task_id, task->node_in_dpst);
     // fj: update current dpst node
     if(task->node_in_dpst == NULL){
         
+    }
+    else if(current_finish == NULL){
+        if(task->task_id == 0){
+            set_current_dpst_node((void*) task->node_in_dpst->children_list_tail->children_list_tail);
+            DPST.current_step_node = task->node_in_dpst->children_list_tail->children_list_tail;
+        }
+        else{
+            set_current_dpst_node((void*) task->node_in_dpst->children_list_tail);
+            DPST.current_step_node = task->node_in_dpst->children_list_tail;
+        }
+
     }
     else if(task->node_in_dpst->depth == 0 || task->node_in_dpst->depth < current_finish->node_in_dpst->depth){
         set_current_dpst_node((void*) current_finish->node_in_dpst->children_list_tail);
@@ -1297,6 +1334,16 @@ void _help_wait(LiteCtx *ctx) {
     task->_fp = _finish_ctx_resume; // reuse _finish_ctx_resume
     task->args = wait_ctx;
 
+    // fj: update task info
+    hclib_worker_state *ws = current_ws();
+    hclib_task_t *curr_task = (hclib_task_t *) ws->curr_task;
+
+    task->current_finish = curr_task->current_finish;
+    task->task_id = curr_task->task_id;
+    task->parent_id = curr_task->parent_id;
+    task->node_in_dpst = curr_task->node_in_dpst;
+    
+
     spawn_escaping((hclib_task_t *)task, continuation_dep);
 
     core_work_loop(starting_task);
@@ -1433,6 +1480,17 @@ static void _help_finish_ctx(LiteCtx *ctx) {
     task->_fp = _finish_ctx_resume;
     task->args = hclib_finish_ctx;
 
+    // fj: update task info
+    hclib_worker_state *ws = current_ws();
+    hclib_task_t *curr_task = (hclib_task_t *) ws->curr_task;
+
+    task->current_finish = curr_task->current_finish;
+    task->task_id = curr_task->task_id;
+    task->parent_id = curr_task->parent_id;
+    task->node_in_dpst = curr_task->node_in_dpst;
+
+
+
     /*
      * Create an async to handle the continuation after the finish, whose state
      * is captured in hclib_finish_ctx and whose execution is pending on
@@ -1512,6 +1570,16 @@ static void yield_helper(LiteCtx *ctx) {
     HASSERT(continuation);
     continuation->_fp = _finish_ctx_resume;
     continuation->args = ctx->prev;
+
+    // fj: record task_id, parent_id and node_in_dpst to continuation
+    hclib_worker_state *ws = current_ws();
+    hclib_task_t *task = (hclib_task_t *) ws->curr_task;
+
+    continuation->current_finish = task->current_finish;
+    continuation->task_id = task->task_id;
+    continuation->parent_id = task->parent_id;
+    continuation->node_in_dpst = task->node_in_dpst;
+    
 
     spawn_escaping_at(locale, continuation, NULL);
 

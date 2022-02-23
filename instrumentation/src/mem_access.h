@@ -2,8 +2,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <vector>
-#include <unordered_set>
-#include <unordered_map>
 #include "struct_def.h"
 
 using addr_t = uint64_t;

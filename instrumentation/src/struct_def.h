@@ -92,6 +92,7 @@ inline bool operator<(const nt_info& lhs, const nt_info& rhs)
 typedef struct lsa_info{
     int task_id;
     tree_node_cpp *last_node_reachable_in_lsa;
+    std::vector<nt_info>* lsa_nt;
 
     inline lsa_info operator=(lsa_info a){
         task_id = a.task_id;
