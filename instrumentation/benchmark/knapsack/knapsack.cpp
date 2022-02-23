@@ -77,10 +77,7 @@ void knapsack(struct item *e, int c, int n, int v, int *sol)
         return;
     }
 
-    /* 
-    * compute the best solution without the current item in the knapsack 
-    */
-    knapsack(e + 1, c, n - 1, v, &without);
+
 
     /* compute the best solution with the current item in the knapsack */
     #ifdef RACE_DETECTION
@@ -98,6 +95,11 @@ void knapsack(struct item *e, int c, int n, int v, int *sol)
         #endif
         
     });
+    
+    /* 
+    * compute the best solution without the current item in the knapsack 
+    */
+    knapsack(e + 1, c, n - 1, v, &without);
 
     #ifdef RACE_DETECTION
         ds_hclib_ready(true);
