@@ -50,9 +50,11 @@ public:
   // MemAccess_t* prev;
 #endif
   MemAccess_t(tree_node_cpp* step_node);
+  MemAccess_t(tree_node_cpp* step_node, addr_t rip);
+
   // MemAccess_t(access_info t_a_n);
   // MemAccess_t(access_info t_a_n, addr_t r, bool is_promise);
-  ~MemAccess_t();
+  // ~MemAccess_t();
 };
 
 class MemAccessList_t {
@@ -72,6 +74,7 @@ public:
   MemAccess_t* writers[NUM_SLOTS] = {nullptr, nullptr, nullptr, nullptr};
 
   MemAccessList_t(addr_t addr, bool is_read, tree_node_cpp* step_node, std::size_t mem_size);
+  MemAccessList_t(addr_t addr, bool is_read, tree_node_cpp* step_node, addr_t rip, std::size_t mem_size);
   // MemAccessList_t(addr_t addr, bool is_read, access_info task_and_node, addr_t rip, std::size_t mem_size, int first_finish_id, bool is_promise);
   ~MemAccessList_t();
   

@@ -15,7 +15,7 @@ if [ $# -lt 1 ]; then
 fi
 
 BENCHMARK_NAME="matmul"
-DEFAULT_INPUT="2048"
+DEFAULT_INPUT="1024"
 ORIGIN_EXE="${BENCHMARK_NAME}-origin.exe"
 RD_EXE="${BENCHMARK_NAME}-rd.exe"
 

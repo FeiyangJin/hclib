@@ -14,9 +14,8 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 
-BENCHMARK_NAME="sparselu"
-DEFAULT_INPUT="32 8"
-# DEFAULT_INPUT="64 16"
+BENCHMARK_NAME="strassen"
+DEFAULT_INPUT="512"
 ORIGIN_EXE="${BENCHMARK_NAME}-origin.exe"
 RD_EXE="${BENCHMARK_NAME}-rd.exe"
 

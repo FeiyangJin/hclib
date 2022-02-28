@@ -11,6 +11,16 @@ MemAccess_t::MemAccess_t(tree_node_cpp* step_node){
   #endif
 }
 
+MemAccess_t::MemAccess_t(tree_node_cpp* step_node, addr_t rip){
+  this->step_node = step_node;
+  this->rip = rip;
+
+  #ifdef LINK_READER
+    this->next = nullptr;
+    // this->prev = nullptr;
+  #endif
+}
+
 // MemAccess_t::MemAccess_t(access_info t_a_n){
 //   this->task_and_node.node_in_dpst = t_a_n.node_in_dpst;
 
@@ -33,12 +43,32 @@ MemAccess_t::MemAccess_t(tree_node_cpp* step_node){
 
 // }
 
-MemAccess_t::~MemAccess_t(){
-  #ifdef LINK_READER
-    this->next = nullptr;
-    // this->prev = nullptr;
-  #endif
+// MemAccess_t::~MemAccess_t(){
+//   this->step_node = nullptr;
+//   this->rip = NULL;
+//   #ifdef LINK_READER
+//     this->next = nullptr;
+//     // this->prev = nullptr;
+//   #endif
+// }
+
+MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read, tree_node_cpp* step_node, addr_t rip, std::size_t mem_size){
+  const int start = ADDR_TO_MEM_INDEX(addr);
+  const int grains = SIZE_TO_NUM_GRAINS(mem_size);
+
+  if (is_read){
+    for (int i=start; i < (start + grains); ++i){
+        MemAccess_t* first_reader = new MemAccess_t(step_node, rip);
+        this->readers[i] = first_reader;
+    }
+  }
+  else{
+    for (int i=start; i < (start + grains); ++i){
+      this->writers[i] = new MemAccess_t(step_node, rip);
+    }
+  }
 }
+
 
 MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read, tree_node_cpp* step_node, std::size_t mem_size){
   const int start = ADDR_TO_MEM_INDEX(addr);
@@ -100,10 +130,6 @@ MemAccessList_t::~MemAccessList_t() {
       #ifdef LINK_READER
         delete readers[i];
         readers[i] = nullptr;
-        // if(readers_tail[i]){
-        //   delete readers_tail[i];
-        //   readers_tail[i] = nullptr;
-        // }
       #else
         readers[i]->clear();
         readers[i] = nullptr;

@@ -141,6 +141,8 @@ inline hclib_task_t *initialize_task(Function lambda_caller, T1 *lambda_on_heap)
     t->args = args;
 
     int task_id_unique = get_task_id_unique();
+    increase_task_id_unique();
+
     t->task_id = task_id_unique;
     if(task_id_unique == 0){
         t->parent_id = -1;
@@ -163,7 +165,7 @@ inline hclib_task_t *initialize_task(Function lambda_caller, T1 *lambda_on_heap)
         ds_addSet(task_id_unique);
     }
     
-    increase_task_id_unique();
+    
     return t;
 }
 
