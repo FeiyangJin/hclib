@@ -165,155 +165,6 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
     } // end of for loop
 }
 
-
-void sparselu_par_call(float **BENCH, int matrix_size, int submatrix_size)
-{
-    #ifdef RACE_DETECTION
-        ds_promise_task(true);
-    #endif
-    int ii, jj, kk;
-    std::vector<hclib::promise_t<void>*> promise_vector;
-
-    for (kk=0; kk<matrix_size; kk++)
-    {
-        lu0(BENCH[kk*matrix_size+kk], submatrix_size);
-        for (jj=kk+1; jj<matrix_size; jj++)
-            if (BENCH[kk*matrix_size+jj] != NULL)
-            {
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(false);
-                #endif
-                promise_vector.push_back(new hclib::promise_t<void>());
-                #ifdef RACE_DETECTION
-                    // ds_hclib_ready(true);
-                #endif
-
-                int index = promise_vector.size() - 1;
-
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(false);
-                #endif
-                hclib::async([=, &BENCH, &promise_vector]() {
-                    #ifdef RACE_DETECTION
-                        // ds_hclib_ready(true);
-                        // ds_promise_task(true);
-                    #endif
-
-                    fwd(BENCH[kk*matrix_size+kk], BENCH[kk*matrix_size+jj], submatrix_size);
-
-                    #ifdef RACE_DETECTION
-                        ds_hclib_ready(false);
-                        promise_vector.at(index)->end_put();
-                    #else
-                        promise_vector.at(index)->put();
-                    #endif
-                });
-                #ifdef RACE_DETECTION
-                    // ds_hclib_ready(true);
-                #endif
-            }
-            
-        for (ii=kk+1; ii<matrix_size; ii++)
-            if (BENCH[ii*matrix_size+kk] != NULL)
-            {
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(false);
-                #endif
-                promise_vector.push_back(new hclib::promise_t<void>());
-                #ifdef RACE_DETECTION
-                    // ds_hclib_ready(true);
-                #endif
-
-                int index = promise_vector.size() - 1;
-
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(false);
-                #endif
-                hclib::async([=, &BENCH, &promise_vector]() {
-                    #ifdef RACE_DETECTION
-                        // ds_hclib_ready(true);
-                        // ds_promise_task(true);
-                    #endif
-                    bdiv (BENCH[kk*matrix_size+kk], BENCH[ii*matrix_size+kk], submatrix_size);
-
-                    #ifdef RACE_DETECTION
-                        ds_hclib_ready(false);
-                        promise_vector.at(index)->end_put();
-                    #else
-                        promise_vector.at(index)->put();
-                    #endif
-                });
-                #ifdef RACE_DETECTION
-                    // ds_hclib_ready(true);
-                #endif
-            }
-
-        #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-        #endif
-        for(auto pp = promise_vector.begin(); pp != promise_vector.end(); pp++){
-            (*pp)->get_future()->wait();
-        }
-        promise_vector.empty();
-        #ifdef RACE_DETECTION
-            // ds_hclib_ready(true);
-        #endif
-
-
-        for (ii=kk+1; ii<matrix_size; ii++)
-            if (BENCH[ii*matrix_size+kk] != NULL)
-                for (jj=kk+1; jj<matrix_size; jj++)
-                    if (BENCH[kk*matrix_size+jj] != NULL)
-                    {
-                        #ifdef RACE_DETECTION
-                            ds_hclib_ready(false);
-                        #endif
-                        promise_vector.push_back(new hclib::promise_t<void>());
-                        #ifdef RACE_DETECTION
-                            // ds_hclib_ready(true);
-                        #endif
-
-                        int index = promise_vector.size() - 1;
-
-                        #ifdef RACE_DETECTION
-                            ds_hclib_ready(false);
-                        #endif
-
-                        hclib::async([=, &BENCH, &promise_vector](){
-                            #ifdef RACE_DETECTION
-                                // ds_hclib_ready(true);
-                                // ds_promise_task(true);
-                            #endif
-
-                            if (BENCH[ii*matrix_size+jj]==NULL) BENCH[ii*matrix_size+jj] = allocate_clean_block(submatrix_size);
-                            bmod(BENCH[ii*matrix_size+kk], BENCH[kk*matrix_size+jj], BENCH[ii*matrix_size+jj], submatrix_size);
-
-                            #ifdef RACE_DETECTION
-                                ds_hclib_ready(false);
-                                promise_vector.at(index)->end_put();
-                            #else
-                                promise_vector.at(index)->put();
-                            #endif
-                        });
-                        #ifdef RACE_DETECTION
-                            // ds_hclib_ready(true);
-                        #endif
-                    }
-
-        #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-        #endif
-        for(auto pp = promise_vector.begin(); pp != promise_vector.end(); pp++){
-            (*pp)->get_future()->wait();
-        }
-        promise_vector.empty();
-        #ifdef RACE_DETECTION
-            // ds_hclib_ready(true);
-        #endif
-    }
-}
-
-
 static void genmat (float *M[], int matrix_size, int submatrix_size)
 {
     int null_entry, init_val, i, j, ii, jj;
@@ -388,27 +239,9 @@ void lu0(float *diag, int submatrix_size)
     int i, j, k;
 
     // try to reduce overhead
-    // #ifdef RACE_DETECTION
-    //     ds_hclib_ready(false);
-    //     int n = submatrix_size;
-    //     int* p;
-
-    //     for(int a = 0; a <= n*n - 1 ; a++){
-    //         p = (int*) &diag[a];
-
-    //         ds_hclib_ready(true);
-    //         if(a <= n - 1){
-    //             asap_check_read(p, 4);
-    //         }
-    //         else{
-    //             asap_check_write(p, 4);
-    //         }
-            
-    //         ds_hclib_ready(false);
-    //     }
-
-    //     ds_hclib_ready(false);
-    // #endif
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
 
     for (k=0; k<submatrix_size; k++)
         for (i=k+1; i<submatrix_size; i++)
@@ -418,6 +251,10 @@ void lu0(float *diag, int submatrix_size)
                 diag[i*submatrix_size+j] = diag[i*submatrix_size+j] - diag[i*submatrix_size+k] * diag[k*submatrix_size+j];
         }
 
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
+
 }
 
 
@@ -425,30 +262,9 @@ void bdiv(float *diag, float *row, int submatrix_size)
 {
     int i, j, k;
 
-    // try to reduce overhead
-    // #ifdef RACE_DETECTION
-    //     ds_hclib_ready(false);
-
-    //     int n = submatrix_size;
-    //     int* p;
-    //     int* p2;
-
-    //     for(int a = 0; a <= n*n - 1 ; a++){
-    //         p = (int*) &diag[a];
-    //         p2 = (int*) &row[a];
-
-    //         ds_hclib_ready(true);
-    //         asap_check_read(p,4);
-    //         asap_check_write(p2,4);
-    //         ds_hclib_ready(false);
-    //     }
-
-    //     // read diag[i], 0 <= i <= n^2 - 1
-
-    //     // write row[j], 0 <= j <= n^2 - 1
-
-    //     ds_hclib_ready(false);
-    // #endif
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
 
     for (i=0; i<submatrix_size; i++)
         for (k=0; k<submatrix_size; k++)
@@ -457,6 +273,10 @@ void bdiv(float *diag, float *row, int submatrix_size)
             for (j=k+1; j<submatrix_size; j++)
                 row[i*submatrix_size+j] = row[i*submatrix_size+j] - row[i*submatrix_size+k]*diag[k*submatrix_size+j];
         }
+
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
 }
 
 
@@ -464,38 +284,19 @@ void bmod(float *row, float *col, float *inner, int submatrix_size)
 {
     int i, j, k;
 
-    // try to reduce overhead
-    // #ifdef RACE_DETECTION
-    //     ds_hclib_ready(false);
-
-    //     int n = submatrix_size;
-    //     int* p;
-    //     int* p2;
-    //     int* p3;
-
-    //     for(int a = 0; a <= n*n - 1 ; a++){
-    //         p = (int*) &inner[a];
-    //         p2 = (int*) &row[a];
-    //         p3 = (int*) &col[a];
-
-    //         ds_hclib_ready(true);
-    //         asap_check_write(p,4);
-    //         asap_check_read(p2,4);
-    //         asap_check_read(p3,4);
-    //         ds_hclib_ready(false);
-    //     }
-
-    //     ds_hclib_ready(false);
-    // #endif
-    // write inner[i] 0 <= i <= n*n - 1
-    // read row[i] 0 <= i <= n*n - 1
-    // read col[i] 0 <= i <= n*n - 1
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
 
     for (i=0; i<submatrix_size; i++)
         for (j=0; j<submatrix_size; j++)
             for (k=0; k<submatrix_size; k++){
                 inner[i*submatrix_size+j] = inner[i*submatrix_size+j] - row[i*submatrix_size+k]*col[k*submatrix_size+j];
             }
+
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
 }
 
 
@@ -503,41 +304,18 @@ void fwd(float *diag, float *col, int submatrix_size)
 {
     int i, j, k;
 
-    // try to reduce overhead
-    // #ifdef RACE_DETECTION
-    //     ds_hclib_ready(false);
-
-    //     int n = submatrix_size;
-    //     int* p;
-    //     int* p2;
-
-    //     for(int a = 0; a <= n*n - 1 ; a++){
-    //         p = (int*) &col[a];
-    //         p2 = (int*) &diag[a];
-
-    //         ds_hclib_ready(true);
-    //         asap_check_read(p2,4);
-            
-    //         if(a <= n-1){
-    //             asap_check_read(p,4);
-    //         }
-    //         else{
-    //             asap_check_write(p,4);
-    //         }
-
-    //         ds_hclib_ready(false);
-    //     }
-
-    //     ds_hclib_ready(false);
-    // #endif
-    // write col[i] n <= i <= n*n - 1
-    // only read col[i]  0 <= i <= n - 1
-    // read diag[i] n <= i <= n*n - 1
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(true);
+    #endif
      
     for (j=0; j<submatrix_size; j++)
         for (k=0; k<submatrix_size; k++)
             for (i=k+1; i<submatrix_size; i++)
                 col[i*submatrix_size+j] = col[i*submatrix_size+j] - diag[i*submatrix_size+k]*col[k*submatrix_size+j];
+
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
 }
 
 
@@ -614,7 +392,6 @@ void run(int ms, int ss)
         // ds_hclib_ready(true);
     #endif
 
-    // sparselu_par_call(BENCH, matrix_size, submatrix_size);
     sparselu_par_call_dep(BENCH, matrix_size, submatrix_size);
 
     #ifdef RACE_DETECTION

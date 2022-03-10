@@ -97,6 +97,7 @@ typedef struct lsa_info{
     inline lsa_info operator=(lsa_info a){
         task_id = a.task_id;
         last_node_reachable_in_lsa = a.last_node_reachable_in_lsa;
+        lsa_nt = a.lsa_nt;
         return a;
     };
 } lsa_info;

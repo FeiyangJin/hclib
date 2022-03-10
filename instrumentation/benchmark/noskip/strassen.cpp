@@ -11,25 +11,18 @@ typedef double REAL;
 #define EPSILON (1.0E-6)
 #define CACHE_LINE_SIZE 64
 
-static const unsigned int POWER = 6;
-static const unsigned int DAC_ARITH_BASECASE = (1 << POWER);  // 64x64
-static const unsigned int MATMUL_THRESH = (1 << (POWER + 4)); // 1024x1024
+static const unsigned int POWER = 4;
+static const unsigned int DAC_ARITH_BASECASE = (1 << POWER);  // 16*16
+static const unsigned int MATMUL_THRESH = (1 << (POWER + 4)); // 256*256
 
-/* n is the current matrix size of M, and 
- * orig_n is the original matrix that M is part of
- */
+
 #define Z_PARTITION(M, M1, M2, M3, M4, n) \
   M1 = &M[block_convert(0,0)]; \
   M2 = &M[block_convert(0,n>>1)]; \
   M3 = &M[block_convert(n>>1, 0)]; \
   M4 = &M[block_convert(n>>1, n>>1)];
 
-/* 
- * Matrices are stored in row-major order; A is a pointer to
- * the first element of the matrix, and an is the number of elements
- * between two rows. This macro produces the element A[i,j]
- * given A, an, i and j
- */
+
 #define ELEM(A, an, i, j) (A[(i) * (an) + (j)])
 
 #define UNROLL(M, m) \
@@ -119,9 +112,7 @@ int cilk_rand(void) {
 static const unsigned int Q[] = {0x55555555, 0x33333333, 0x0F0F0F0F, 0x00FF00FF};
 static const unsigned int S[] = {1, 2, 4, 8};
 
-// provides a look up for the Morton Number of the z-order 
-// curve given the x and y coordinate
-// every instance of an (x,y) lookup must use this function
+
 unsigned int z_convert(int row, int col) {
   unsigned int z; // z gets the resulting 32-bit Morton Number.  
   // x and y must initially be less than 65536.
@@ -191,22 +182,22 @@ static void mm_additive_base(REAL *C, REAL *A, REAL *B, int n) {
   REAL *ptrToB = B;
 
   //try to reduce overhead
-  #ifdef RACE_DETECTION
-    ds_hclib_ready(false);
+//   #ifdef RACE_DETECTION
+//     ds_hclib_ready(false);
 
-    for(int i = 0; i<= n*n - 1; i++){
-      int *pc = (int*) &C[i];
-      int *pb = (int*) &B[i];
-      int *pa = (int*) &A[i];
-      ds_hclib_ready(true);
-      asap_check_write(pc,8);
-      asap_check_read(pb,8);
-      asap_check_read(pa,8);
-      ds_hclib_ready(false);
-    }
+//     for(int i = 0; i<= n*n - 1; i++){
+//       int *pc = (int*) &C[i];
+//       int *pb = (int*) &B[i];
+//       int *pa = (int*) &A[i];
+//       ds_hclib_ready(true);
+//       asap_check_write(pc,8);
+//       asap_check_read(pb,8);
+//       asap_check_read(pa,8);
+//       ds_hclib_ready(false);
+//     }
 
-    ds_hclib_ready(false);
-  #endif
+//     ds_hclib_ready(false);
+//   #endif
 
   for(int row = 0; row < n; row++) { // going down the row 
     for(int col = 0; col < n; col+=8) { // doing 8 columns at a time
@@ -267,21 +258,21 @@ static void mm_base(REAL *C, REAL *A, REAL *B, int n) {
   #endif
 
   //try to reduce overhead
-  #ifdef RACE_DETECTION
-    ds_hclib_ready(false);
+//   #ifdef RACE_DETECTION
+//     ds_hclib_ready(false);
 
-    for(int i = 0; i<= n*n - 1; i++){
-      int *pc = (int*) &C[i];
-      int *pb = (int*) &B[i];
-      int *pa = (int*) &A[i];
-      ds_hclib_ready(true);
-      asap_check_write(pc,8);
-      asap_check_read(pb,8);
-      asap_check_read(pa,8);
-      ds_hclib_ready(false);
-    }
-    ds_hclib_ready(false);
-  #endif
+//     for(int i = 0; i<= n*n - 1; i++){
+//       int *pc = (int*) &C[i];
+//       int *pb = (int*) &B[i];
+//       int *pa = (int*) &A[i];
+//       ds_hclib_ready(true);
+//       asap_check_write(pc,8);
+//       asap_check_read(pb,8);
+//       asap_check_read(pa,8);
+//       ds_hclib_ready(false);
+//     }
+//     ds_hclib_ready(false);
+//   #endif
 
   REAL *ptrToA = A;
   REAL *ptrToB = B;
@@ -499,22 +490,6 @@ void mm_dac_z(hclib::promise_t<void> *output_dep, REAL *C, REAL *A, REAL *B, int
     ds_hclib_ready(false);
   #endif
 
-  // cilk::future<void> fhandles[4];
-  // recrusively call the sub-matrices for evaluation in parallel
-  // cilk_future_create1(&fhandles[0], mm_dac_z, (cilk::future<void>*)NULL, C11, A11, B11, n>>1, add);
-
-  // cilk_future_create1(&fhandles[1], mm_dac_z, (cilk::future<void>*)NULL, C12, A11, B12, n>>1, add);
-
-  // cilk_future_create1(&fhandles[2], mm_dac_z, (cilk::future<void>*)NULL, C21, A21, B11, n>>1, add);
-
-  // cilk_future_create1(&fhandles[3], mm_dac_z, (cilk::future<void>*)NULL, C22, A21, B12, n>>1, add);
-
-  // cilk_spawn mm_dac_z(&fhandles[0], C11, A12, B21, n >> 1, true);
-  // cilk_spawn mm_dac_z(&fhandles[1], C12, A12, B22, n >> 1, true);
-  // cilk_spawn mm_dac_z(&fhandles[2], C21, A22, B21, n >> 1, true);
-
-  // mm_dac_z(&fhandles[3], C22, A22, B22, n >> 1, true);
-
   #ifdef RACE_DETECTION
     ds_hclib_ready(false);
   #endif
@@ -629,13 +604,6 @@ static void final_add(REAL *C11, REAL *C12, REAL *C21, REAL *C22,
     final_add(C11_3, C12_3, C21_3, C22_3, M2_3, M5_3, T1_3, n >> 1, NULL);
   });
 
-  // cilk_spawn final_add(C11_0, C12_0, C21_0, C22_0, M2_0, M5_0, T1_0, n >> 1, NULL);
-
-  // cilk_spawn final_add(C11_1, C12_1, C21_1, C22_1, M2_1, M5_1, T1_1, n >> 1, NULL);
-
-  // cilk_spawn final_add(C11_2, C12_2, C21_2, C22_2, M2_2, M5_2, T1_2, n >> 1, NULL);
-
-  // final_add(C11_3, C12_3, C21_3, C22_3, M2_3, M5_3, T1_3, n >> 1, NULL);
 
   #ifdef RACE_DETECTION
     ds_hclib_ready(false);
@@ -747,15 +715,6 @@ static void setup_add(REAL *S1, REAL *S2, REAL *S3, REAL *S4,
 
   });
 
-  //   cilk_spawn setup_add(S1_0,S2_0,S3_0,S4_0,S5_0,S6_0,S7_0,S8_0,
-  //             A11_0,A12_0,A21_0,A22_0,B11_0,B12_0,B21_0,B22_0,n>>1);
-  //   cilk_spawn setup_add(S1_1,S2_1,S3_1,S4_1,S5_1,S6_1,S7_1,S8_1,
-  //             A11_1,A12_1,A21_1,A22_1,B11_1,B12_1,B21_1,B22_1,n>>1);
-  //   cilk_spawn setup_add(S1_2,S2_2,S3_2,S4_2,S5_2,S6_2,S7_2,S8_2,
-  //             A11_2,A12_2,A21_2,A22_2,B11_2,B12_2,B21_2,B22_2,n>>1);
-
-  // setup_add(S1_3,S2_3,S3_3,S4_3,S5_3,S6_3,S7_3,S8_3,
-  //           A11_3,A12_3,A21_3,A22_3,B11_3,B12_3,B21_3,B22_3,n>>1);
   #ifdef RACE_DETECTION
     ds_hclib_ready(false);
   #endif
@@ -917,34 +876,9 @@ void strassen_z(REAL *C, REAL *A, REAL *B, int n) {
 
   final_add(C11, C12, C21, C22, M2, M5, T1, new_n, NULL);
 
-  // final_add(C11, C12, C21, C22, M2, M5, T1, new_n, phandles);
-
-  // free(old_tmp);
-
   #ifdef RACE_DETECTION
     ds_hclib_ready(false);
   #endif
-
-  // cilk::future<void> fhandles[7];
-
-  // cilk_future_create1(&fhandles[0], strassen_z, M2, A11, B11, new_n);
-
-  // cilk_future_create1(&fhandles[1], strassen_z, M5, S1, S5, new_n);
-
-  // cilk_future_create1(&fhandles[2], strassen_z, T1, S2, S6, new_n);
-
-  // cilk_future_create1(&fhandles[3], strassen_z, C22, S3, S7, new_n);
-
-  // cilk_future_create1(&fhandles[4], strassen_z, C11, A12, B21, new_n);
-
-  // cilk_future_create1(&fhandles[5], strassen_z, C12, S4, B22, new_n);
-
-  // cilk_future_create1(&fhandles[6], strassen_z, C21, A22, S8, new_n);
-
-  // final_add(C11, C12, C21, C22, M2, M5, T1, new_n,
-  //           fhandles);
-  
-  // free(old_tmp);
 }
 
 

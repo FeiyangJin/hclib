@@ -13,7 +13,6 @@ static const unsigned int Q[] = {0x55555555, 0x33333333, 0x0F0F0F0F, 0x00FF00FF}
 static const unsigned int S[] = {1, 2, 4, 8};
 
 void mat_mul_par_promise(const REAL *const A, const REAL *const B, REAL *C, int n);
-void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n);
 
 //provides a look up for the Morton Number of the z-order curve given the x and y coordinate
 //every instance of an (x,y) lookup must use this function
@@ -228,189 +227,56 @@ void mat_mul_par_promise(const REAL *const A, const REAL *const B, REAL *C, int 
     hclib::promise_t<void> *p5 = new hclib::promise_t<void>();
     hclib::promise_t<void> *p6 = new hclib::promise_t<void>();
 
-    // hclib::finish([&](){
 
-        hclib::async([A2, B3, &C1, n, &p4](){
-            #ifdef RACE_DETECTION
-                ds_hclib_ready(false);
-            #endif
-            // mat_mul_par(A2,B3,C1,n>>1);
-            mat_mul_par_promise(A2,B3,C1,n>>1);
-            #ifdef RACE_DETECTION
-                p4->end_put();
-            #else
-                p4->put();
-            #endif
-        });
-
+    hclib::async([A2, B3, &C1, n, &p4](){
         #ifdef RACE_DETECTION
             ds_hclib_ready(false);
         #endif
-        hclib::async([A2, B4, &C2, n, &p5](){
-            // mat_mul_par(A2,B4,C2,n>>1);
-            mat_mul_par_promise(A2,B4,C2,n>>1);
-            #ifdef RACE_DETECTION
-                p5->end_put();
-            #else
-                p5->put();
-            #endif
-        });
-
+        
+        mat_mul_par_promise(A2,B3,C1,n>>1);
         #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
+            p4->end_put();
+        #else
+            p4->put();
         #endif
-        hclib::async([A4, B3, &C3, n, &p6](){
-            // mat_mul_par(A4,B3,C3,n>>1);
-            mat_mul_par_promise(A4,B3,C3,n>>1);
-            #ifdef RACE_DETECTION
-                p6->end_put();
-            #else
-                p6->put();
-            #endif
-        });
+    });
 
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
+    hclib::async([A2, B4, &C2, n, &p5](){
+        
+        mat_mul_par_promise(A2,B4,C2,n>>1);
         #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
+            p5->end_put();
+        #else
+            p5->put();
         #endif
-        // mat_mul_par(A4,B4,C4,n>>1);
-        mat_mul_par_promise(A4,B4,C4,n>>1);
-    // });
+    });
+
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
+    hclib::async([A4, B3, &C3, n, &p6](){
+        
+        mat_mul_par_promise(A4,B3,C3,n>>1);
+        #ifdef RACE_DETECTION
+            p6->end_put();
+        #else
+            p6->put();
+        #endif
+    });
+
+    #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
+    #endif
+    
+    mat_mul_par_promise(A4,B4,C4,n>>1);
+    
 
     p4->get_future()->wait();
     p5->get_future()->wait();
     p6->get_future()->wait();
-    #ifdef RACE_DETECTION
-        ds_hclib_ready(false);
-    #endif
-}
-
-//recursive parallel solution to matrix multiplication
-void mat_mul_par(const REAL *const A, const REAL *const B, REAL *C, int n){
-    #ifdef RACE_DETECTION
-        ds_hclib_ready(true);
-        // ds_promise_task(false);
-    #endif
-    
-    //BASE CASE: here computation is switched to iterative matrix multiplication
-    //At the base case A, B, and C point to row order matrices of n x n
-    if(n == BASE_CASE) {
-        int i, j, k;
-
-        // try do reduce overhead
-        // #ifdef RACE_DETECTION
-        //     ds_hclib_ready(false);
-        //     int a;
-        //     for(a = 0; a < n*n-1; a++){
-        //         int* p = (int*) &C[a];
-        //         int* p2 = (int*) &A[a];
-        //         int* p3 = (int*) &B[a];
-
-        //         ds_hclib_ready(true);
-        //         asap_check_write(p,4);
-        //         asap_check_read(p2,4);
-        //         asap_check_read(p3,4);
-        //         ds_hclib_ready(false); 
-        //     }
-        //     ds_hclib_ready(false);
-        // #endif
-        for(i = 0; i < n; i++){
-            for(k = 0; k < n; k++){
-                REAL c = 0.0;
-                for(j = 0; j < n; j++){
-                    c += A[i * n + j] * B[j* n + k];
-                }
-                C[i * n + k] += c;
-            }
-        }
-
-        #ifdef RACE_DETECTION
-            ds_hclib_ready(true);
-        #endif
-
-        return;
-    }
-
-    //partition each matrix into 4 sub matrices
-    //each sub-matrix points to the start of the z pattern
-    const REAL *const A1 = &A[block_convert(0,0)];
-    const REAL *const A2 = &A[block_convert(0, n >> 1)]; //bit shift to divide by 2
-    const REAL *const A3 = &A[block_convert(n >> 1,0)];
-    const REAL *const A4 = &A[block_convert(n >> 1, n >> 1)];
-
-    const REAL *const B1 = &B[block_convert(0,0)];
-    const REAL *const B2 = &B[block_convert(0, n >> 1)];
-    const REAL *const B3 = &B[block_convert(n >> 1, 0)];
-    const REAL *const B4 = &B[block_convert(n >> 1, n >> 1)];
-    
-    REAL *C1 = &C[block_convert(0,0)];
-    REAL *C2 = &C[block_convert(0, n >> 1)];
-    REAL *C3 = &C[block_convert(n >> 1,0)];
-    REAL *C4 = &C[block_convert(n >> 1, n >> 1)];
-
-    #ifdef RACE_DETECTION
-        ds_hclib_ready(false);
-    #endif
-    hclib::finish([A1,B1,B2,A3,&C1,&C2,&C3,&C4,n](){
-        hclib::async([A1,B1,&C1,n](){
-            mat_mul_par_promise(A1,B1,C1,n>>1);
-            // mat_mul_par(A1,B1,C1,n>>1);
-        });
-
-        #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-        #endif
-        hclib::async([A1,B2,&C2,n](){
-            // mat_mul_par_promise(A1,B2,C2,n>>1);
-            mat_mul_par(A1,B2,C2,n>>1);
-        });
-
-        #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-        #endif
-        hclib::async([A3,B1,&C3,n](){
-            // mat_mul_par_promise(A3,B1,C3,n>>1);
-            mat_mul_par(A3,B1,C3,n>>1);
-        });
-
-        #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-        #endif
-        // mat_mul_par_promise(A3,B2,C4,n>>1);
-        mat_mul_par(A3,B2,C4,n>>1);
-    });
-
-
-    #ifdef RACE_DETECTION
-        ds_hclib_ready(false);
-    #endif
-    hclib::finish([&](){
-        #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-        #endif
-        hclib::async([A2,B3,&C1,n](){
-            mat_mul_par(A2,B3,C1,n>>1);
-        });
-
-        #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-        #endif
-        hclib::async([A2,B4,&C2,n](){
-            mat_mul_par(A2,B4,C2,n>>1);
-        });
-
-        #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-        #endif
-        hclib::async([A4,B3,&C3,n](){
-            mat_mul_par(A4,B3,C3,n>>1);
-        });
-
-        #ifdef RACE_DETECTION
-            ds_hclib_ready(false);
-        #endif
-        mat_mul_par(A4,B4,C4,n>>1);
-    });
-
     #ifdef RACE_DETECTION
         ds_hclib_ready(false);
     #endif
@@ -465,7 +331,7 @@ int main(int argc, char *argv[]){
   hclib::launch(deps, 1, [&]() {
 
     long start = hclib_current_time_ms();
-    // mat_mul_par(A,B,D,n);
+    
     mat_mul_par_promise(A,B,D,n);
     long end = hclib_current_time_ms();
     long dur = ((double)(end-start))/1000;

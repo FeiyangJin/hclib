@@ -114,13 +114,13 @@ void increase_task_id_unique(){
     task_id_unique++;
 }
 
-int get_current_task_id(){
-    return DPST.current_step_node->corresponding_task_id;
+// int get_current_task_id(){
+//     return DPST.current_step_node->corresponding_task_id;
 
-    // hclib_worker_state *ws = current_ws();
-    // hclib_task_t *task = (hclib_task_t *) ws->curr_task;
-    // return task->task_id;
-}
+//     // hclib_worker_state *ws = current_ws();
+//     // hclib_task_t *task = (hclib_task_t *) ws->curr_task;
+//     // return task->task_id;
+// }
 
 /**
  * @brief  Insert a tree node (not a step node) under parent

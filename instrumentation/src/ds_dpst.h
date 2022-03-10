@@ -11,7 +11,7 @@
 
 using namespace std;
 
-#define DEBUG
+// #define DEBUG
 
 // this key means the furtherest step in task_a that precedes task_b
 // notice that key(a,b) != key(b,a)
@@ -151,7 +151,6 @@ public:
 
     int get_cache_size();
 
-    bool easy_precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b);
 };
 
 #endif

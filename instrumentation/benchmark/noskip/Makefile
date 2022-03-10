@@ -1,6 +1,13 @@
 include ../common/make.inc
 
-all: poisson-rd.exe poisson-origin.exe sparselu-rd.exe sparselu-origin.exe sort-rd.exe sort-origin.exe matmul-rd.exe matmul-origin.exe
+all: poisson-rd.exe poisson-origin.exe sparselu-rd.exe sparselu-origin.exe sort-rd.exe sort-origin.exe matmul-rd.exe matmul-origin.exe strassen-rd.exe strassen-origin.exe
+
+strassen-rd.exe: strassen.cpp
+	$(INST) $^ -DRACE_DETECTION $(TEST_RD_OPTIONS)
+	mv strassen.exe strassen-rd.exe
+
+strassen-origin.exe: strassen.cpp
+	${CXX} -o $@ $^ $(TEST_ORIGIN_OPTIONS)
 
 poisson-rd.exe: poisson.cpp 
 	$(INST) $^ -DRACE_DETECTION $(TEST_RD_OPTIONS)

@@ -93,6 +93,7 @@ void DisjointSet::addSet(int task_index){
     lsa_info null_lsa = {
         .task_id = -1,
         .last_node_reachable_in_lsa = NULL,
+        // .lsa_nt = new vector<nt_info>()
         .lsa_nt = nullptr
     };
 
@@ -513,7 +514,7 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned
     #endif
 
     #ifdef DEBUG
-        if(visited.size() > 1){
+        if(visited.size() > 0){
             visittotalsize += visited.size();
             visitcount ++;
             visitmax = visitmax > visited.size() ? visitmax : visited.size();
@@ -524,6 +525,9 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned
     return result;
 }
 
+#define BFS
+// #define FB
+
 bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned int task_a, unsigned int task_b, robin_hood::unordered_set<int> &visited){
     // #ifdef CACHE
     //     unsigned int key = (task_a << 18) | task_b;
@@ -533,11 +537,13 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned i
     //     }
     // #endif
     
-    // bool b_in_visited = visited.count(task_b);
-    // if(b_in_visited){
-    //     return false;
-    // }
-    // visited.insert(task_b);
+#ifndef BFS
+    bool b_in_visited = visited.count(task_b);
+    if(b_in_visited){
+        return false;
+    }
+    visited.insert(task_b);
+#endif
 
 
     // this covers ancestor in DPST
@@ -554,6 +560,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned i
         return true;
     }
 
+#ifdef BFS
     // bfs nt joins
     deque<tree_node_cpp*> steps;
     // steps.push_back(step_b);
@@ -566,8 +573,11 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned i
     // 2/22 update
     deque<lsa_info> all_lsa; 
 
-    // for(auto nt_join = b_set_info->nt->begin(); nt_join != b_set_info->nt->end(); nt_join++){
+#ifdef FB
+    for(auto nt_join = b_set_info->nt->begin(); nt_join != b_set_info->nt->end(); nt_join++){
+#else
     for(auto nt_join = b_set_info->nt->rbegin(); nt_join != b_set_info->nt->rend(); nt_join++){
+#endif
         int task_id = (*nt_join).task_id;
 
         tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
@@ -600,8 +610,11 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned i
             set_info* step_set = find_helper(step_task);
 
             // if(step_task != last_push_task){
-                // for(auto nt_join = step_set->nt->rbegin(); nt_join != step_set->nt->rend(); nt_join++){
+            #ifdef FB
                 for(auto nt_join = step_set->nt->begin(); nt_join != step_set->nt->end(); nt_join++){
+            #else
+                for(auto nt_join = step_set->nt->rbegin(); nt_join != step_set->nt->rend(); nt_join++){
+            #endif
                     int task_id = (*nt_join).task_id;
 
                     // if(!visited.count(task_id)){
@@ -658,12 +671,19 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned i
                 all_lsa.push_back(one_lsa);
             }
 
-            
+            if(!the_lsa.lsa_nt){
+                visited.insert(lsa_task);
+                continue;
+            }
             // if(!visited.count(lsa_task)){
                 // check its nt and add nt's lsa to the dequeue
+            #ifdef FB
                 for(auto nt_join = lsa_set_info->nt->begin(); nt_join != lsa_set_info->nt->end(); nt_join++){
                 // for(auto nt_join = lsa_set_info->nt->rbegin(); nt_join != lsa_set_info->nt->rend(); nt_join++){
-                // for(auto nt_join = the_lsa.lsa_nt->rbegin(); nt_join != the_lsa.lsa_nt->rend(); nt_join++){
+            #else
+                for(auto nt_join = the_lsa.lsa_nt->rbegin(); nt_join != the_lsa.lsa_nt->rend(); nt_join++){
+                // for(auto nt_join = lsa_set_info->nt->rbegin(); nt_join != lsa_set_info->nt->rend(); nt_join++){
+            #endif
                     int task_id = (*nt_join).task_id;
 
                     set_info* nt_set_info = find_helper(task_id);
@@ -725,7 +745,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned i
 
             // }
 
-            last_check_lsa = lsa_task;
+            // last_check_lsa = lsa_task;
         }
 
         if(steps.size() == 0){
@@ -733,49 +753,58 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned i
         }
     }
 
+#else
+    // DFS
+    // nt
+#ifdef FB
+    for(auto nt_join = b_set_info->nt->begin(); nt_join != b_set_info->nt->end(); nt_join++){
+#else
+    for(auto nt_join = b_set_info->nt->rbegin(); nt_join != b_set_info->nt->rend(); ++nt_join){
+#endif
+        int task_id = (*nt_join).task_id;
+        tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
+        tree_node_cpp* last_step_node = task_node->children_list_tail;
 
-    // // DFS
-    // // for(auto nt_join = b_set_info->nt->begin(); nt_join != b_set_info->nt->end(); nt_join++){
-    // for(auto nt_join = b_set_info->nt->rbegin(); nt_join != b_set_info->nt->rend(); ++nt_join){
-    //     int task_id = (*nt_join).task_id;
-    //     tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
-    //     tree_node_cpp* last_step_node = task_node->children_list_tail;
-
-    //     if(visit(step_a, last_step_node, task_a, task_id, visited)){
-    //         return true;
-    //     }
-    // }
+        if(visit(step_a, last_step_node, task_a, task_id, visited)){
+            return true;
+        }
+    }
 
 
-    // //lsa
-    // lsa_info one_lsa = b_set_info->lsa;
+    //lsa
+    lsa_info one_lsa = b_set_info->lsa;
     
-    // while (one_lsa.task_id != -1)
-    // {
+    while (one_lsa.task_id != -1)
+    {
         
-    //     set_info* lsa_set_info = find_helper(one_lsa.task_id);
-    //     for(auto lsa_nt = lsa_set_info->nt->rbegin(); lsa_nt != lsa_set_info->nt->rend(); ++lsa_nt){
-    //     // for(auto lsa_nt = lsa_set_info->nt->begin(); lsa_nt != lsa_set_info->nt->end(); lsa_nt++){
-    //         tree_node_cpp* step_before_this_nt = (*lsa_nt).last_node_before_this_nt;
+        set_info* lsa_set_info = find_helper(one_lsa.task_id);
+    #ifdef FB
+        for(auto lsa_nt = lsa_set_info->nt->begin(); lsa_nt != lsa_set_info->nt->end(); ++lsa_nt){
+    #else
+        for(auto lsa_nt = lsa_set_info->nt->rbegin(); lsa_nt != lsa_set_info->nt->rend(); ++lsa_nt){
+    #endif
+        // for(auto lsa_nt = lsa_set_info->nt->begin(); lsa_nt != lsa_set_info->nt->end(); lsa_nt++){
+            tree_node_cpp* step_before_this_nt = (*lsa_nt).last_node_before_this_nt;
 
-    //         // assert(lsa_deepest_reachable_node != NULL);
-    //         // if(precede_dpst(step_before_this_nt,lsa_deepest_reachable_node)){
-    //         // if(step_before_this_nt->is_parent_nth_child <= lsa_deepest_reachable_node->is_parent_nth_child){
-    //             int task_id = (*lsa_nt).task_id;
-    //             tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
-    //             tree_node_cpp* last_step_node = task_node->children_list_tail;
-    //             // assert(last_step_node->this_node_type == STEP);
+            // assert(lsa_deepest_reachable_node != NULL);
+            // if(precede_dpst(step_before_this_nt,lsa_deepest_reachable_node)){
+            // if(step_before_this_nt->is_parent_nth_child <= lsa_deepest_reachable_node->is_parent_nth_child){
+                int task_id = (*lsa_nt).task_id;
+                tree_node_cpp* task_node = (tree_node_cpp*) this->all_tasks[task_id].node_in_dpst;
+                tree_node_cpp* last_step_node = task_node->children_list_tail;
+                // assert(last_step_node->this_node_type == STEP);
 
-    //             if(visit(step_a, last_step_node, task_a, task_id, visited)){
-    //                 return true;
-    //             }
-    //         // }
+                if(visit(step_a, last_step_node, task_a, task_id, visited)){
+                    return true;
+                }
+            // }
 
-    //     }
-    //     one_lsa = lsa_set_info->lsa;
-    // }
+        }
+        one_lsa = lsa_set_info->lsa;
+    }
     
-    // return false;
+    return false;
+#endif
 }
 
 int DisjointSet::get_cache_size(){
@@ -786,37 +815,3 @@ int DisjointSet::get_cache_size(){
     }
     return this->cache.size();
 }
-
-// bool DisjointSet::easy_precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b){
-//     if(step_a->index == step_b->index){
-//         return true;
-//     }
-
-//     cache_key key(task_a,task_b);
-//     bool in_cache = cache.find(key) != cache.end();
-//     if(in_cache){
-//         if(this->precede_dpst(step_a,cache.at(key))){
-//             return true;
-//         }
-//     }
-
-//     bool result = false;
-//     if(precede_dpst(step_a,step_b) == true){
-//         result = true;
-//     }
-
-//     set_info* a_set_info = find_helper(task_a);
-//     int Sa = a_set_info->set_id;
-//     if(this->all_tasks[Sa].this_task_state == ACTIVE){
-//         result = true;
-//     }
-
-//     if(result && in_cache){
-//         cache.at(key) = step_a;
-//     }
-//     else if(result){
-//         cache.insert(std::pair<cache_key,tree_node_cpp*>(key,step_a));
-//     }
-
-//     return result;
-// }

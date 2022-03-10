@@ -88,7 +88,7 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
             promise_u[pi] = p;
         }
         #ifdef RACE_DETECTION
-            // ds_hclib_ready(true);
+            ds_hclib_ready(true);
         #endif
 
 
@@ -97,6 +97,9 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                 ds_hclib_ready(false);
             #endif
             hclib::async([i, nx, ny, &u, &unew, &promise_unew, &promise_u]() mutable{
+                #ifdef RACE_DETECTION
+                    ds_hclib_ready(true);
+                #endif
                 if(i > 0){
                     promise_unew[i-1]->get_future()->wait();
                 }
@@ -105,15 +108,13 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                     promise_unew[i+1]->get_future()->wait();
                 }
 
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(true);
-                #endif
+
                 for (int ja = 0; ja < ny; ja++) {
                     u[index2d(ny,i,ja)] = unew[index2d(ny,i,ja)];
                 }
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(false);
-                #endif
+                // #ifdef RACE_DETECTION
+                //     ds_hclib_ready(false);
+                // #endif
 
                 promise_u[i]->put();
                 // delete promise_unew[i];
@@ -134,6 +135,9 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                 ds_hclib_ready(false);
             #endif
             hclib::async([i, nx, ny, dx, dy, f, &u, &unew, &promise_u, &promise_unew]() mutable{
+                #ifdef RACE_DETECTION
+                    ds_hclib_ready(true);
+                #endif
                 if(i > 0){
                     promise_u[i-1]->get_future()->wait();
                 }
@@ -450,15 +454,15 @@ int main (int argc, char ** argv) {
         float dur = ((float)(end-start))/1000;
         printf("Run Time = %f \n \n",dur);
 
-    // #ifdef RACE_DETECTION
-    //     printf("DPST height is: %d \n", get_dpst_height());
-    //     printf("cache size is %d \n",ds_get_cache_size());
-    //     printf("number of task is %d \n",get_task_id_unique());
-    //     printf("number of nt join %d \n", get_nt_count());
-    //     printf("number of tree joins %d \n", ds_get_tree_join_count());
-    //     ds_print_check_write_count();
-    //     ds_print_check_read_count();
-    // #endif
+    #ifdef RACE_DETECTION
+        printf("DPST height is: %d \n", get_dpst_height());
+        printf("cache size is %d \n",ds_get_cache_size());
+        printf("number of task is %d \n",get_task_id_unique());
+        printf("number of nt join %d \n", get_nt_count());
+        printf("number of tree joins %d \n", ds_get_tree_join_count());
+        ds_print_check_write_count();
+        ds_print_check_read_count();
+    #endif
     });
 
     return 0;

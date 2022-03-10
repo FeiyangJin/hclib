@@ -15,23 +15,9 @@ int main(int argc, char** argv) {
     int x = 10;
 
     hclib::async([&x](){
-      // #ifdef RACE_DETECTION
-      //   int *p = &x;
-
-      //   ds_hclib_ready(true);
-      //   asap_check_write(p,4);
-      //   ds_hclib_ready(false);
-      // #endif
       x = 70;
     });
 
-    // #ifdef RACE_DETECTION
-    //   int *p = &x;
-
-    //   ds_hclib_ready(true);
-    //   asap_check_read(p,4);
-    //   ds_hclib_ready(false);
-    // #endif
     printf("\n x is %d \n \n",x);
 
     
