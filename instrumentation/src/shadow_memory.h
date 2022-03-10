@@ -20,6 +20,44 @@ public:
 
   struct shadow_tbl **shadow_dir;
 
+  // replace first parameter type with addr_t
+  inline void clear_shadow_mem(uint64_t addr, int bytes) {
+    int first_tbl_idx = addr >> (LOG_TBL_SIZE + LOG_KEY_SIZE);
+    int last_tbl_idx = (addr + bytes) >> (LOG_TBL_SIZE + LOG_KEY_SIZE);
+    int last_entry = ((addr + bytes) >> LOG_KEY_SIZE) & ((1<<LOG_TBL_SIZE) - 1);
+    int tbl_size = 1 << LOG_TBL_SIZE;
+
+    shadow_tbl *first_tbl = shadow_dir[first_tbl_idx];
+    if (first_tbl) {
+      int first_entry = (addr >> LOG_KEY_SIZE) & ((1<<LOG_TBL_SIZE) - 1);
+      int last_entry_in_first_tbl = (first_tbl_idx == last_tbl_idx ? last_entry : tbl_size - 1);
+      for (int j = first_entry; j <= last_entry_in_first_tbl && first_tbl->shadow_entries[j]; j++) {
+        T *cell = first_tbl->shadow_entries[j];
+        cell->clear();
+      }
+    }
+
+    if (first_tbl_idx == last_tbl_idx) {
+      return;
+    }
+
+    for (int i = first_tbl_idx + 1; i < last_tbl_idx && shadow_dir[i]; i++) {
+      shadow_tbl *tbl = shadow_dir[i];
+      for (int j = 0; j < tbl_size && tbl->shadow_entries[j]; j++) {
+        T *cell = tbl->shadow_entries[j];
+        cell->clear();
+      }
+    }
+
+    shadow_tbl *last_tbl = shadow_dir[last_tbl_idx];
+    if (last_tbl) {
+      for (int j = 0; j <= last_entry && last_tbl->shadow_entries[j]; j++) {
+        T *cell = last_tbl->shadow_entries[j];
+        cell->clear();
+      }
+    }
+  }
+
   inline T** find_slot(uint64_t key, bool alloc) {
     // dest = key >> 20
     shadow_tbl *volatile *dest = &(shadow_dir[key>>LOG_TBL_SIZE]);

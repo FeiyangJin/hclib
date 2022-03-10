@@ -4,6 +4,7 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/IR/Attributes.h"
+#include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instructions.h"
@@ -70,10 +71,14 @@ class RaceDetector{
   uint64_t getSkippedInstParamReads() {
     return this->skippedInstParamReads;
   }
+  uint64_t getInstrumentedAllocs() {
+    return this->instrumentedAllocs;
+  }
  private:
   FunctionCallee checkRead;
   FunctionCallee checkWrite;
   FunctionCallee start;
+  FunctionCallee alloc;
   Function *fptr;
   ItaniumPartialDemangler demangler;
   DenseSet<StringRef> nsBlackList;;
@@ -84,8 +89,10 @@ class RaceDetector{
   uint64_t instrumentedReads;
   uint64_t instrumentedWrites;
   uint64_t skippedInstParamReads;
+  uint64_t instrumentedAllocs;
   void instrumentLoadAndStore(Instruction *inst, const DataLayout &dl);
   void instrumentProgramInput();
+  void instrumentAlloc(CallBase *invokeAlloc);
   void chooseInstructiontoInstrument(SmallVectorImpl<Instruction *> &local, SmallVectorImpl<Instruction *> &all);
   int getMemoryAccessSize(Value *addr, const DataLayout &dl);
   StringRef getFunctionBaseName(StringRef func);
@@ -94,7 +101,7 @@ class RaceDetector{
 
 RaceDetector::RaceDetector(Function &f) : fptr(&f), demangler(), nsBlackList(), funcWhiteList(), ignoredFuncCallSet(), 
                                           skippedReads(0), skippedWrites(0), instrumentedReads(0), instrumentedWrites(0), 
-                                          skippedInstParamReads(0){
+                                          skippedInstParamReads(0), instrumentedAllocs(0) {
   Module *m = f.getParent();
   IRBuilder<> irb(m->getContext());
   AttributeList attr;
@@ -103,6 +110,7 @@ RaceDetector::RaceDetector(Function &f) : fptr(&f), demangler(), nsBlackList(), 
   SmallString<32> readFuncName("asap_check_read");
   SmallString<32> writeFuncName("asap_check_write");
   SmallString<32> initialFuncName("asap_start");
+  SmallString<32> allocFuncName("asap_alloc");
 
   checkRead = m->getOrInsertFunction(readFuncName, attr, 
                                      irb.getVoidTy(), irb.getInt8PtrTy(),
@@ -113,6 +121,9 @@ RaceDetector::RaceDetector(Function &f) : fptr(&f), demangler(), nsBlackList(), 
   start = m->getOrInsertFunction(initialFuncName, attr, 
                                  irb.getVoidTy(), irb.getInt32Ty(),
                                  irb.getInt8PtrTy());
+  alloc = m->getOrInsertFunction(allocFuncName, attr, 
+                                 irb.getVoidTy(), irb.getInt8PtrTy(),
+                                 irb.getInt32Ty());
   nsBlackList.insert({"hclib"});
   funcWhiteList.insert({"call_lambda"});
   ignoredFuncCallSet.insert({"asap_check_read"});
@@ -148,25 +159,37 @@ void RaceDetector::sanitizeFunction() {
   errs() << "Instrument " << fptr->getParent()->getName() << "::" << fptr->getName() << "\n";
   for (auto &bb : *fptr) {
     for (auto &inst : bb) {
+      // inst.print(errs());
+      // errs() << "\n";
       if (isa<LoadInst>(inst) || isa<StoreInst>(inst)) {
         localLoadsAndStores.push_back(&inst);
       } else if ((isa<CallInst>(inst) && !isa<DbgInfoIntrinsic>(inst)) ||
                   isa<InvokeInst>(inst)) {
         CallBase *cb = cast<CallBase>(&inst);
+        // instrument memory allocation
         if (cb->getCalledFunction()) {
-          StringRef baseName = getFunctionBaseName(cb->getCalledFunction()->getName());
-          if (ignoredFuncCallSet.contains(baseName)) {
-            for (auto &param : cb->args()) {
-              Value *source = param.get();
-              if (isa<LoadInst>(*source)) {
-                loadsForIgnoredFuncCall.insert(cast<LoadInst>(source));
+          StringRef funcName = cb->getCalledFunction()->getName();
+          if (funcName == "malloc" ||
+              funcName == "_Znam" ||
+              funcName == "_Znwm") {
+                instrumentAlloc(cb);
               }
-            }
-          }
-          if (!baseName.empty()) {
-            delete[] baseName.data();
-          }
         }
+        
+        // if (cb->getCalledFunction()) {
+        //   StringRef baseName = getFunctionBaseName(cb->getCalledFunction()->getName());
+        //   if (ignoredFuncCallSet.contains(baseName)) {
+        //     for (auto &param : cb->args()) {
+        //       Value *source = param.get();
+        //       if (isa<LoadInst>(*source)) {
+        //         loadsForIgnoredFuncCall.insert(cast<LoadInst>(source));
+        //       }
+        //     }
+        //   }
+        //   if (!baseName.empty()) {
+        //     delete[] baseName.data();
+        //   }
+        // }
 
         chooseInstructiontoInstrument(localLoadsAndStores, allLoadsAndStores);
       }
@@ -207,7 +230,7 @@ void RaceDetector::instrumentLoadAndStore(Instruction *inst, const DataLayout &d
                   irb.getInt32(size)});
 }
 
-void RaceDetector:: instrumentProgramInput() {
+void RaceDetector::instrumentProgramInput() {
   // This method should only be invoked on main function
   assert(fptr->arg_size() == 2);
   IRBuilder<> irb(&fptr->getEntryBlock().front());
@@ -215,6 +238,29 @@ void RaceDetector:: instrumentProgramInput() {
   Value *argv = fptr->getArg(1);
   irb.CreateCall(start, {irb.CreateIntCast(argc, irb.getInt32Ty(), true),
                          irb.CreatePointerCast(argv, irb.getInt8PtrTy())});
+}
+
+void RaceDetector::instrumentAlloc(CallBase *invokeAlloc) {
+  BasicBlock *bb = invokeAlloc->getParent();
+  IRBuilder<> irb(invokeAlloc->getParent());
+  if (invokeAlloc->getNextNode()) {
+    irb.SetInsertPoint(invokeAlloc->getNextNode());
+    Value *size = invokeAlloc->getArgOperand(0);
+    irb.CreateCall(alloc, {irb.CreatePointerCast(invokeAlloc, irb.getInt8PtrTy()),
+                           irb.CreateIntCast(size, irb.getInt32Ty(), true)});
+  } else {
+    InvokeInst *invoke = cast<InvokeInst>(invokeAlloc);
+    BasicBlock *next = bb->getNextNode();
+    BasicBlock *newBB = BasicBlock::Create(bb->getContext(), "", bb->getParent(), next);
+    irb.SetInsertPoint(newBB);
+    Value *size = invokeAlloc->getArgOperand(0);
+    irb.CreateCall(alloc, {irb.CreatePointerCast(invokeAlloc, irb.getInt8PtrTy()),
+                           irb.CreateIntCast(size, irb.getInt32Ty(), true)});
+    irb.CreateBr(next);
+    invoke->setNormalDest(newBB);
+  }
+  instrumentedAllocs++;
+  
 }
 
 void RaceDetector::chooseInstructiontoInstrument(SmallVectorImpl<Instruction *> &local, 
@@ -296,7 +342,8 @@ PreservedAnalyses InstrumentationPass::run(Function &F,
   // errs() << "Skipped writes: " << rd.getSkippedWrites() << "\n"; 
   errs() << "Instrumented reads: " <<  rd.getInstrumentedReads() << "\n";
   errs() << "Instrumented writes: " << rd.getInstrumentedWrites() << "\n";
-  errs() << "Skipped inst-routine param reads: " << rd.getSkippedInstParamReads() << "\n";
+  // errs() << "Skipped inst-routine param reads: " << rd.getSkippedInstParamReads() << "\n";
+  errs() << "Instrumented malloc/new: " << rd.getInstrumentedAllocs() << "\n";
 
   return PreservedAnalyses::none();
 }

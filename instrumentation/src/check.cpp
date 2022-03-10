@@ -21,7 +21,7 @@ static unsigned long handle_read_count = 0;
 static unsigned long handle_write_count = 0;
 // #define STEPSKIP
 // #define CONSTQUERY
-#define REPORT
+// #define REPORT
 
 #ifdef STEPSKIP
   static int current_step_id = -1;
@@ -41,14 +41,15 @@ extern "C" __attribute__((weak)) void set_current_dpst_node(void* node){
 
 static llvm::symbolize::LLVMSymbolizer::Options opts{};
 static llvm::symbolize::LLVMSymbolizer symbolizer{opts};
-static string moduleName;
+static string module_name;
 
 extern "C" void print_debug_info(addr_t previous, addr_t current) {
   using namespace llvm;
   Expected<DILineInfo> prev_info = symbolizer.symbolizeCode(
-        moduleName, {previous, object::SectionedAddress::UndefSection});
+        module_name, {previous, object::SectionedAddress::UndefSection});
   Expected<DILineInfo> curr_info = symbolizer.symbolizeCode(
-      moduleName, {current, object::SectionedAddress::UndefSection});
+      module_name, {current, object::SectionedAddress::UndefSection});
+  //printf("%lu, %lu\n", previous, current);
   if (prev_info) {
     printf("Previous memory access:\n");
     printf("%s %s %d %d\n", prev_info->FileName.c_str(), prev_info->FunctionName.c_str(), prev_info->Line, prev_info->Column);
@@ -144,7 +145,7 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
     bool race = !ds->precede(writer->step_node,current_dpst_node,writer->step_node->corresponding_task_id,current_dpst_node->corresponding_task_id);
     #ifdef REPORT
       if(race){
-        printf("we find a read-write race !!!!!!!!!! \n");
+        printf("we find a write-read race !!!!!!!!!! \n");
         // tree_node_cpp* p_node = (tree_node_cpp*)writer->task_and_node.node_in_dpst;
         // tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
         // printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, writer->task_and_node.task_id, current_task_and_step.task_id);
@@ -163,7 +164,7 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
           if(reader == nullptr){ // 1. we have no previous reader
             // MemAccess_t* new_reader = new MemAccess_t(current_task_and_step, rip, is_asap_promise_task);
             // MemAccess_t* new_reader = new MemAccess_t(current_task_and_step);
-            MemAccess_t* new_reader = new MemAccess_t(current_dpst_node);
+            MemAccess_t* new_reader = new MemAccess_t(current_dpst_node, rip);
             slot->readers[i] = new_reader;
             // slot->readers_tail[i] = new_reader;
             // continue;
@@ -195,7 +196,7 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
             // if(update){
               // MemAccess_t* new_reader = new MemAccess_t(current_task_and_step, rip, is_asap_promise_task);
               // MemAccess_t* new_reader = new MemAccess_t(current_task_and_step);
-              MemAccess_t* new_reader = new MemAccess_t(current_dpst_node);
+              MemAccess_t* new_reader = new MemAccess_t(current_dpst_node, rip);
               new_reader->next = reader->next;
               // new_reader->prev = reader;
               reader->next = new_reader;
@@ -295,7 +296,7 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
     if(writer == nullptr) {
       // slot->writers[i] = new MemAccess_t(current_task_and_step, rip, is_asap_promise_task);
       // slot->writers[i] = new MemAccess_t(current_task_and_step);
-      slot->writers[i] = new MemAccess_t(current_dpst_node);
+      slot->writers[i] = new MemAccess_t(current_dpst_node, rip);
       continue;
     }
 
@@ -322,7 +323,7 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
     // update writer
     writer->step_node = current_dpst_node;
     // writer->task_and_node = current_task_and_step;
-    // writer->rip     = rip;
+    writer->rip     = rip;
   } // end of checking writers
 
 
@@ -340,7 +341,7 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
           #endif
           #ifdef REPORT
             if(race){
-              printf("we find a write-read race !!!!!!!!!! \n");
+              printf("we find a read-write race !!!!!!!!!! \n");
               // tree_node_cpp* p_node = (tree_node_cpp*)reader->task_and_node.node_in_dpst;
               // tree_node_cpp* c_node = (tree_node_cpp*)current_task_and_step.node_in_dpst;
               // printf("previous step index: %d, current step index: %d, previous task %d, current task %d \n", p_node->index, c_node->index, reader->task_and_node.task_id, current_task_and_step.task_id);
@@ -413,7 +414,6 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
   
 }
 
-
 extern "C" __attribute__((weak)) void asap_check_write(int *addr, int bytes) {
 
   if(hclib_ready == true){
@@ -468,15 +468,16 @@ extern "C" __attribute__((weak)) void asap_check_write(int *addr, int bytes) {
     // void *pc = __builtin_return_address(0);
     auto a = ADDR_TO_KEY(addr);
     auto slot = shadow_mem->find(a);
+    addr_t rip = (addr_t)__builtin_return_address(0);
 
     if(slot == NULL){
-      MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, false, current_dpst_node, bytes);
+      MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, false, current_dpst_node, bytes, rip);
       // MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, false, current_task_and_step, (addr_t)nullptr, bytes, current_finish_id, is_asap_promise_task);
       slot = shadow_mem->insert(a, mem_list);
       return;
     }
 
-    handle_write(slot, (addr_t)__builtin_return_address(0), (addr_t)addr, bytes);
+    handle_write(slot, rip, (addr_t)addr, bytes);
     return;
   }
 
@@ -531,22 +532,32 @@ extern "C" __attribute__((weak)) void asap_check_read(int *addr, int bytes) {
     // void *pc = __builtin_return_address(0);
     auto a = ADDR_TO_KEY(addr);
     auto slot = shadow_mem->find(a);
+    addr_t rip = (addr_t)__builtin_return_address(0);
 
     if(slot == nullptr){
-      MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, true, current_dpst_node, bytes);
+      MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, true, current_dpst_node, bytes, rip);
       // MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, true, current_task_and_step, (addr_t)nullptr, bytes, current_finish_id, is_asap_promise_task);
       slot = shadow_mem->insert(a, mem_list);
       return;
     }
 
-    handle_read(slot,(addr_t)__builtin_return_address(0),(addr_t)addr,bytes);
+    handle_read(slot, rip, (addr_t)addr, bytes);
     return;
   }
     
 }
 
 extern "C" __attribute__((weak)) void asap_start(int argc, char *argv[]) {
-  printf("ASAP race detector start\n");
-  printf("Program to conduct race detection: %s\n", argv[0]);
-  moduleName = argv[0];
+  printf("DRDP determinacy race detector start\n");
+  printf("Program to be checked: %s\n", argv[0]);
+  printf("Input parameter:");
+  for (int i = 1; i < argc; i++) {
+    printf(" %s", argv[i]);
+  }
+  printf("\n");
+  module_name = argv[0];
+}
+
+extern "C" __attribute__((weak)) void asap_alloc(int *addr, int bytes) {
+  shadow_mem->clear_shadow_mem((addr_t)addr, bytes);
 }
