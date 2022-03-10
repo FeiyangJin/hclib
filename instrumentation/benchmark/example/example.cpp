@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     //   ds_hclib_ready(false);
     // #endif
     printf("\n x is %d \n \n",x);
-
+    printf("should detect race\n");
     
 
     // #ifdef RACE_DETECTION
