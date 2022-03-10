@@ -14,10 +14,47 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 
-BENCHMARK_NAME="knapsack"
-DEFAULT_INPUT="knapsack-040.input"
+BENCHMARK_NAME="smith_waterman"
+DEFAULT_INPUT="tiny"
 ORIGIN_EXE="${BENCHMARK_NAME}-origin.exe"
 RD_EXE="${BENCHMARK_NAME}-rd.exe"
+
+INPUT_FILE_1="./input/string1-$DEFAULT_INPUT.txt"
+INPUT_FILE_2="./input/string2-$DEFAULT_INPUT.txt"
+
+if [ DEFAULT_INPUT == "tiny" ]; then
+        TILE_WIDTH=4
+        TILE_HEIGHT=4
+        INNER_TILE_WIDTH=2
+        INNER_TILE_HEIGHT=2
+        EXPECTED_RESULT=12
+else
+if [ DEFAULT_INPUT == "medium" ]; then
+        TILE_WIDTH=232
+        TILE_HEIGHT=240
+        INNER_TILE_WIDTH=29
+        INNER_TILE_HEIGHT=30
+        EXPECTED_RESULT=3640
+else
+if [ DEFAULT_INPUT == "large" ]; then
+        TILE_WIDTH=2320
+        TILE_HEIGHT=2400
+        INNER_TILE_WIDTH=232
+        INNER_TILE_HEIGHT=240
+        # INNER_TILE_WIDTH=116
+        # INNER_TILE_HEIGHT=120
+        EXPECTED_RESULT=36472
+else
+if [ "DEFAULT_INPUT == "huge" ]; then
+        TILE_WIDTH=11600
+        TILE_HEIGHT=12000
+        INNER_TILE_WIDTH=725
+        INNER_TILE_HEIGHT=750
+        EXPECTED_RESULT=364792
+fi
+fi
+fi
+fi
 
 while [ $# -gt "0" ]; do
     case "$1" in
@@ -79,6 +116,6 @@ else
         make ${RD_EXE}
     fi
     echo "Run race detection"
-    echo "LD_LIBRARY_PATH=\"../../../instrumentation:${LD_LIBRARY_PATH}\" HCLIB_WORKERS=1 ./${RD_EXE} ${INPUT}"
+    echo "LD_LIBRARY_PATH=\"../../../instrumentation:${LD_LIBRARY_PATH}\" HCLIB_WORKERS=1 ./${RD_EXE} ${INPUT_FILE_1} ${INPUT_FILE_2} ${TILE_WIDTH} ${TILE_HEIGHT} ${INNER_TILE_WIDTH} ${INNER_TILE_HEIGHT}"
     LD_LIBRARY_PATH="../../../instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 /usr/bin/time -f "\nTime: %e sec\nMemory: %M kb" ./${RD_EXE} ${INPUT}
 fi

@@ -4,10 +4,10 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <deque>
 #include "assert.h"
 #include "struct_def.h"
-#include <robin_hood.h>
-#include <deque>
+#include "robin_hood.h"
 
 using namespace std;
 
@@ -151,7 +151,6 @@ public:
 
     int get_cache_size();
 
-    bool easy_precede(tree_node_cpp* step_a, tree_node_cpp* step_b, int task_a, int task_b);
 };
 
 #endif

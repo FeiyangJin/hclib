@@ -12,42 +12,6 @@ void timestamp(void);
 float u_exact(float x, float y);
 float uxxyy_exact(float x, float y);
 
-void sweep_seq(int nx, int ny, float dx, float dy, float *f_, int itold, int itnew, float *u_, float *unew_)
-{
-    int i;
-    int it;
-    int j;
-    float *f = f_;
-    float *u = u_;
-    float *unew = unew_;
-    // float (*f)[nx][ny] = (float (*)[nx][ny])f_;
-    // float (*u)[nx][ny] = (float (*)[nx][ny])u_;
-    // float (*unew)[nx][ny] = (float (*)[nx][ny])unew_;
-
-    for (it = itold + 1; it <= itnew; it++) {
-        for (i = 0; i < nx; i++) {
-            for (j = 0; j < ny; j++) {
-                u[index2d(ny, i, j)] = unew[index2d(ny, i, j)];
-                // (*u)[i][j] = (*unew)[i][j];
-            }
-        }
-        for (i = 0; i < nx; i++) {
-            for (j = 0; j < ny; j++) {
-                if (i == 0 || j == 0 || i == nx - 1 || j == ny - 1) {
-                    unew[index2d(ny, i, j)] = f[index2d(ny, i, j)];
-                    // (*unew)[i][j] = (*f)[i][j];
-                } else {
-                    unew[index2d(ny, i, j)] = 0.25 * (u[index2d(ny, i-1, j)] + u[index2d(ny, i, j+1)] + u[index2d(ny, i, j-1)] + u[index2d(ny, i+1, j)]
-                        + f[index2d(ny, i, j)] * dx * dy);
-                    // (*unew)[i][j] = 0.25 * ((*u)[i-1][j] + (*u)[i][j+1]
-                    //         + (*u)[i][j-1] + (*u)[i+1][j]
-                    //         + (*f)[i][j] * dx * dy);
-                }
-            }
-        }
-    }
-}
-
 
 void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew, float *u_, float *unew_, int block_size)
 {
@@ -88,7 +52,7 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
             promise_u[pi] = p;
         }
         #ifdef RACE_DETECTION
-            ds_hclib_ready(true);
+            // ds_hclib_ready(true);
         #endif
 
 
@@ -97,9 +61,6 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                 ds_hclib_ready(false);
             #endif
             hclib::async([i, nx, ny, &u, &unew, &promise_unew, &promise_u]() mutable{
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(true);
-                #endif
                 if(i > 0){
                     promise_unew[i-1]->get_future()->wait();
                 }
@@ -108,14 +69,26 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                     promise_unew[i+1]->get_future()->wait();
                 }
 
-
+                #ifdef RACE_DETECTION
+                    ds_hclib_ready(true);
+                #endif
                 for (int ja = 0; ja < ny; ja++) {
+                    // #ifdef RACE_DETECTION
+                    //     int index = index2d(ny,i,ja);
+                    //     int* p = (int*) &u[index];
+                    //     int* p2 = (int*) &unew[index];
+
+                    //     ds_hclib_ready(true);
+                    //     asap_check_write(p,4);
+                    //     asap_check_read(p2,4);
+                    //     ds_hclib_ready(false);
+                    // #endif
                     u[index2d(ny,i,ja)] = unew[index2d(ny,i,ja)];
                 }
-                // #ifdef RACE_DETECTION
-                //     ds_hclib_ready(false);
-                // #endif
-
+                #ifdef RACE_DETECTION
+                    ds_hclib_ready(false);
+                #endif
+ 
                 promise_u[i]->put();
                 // delete promise_unew[i];
                 // promise_unew[i] = new hclib::promise_t<void>();
@@ -135,9 +108,6 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                 ds_hclib_ready(false);
             #endif
             hclib::async([i, nx, ny, dx, dy, f, &u, &unew, &promise_u, &promise_unew]() mutable{
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(true);
-                #endif
                 if(i > 0){
                     promise_u[i-1]->get_future()->wait();
                 }
@@ -146,52 +116,55 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                     promise_u[i+1]->get_future()->wait();
                 }
 
-                #ifdef RACE_DETECTION
-                    ds_hclib_ready(false);
+        //         #ifdef RACE_DETECTION
+        //             ds_hclib_ready(false);
 
-                    // try to reduce overhead
-                    for (int k=0; k<ny; k++){
-                        // 0. calculating index
-                        int index = index2d(ny, i, k);
-                        int* p = ((int*)&unew[index]);
+        //             // try to reduce overhead
+        //             for (int k=0; k<ny; k++){
+        //                 // 0. calculating index
+        //                 int index = index2d(ny, i, k);
+        //                 int* p = ((int*)&unew[index]);
 
-                        // 1. access unew
-                        ds_hclib_ready(true);
-                        asap_check_write(p, 4);
-                        ds_hclib_ready(false);
+        //                 // 1. access unew
+        //                 ds_hclib_ready(true);
+        //                 asap_check_write(p, 4);
+        //                 ds_hclib_ready(false);
 
-                        // 2. access f
-                        int* p2 = ((int*)&f[index]);
+        //                 // 2. access f
+        //                 int* p2 = ((int*)&f[index]);
 
-                        ds_hclib_ready(true);
-                        asap_check_read(p2, 4);
-                        ds_hclib_ready(false);
+        //                 ds_hclib_ready(true);
+        //                 asap_check_read(p2, 4);
+        //                 ds_hclib_ready(false);
 
                         
-                        // 3. access u under some condition
-                        if (i == 0 || k == 0 || i == nx - 1 || k == ny - 1) {
-                            unew[index] = f[index];
-                        }
-                        else{
-                            // access u
-                            int index3 = index2d(ny, i-1, k);
-                            int index4 = index2d(ny, i+1, k);
-                            int* p3 = ((int*) &u[index3]);
-                            int* p4 = ((int*) &u[index4]);
+        //                 // 3. access u under some condition
+        //                 if (i == 0 || k == 0 || i == nx - 1 || k == ny - 1) {
+        //                     unew[index] = f[index];
+        //                 }
+        //                 else{
+        //                     // access u
+        //                     int index3 = index2d(ny, i-1, k);
+        //                     int index4 = index2d(ny, i+1, k);
+        //                     int* p3 = ((int*) &u[index3]);
+        //                     int* p4 = ((int*) &u[index4]);
 
-                            ds_hclib_ready(true);
-                            asap_check_read(p3, 4);
-                            asap_check_read(p4, 4);
-                            ds_hclib_ready(false);
+        //                     ds_hclib_ready(true);
+        //                     asap_check_read(p3, 4);
+        //                     asap_check_read(p4, 4);
+        //                     ds_hclib_ready(false);
 
-                            unew[index] = 0.25 * (u[index3] + u[index2d(ny, i, k+1)] + u[index2d(ny, i, k-1)] + u[index4] 
-                                        + f[index] * dx * dy);
-                        }
-                    }
+        //                     unew[index] = 0.25 * (u[index3] + u[index2d(ny, i, k+1)] + u[index2d(ny, i, k-1)] + u[index4] 
+        //                                 + f[index] * dx * dy);
+        //                 }
+        //             }
 
-                    ds_hclib_ready(false);
-                #else
+        //             ds_hclib_ready(false);
+                // #else
 
+                #ifdef RACE_DETECTION
+                    ds_hclib_ready(true);
+                #endif
                     for (int jb = 0; jb < ny; jb++) {
                         if (i == 0 || jb == 0 || i == nx - 1 || jb == ny - 1) {
                             unew[index2d(ny, i, jb)] = f[index2d(ny, i, jb)];
@@ -200,8 +173,10 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                                                     + f[index2d(ny, i, jb)] * dx * dy);
                         }
                     }
-
+                #ifdef RACE_DETECTION
+                    ds_hclib_ready(false);
                 #endif
+                // #endif
  
                 promise_unew[i]->put();
 

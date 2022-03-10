@@ -14,8 +14,8 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 
-BENCHMARK_NAME="knapsack"
-DEFAULT_INPUT="knapsack-040.input"
+BENCHMARK_NAME="floorplan"
+DEFAULT_INPUT="input.15"
 ORIGIN_EXE="${BENCHMARK_NAME}-origin.exe"
 RD_EXE="${BENCHMARK_NAME}-rd.exe"
 
