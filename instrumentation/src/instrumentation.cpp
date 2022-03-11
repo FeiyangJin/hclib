@@ -105,8 +105,11 @@ RaceDetector::RaceDetector(Function &f) : fptr(&f), demangler(), nsBlackList(), 
   Module *m = f.getParent();
   IRBuilder<> irb(m->getContext());
   AttributeList attr;
-  attr = attr.addAttribute(m->getContext(), AttributeList::FunctionIndex,
-                           Attribute::NoUnwind);
+#if (LLVM_VERSION_MAJOR >= 14)
+  attr = attr.addFnAttribute(m->getContext(), Attribute::NoUnwind);
+#else
+  attr = attr.addAttribute(m->getContext(), AttributeList::FunctionIndex, Attribute::NoUnwind);
+#endif
   SmallString<32> readFuncName("asap_check_read");
   SmallString<32> writeFuncName("asap_check_write");
   SmallString<32> initialFuncName("asap_start");
@@ -250,7 +253,7 @@ void RaceDetector::instrumentAlloc(CallBase *invokeAlloc) {
                            irb.CreateIntCast(size, irb.getInt32Ty(), true)});
   } else {
     InvokeInst *invoke = cast<InvokeInst>(invokeAlloc);
-    BasicBlock *next = bb->getNextNode();
+    BasicBlock *next = invoke->getNormalDest();
     BasicBlock *newBB = BasicBlock::Create(bb->getContext(), "", bb->getParent(), next);
     irb.SetInsertPoint(newBB);
     Value *size = invokeAlloc->getArgOperand(0);

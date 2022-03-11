@@ -2,9 +2,9 @@
 
 #include "mem_access.h"
 
-MemAccess_t::MemAccess_t(tree_node_cpp* step_node, addr_t rip){
+MemAccess_t::MemAccess_t(tree_node_cpp* step_node){
   this->step_node = step_node;
-  this->rip = rip;
+
   #ifdef LINK_READER
     this->next = nullptr;
     // this->prev = nullptr;
@@ -77,7 +77,7 @@ MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read, tree_node_cpp* step_
   if (is_read){
     for (int i=start; i < (start + grains); ++i){
         // MemAccess_t* first_reader = new MemAccess_t(task_and_node);
-        MemAccess_t* first_reader = new MemAccess_t(step_node, rip);
+        MemAccess_t* first_reader = new MemAccess_t(step_node);
         this->readers[i] = first_reader;
         // this->readers_tail[i] = first_reader;
     }
@@ -85,7 +85,7 @@ MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read, tree_node_cpp* step_
   else{
     for (int i=start; i < (start + grains); ++i){
       // this->writers[i] = new MemAccess_t(task_and_node);
-      this->writers[i] = new MemAccess_t(step_node, rip);
+      this->writers[i] = new MemAccess_t(step_node);
     }
   }
 }

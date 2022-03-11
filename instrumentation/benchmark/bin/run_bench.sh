@@ -3,7 +3,7 @@ set -e
 
 ROOT=$(readlink -f $(dirname $0)/..)
 CURRENT_DIR=$(pwd)
-BENCHMARKS="fib health matmul_promise nqueens poisson sort sparselu"
+BENCHMARKS="health knapsack matmul_promise sort poisson sparselu strassen"
 OUTPUT="${CURRENT_DIR}/run-$(date +%y%m%d-%H%M%S).csv"
 
 touch ${OUTPUT}
