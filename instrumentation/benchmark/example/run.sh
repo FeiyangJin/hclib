@@ -61,7 +61,7 @@ fi
 
 #if [ -z ${HCLIB_ROOT:+x} ]; then
 if [ ${ENABLE_RACE_DETECTION} -eq '0' ]; then
-    source /home/fjin/hclib/hclib-install/bin/hclib_setup_env.sh
+    source ../../../hclib-install-orig/bin/hclib_setup_env.sh
 else
     source ../../../hclib-install/bin/hclib_setup_env.sh
 fi

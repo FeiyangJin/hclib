@@ -3,7 +3,7 @@ include ../common/make.inc
 all: health-rd.exe health-origin.exe
 
 health-rd.exe: health.cpp 
-	$(INST) $^ -DRACE_DETECTION $(TEST_RD_OPTIONS)
+	$(INST) $^ -DRACE_DETECTION -DDRDP_ENABLED $(TEST_RD_OPTIONS)
 	mv health.exe health-rd.exe
 
 health-origin.exe: health.cpp

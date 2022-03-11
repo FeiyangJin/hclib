@@ -16,6 +16,7 @@
 ### Above combination will ignore all files without extension ###
 build*
 hclib-install
+hclib-install-orig
 compileTree
 config
 configure

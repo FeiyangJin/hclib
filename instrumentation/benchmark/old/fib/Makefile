@@ -3,7 +3,7 @@ include ../common/make.inc
 all: fib-rd.exe fib-origin.exe
 
 fib-rd.exe: fib.cpp 
-	$(INST) $^ -DRACE_DETECTION $(TEST_RD_OPTIONS)
+	$(INST) $^ -DRACE_DETECTION -DDRDP_ENABLED $(TEST_RD_OPTIONS)
 	mv fib.exe fib-rd.exe
 
 fib-origin.exe: fib.cpp

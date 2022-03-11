@@ -3,7 +3,7 @@ include ../common/make.inc
 all: strassen-rd.exe strassen-origin.exe
 
 strassen-rd.exe: strassen.cpp 
-	$(INST) $^ -DRACE_DETECTION $(RD_OPTIONS)
+	$(INST) $^ -DRACE_DETECTION -DDRDP_ENABLED $(RD_OPTIONS)
 	mv strassen.exe strassen-rd.exe
 
 strassen-origin.exe: strassen.cpp

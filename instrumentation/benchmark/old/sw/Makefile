@@ -3,7 +3,7 @@ include ../common/make.inc
 all: smith_waterman-rd.exe smith_waterman-origin.exe
 
 smith_waterman-rd.exe: smith_waterman.cpp 
-	$(INST) $^ -DRACE_DETECTION $(TEST_RD_OPTIONS)
+	$(INST) $^ -DRACE_DETECTION -DDRDP_ENABLED $(TEST_RD_OPTIONS)
 	mv smith_waterman.exe smith_waterman-rd.exe
 
 smith_waterman-origin.exe: smith_waterman.cpp

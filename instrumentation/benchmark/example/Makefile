@@ -1,9 +1,10 @@
 include ../common/make.inc
+SHELL:=/bin/bash
 
 all: example-rd.exe example-origin.exe
 
-example-rd.exe: example.cpp 
-	$(INST) $^ -DRACE_DETECTION $(TEST_RD_OPTIONS)
+example-rd.exe: example.cpp
+	$(INST) $^ -DRACE_DETECTION -DDRDP_ENABLED $(TEST_RD_OPTIONS)
 	mv example.exe example-rd.exe
 
 example-origin.exe: example.cpp

@@ -3,10 +3,9 @@ set -e
 
 ROOT=$(readlink -f $(dirname $0)/..)
 CURRENT_DIR=$(pwd)
-BENCHMARKS="strassen poisson"
-# BENCHMARKS="health life knapsack matmul_promise sort sparselu poisson"
+BENCHMARKS="health knapsack matmul_promise sort poisson sparselu strassen"
 EXPERIMENTS="orig rd"
-TIMES='5'
+TIMES=${TIMES:=5}
 OUTPUT="${CURRENT_DIR}/eval-$(date +%y%m%d-%H%M%S).csv"
 touch ${OUTPUT}
 ln -fs ${OUTPUT} ${CURRENT_DIR}/latest-result

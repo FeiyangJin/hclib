@@ -62,7 +62,7 @@ fi
 
 #if [ -z ${HCLIB_ROOT:+x} ]; then
 if [ ${ENABLE_RACE_DETECTION} -eq '0' ]; then
-    source /home/fjin/hclib/hclib-install/bin/hclib_setup_env.sh
+    source ../../../hclib-install-orig/bin/hclib_setup_env.sh
 else
     source ../../../hclib-install/bin/hclib_setup_env.sh
 fi
@@ -74,7 +74,7 @@ if [ ${ENABLE_RACE_DETECTION} -eq '0' ]; then
     fi
     echo "Run original application"
     echo "LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH}\" HCLIB_WORKERS=1 ./${ORIGIN_EXE} ${INPUT}"
-    HCLIB_WORKERS=1 /usr/bin/time -f "\nTime: %e sec\nMemory: %M kb" ./${ORIGIN_EXE} ${INPUT}
+    LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 /usr/bin/time -f "\nTime: %e sec\nMemory: %M kb" ./${ORIGIN_EXE} ${INPUT}
 else
     if [ ! -e ${RD_EXE} ]; then
         make ${RD_EXE}

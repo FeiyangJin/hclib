@@ -3,7 +3,7 @@ include ../common/make.inc
 all: floorplan-rd.exe floorplan-origin.exe
 
 floorplan-rd.exe: floorplan.cpp 
-	$(INST) $^ -DRACE_DETECTION $(TEST_RD_OPTIONS)
+	$(INST) $^ -DRACE_DETECTIONi -DDRDP_ENABLED $(TEST_RD_OPTIONS)
 	mv floorplan.exe floorplan-rd.exe
 
 floorplan-origin.exe: floorplan.cpp

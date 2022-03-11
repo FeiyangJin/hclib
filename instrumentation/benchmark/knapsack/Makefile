@@ -3,7 +3,7 @@ include ../common/make.inc
 all: knapsack-rd.exe knapsack-origin.exe
 
 knapsack-rd.exe: knapsack.cpp 
-	$(INST) $^ -DRACE_DETECTION $(TEST_RD_OPTIONS)
+	$(INST) $^ -DRACE_DETECTION -DDRDP_ENABLED $(TEST_RD_OPTIONS)
 	mv knapsack.exe knapsack-rd.exe
 
 knapsack-origin.exe: knapsack.cpp
