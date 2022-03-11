@@ -15,7 +15,14 @@ if [ $# -lt 1 ]; then
 fi
 
 BENCHMARK_NAME="strassen"
-DEFAULT_INPUT="512"
+# DEFAULT_INPUT="2048 6"
+
+# use the following for 512 16 because 2^4 = 16
+DEFAULT_INPUT="512 4"
+
+# use the following for 32 8
+# DEFAULT_INPUT="32 3"
+
 ORIGIN_EXE="${BENCHMARK_NAME}-origin.exe"
 RD_EXE="${BENCHMARK_NAME}-rd.exe"
 

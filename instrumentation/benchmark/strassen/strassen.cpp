@@ -11,9 +11,9 @@ typedef double REAL;
 #define EPSILON (1.0E-6)
 #define CACHE_LINE_SIZE 64
 
-static const unsigned int POWER = 6;
-static const unsigned int DAC_ARITH_BASECASE = (1 << POWER);  // 64x64
-static const unsigned int MATMUL_THRESH = (1 << (POWER + 4)); // 1024x1024
+static unsigned int POWER = 6;
+static unsigned int DAC_ARITH_BASECASE = (1 << POWER);  // 64x64
+static unsigned int MATMUL_THRESH = (1 << (POWER + 4)); // 1024x1024
 
 /* n is the current matrix size of M, and 
  * orig_n is the original matrix that M is part of
@@ -956,6 +956,11 @@ int main(int argc, char *argv[]) {
 
   /* standard benchmark options*/
   n = argc>1?atoi(argv[1]) : 512;
+  POWER = (unsigned) argc>2?atoi(argv[2]) : 4;
+
+  DAC_ARITH_BASECASE = (1 << POWER);
+  MATMUL_THRESH = (1 << (POWER + 4));
+
   verify = 0;  
 
   A = (REAL *) malloc(n * n * sizeof(REAL));
