@@ -41,7 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #include <assert.h>
 #include "litectx.h"
-#include "aaa_c_connector.h"
+#include "drdp_routine.h"
 
 #ifndef HCLIB_RT_H_
 #define HCLIB_RT_H_

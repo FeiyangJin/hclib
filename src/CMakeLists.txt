@@ -1,7 +1,5 @@
 enable_language(C ASM CXX)
 
-add_subdirectory(mixuse)
-
 set(SOURCES
   hclib-runtime.c 
   hclib-deque.c 
@@ -80,7 +78,6 @@ else()
 endif()
 
 add_library(hclib SHARED ${SOURCES})
-add_dependencies(hclib aaa_c_connector)
 
 if(HCLIB_PRIVATIZE_C_STD_11)
   target_compile_features(hclib PRIVATE c_std_11)
@@ -119,7 +116,6 @@ install(EXPORT hclib
 
 target_compile_definitions(hclib PRIVATE ${COMPILE_DEFINITIONS})
 
-target_link_libraries(hclib PUBLIC ${MIXUSE_BUILD_DIR}/libaaa_c_connector.so)
 
 if (HCLIB_ENABLE_HWLOC)
 find_path(HWLOC_INCLUDE NAMES hwloc.h PATHS "$ENV{HWLOC_HOME}/include")

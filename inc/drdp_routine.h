@@ -1,5 +1,5 @@
-#ifndef AAA_C_CONNECTOR_H 
-#define AAA_C_CONNECTOR_H 
+#ifndef DRDP_ROUTINE_H 
+#define DRDP_ROUTINE_H 
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,4 +60,4 @@ __attribute__((weak)) bool ds_dpst_precede(void* node1, void* node);
 #endif
 
 
-#endif
+#endif // DRDP_ROUTINE_H

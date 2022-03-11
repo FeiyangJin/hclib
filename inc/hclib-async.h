@@ -41,8 +41,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "hclib-async-struct.h"
 #include "hclib_promise.h"
 #include "hclib_future.h"
-#include "aaa_c_connector.h"
 #include "hclib-finish.h"
+#include "drdp_routine.h"
 
 
 #ifndef HCLIB_ASYNC_H_

@@ -28,4 +28,3 @@ ifdef TBB_MALLOC
   HCLIB_LDFLAGS+=-L$(TBB_MALLOC)
   HCLIB_LDLIBS+=-ltbbmalloc_proxy
 endif
-HCLIB_LDLIBS+=-laaa_c_connector
