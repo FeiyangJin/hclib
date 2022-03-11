@@ -252,8 +252,9 @@ void hclib_yield(hclib_locale_t *locale);
  */
 void hclib_get_curr_task_info(void (**fp_out)(void *), void **args_out);
 
+#ifdef DRDP_ENABLED
 void hclib_print_current_task_info();
-
+#endif
 
 /*
  * Print runtime statistics on HClib to the provided file pointer. If HClib

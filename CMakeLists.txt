@@ -29,6 +29,7 @@ option(HCLIB_ENABLE_HWLOC       "whether to enable HWLoc"             OFF)
 option(HCLIB_ENABLE_PRODUCTION  "disable assertions and stats"        OFF)
 option(HCLIB_PRIVATIZE_C_STD_11    "whether to publicize c_std_11 compiler features" OFF)
 option(HCLIB_INLINE_FUTURES_ONLY   "disable support for arbitary numbers of futures for tasks" OFF)
+option(HCLIB_ENABLE_DRDP        "enable DRDP determinacy race detector" OFF)
 
 set(COMPILE_DEFINITIONS "")
 
@@ -59,6 +60,10 @@ endif()
 if (HCLIB_INLINE_FUTURES_ONLY)
     list(APPEND COMPILE_DEFINITIONS "HCLIB_INLINE_FUTURES_ONLY")
 endif(HCLIB_INLINE_FUTURES_ONLY)
+
+if (HCLIB_ENABLE_DRDP)
+    list(APPEND COMPILE_DEFINITIONS "DRDP_ENABLED")
+endif (HCLIB_ENABLE_DRDP)
 
 message("COMPILE_DEFINITIONS: " ${COMPILE_DEFINITIONS})
 

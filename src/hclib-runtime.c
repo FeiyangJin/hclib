@@ -69,6 +69,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mach/mach.h>
 #endif
 
+#ifdef DRDP_ENABLED
 struct dpst DPST;
 
 char *node_char[5] = {'R','F','A','f','S'};
@@ -386,6 +387,7 @@ void printDPST(){
         }
     }
 }
+#endif
 
 static double user_specified_timer = 0;
 // TODO use __thread on Linux?
@@ -771,12 +773,13 @@ static inline void check_out_finish(finish_t *finish) {
 }
 
 static inline void execute_task(hclib_task_t *task) {
+#ifdef DRDP_ENABLED
     // fj: check if we are at a step node, and mark the task as active
     // if(task->node_in_dpst != NULL){
     //     HASSERT(get_current_step_node()->this_node_type == STEP);
     // }
     ds_update_task_state(task->task_id,0);
-
+#endif
     finish_t *current_finish = task->current_finish;
     /*
      * Update the current finish of this worker to be inherited from the
@@ -787,6 +790,7 @@ static inline void execute_task(hclib_task_t *task) {
     ws->current_finish = current_finish;
     ws->curr_task = task;
 
+#ifdef DRDP_ENABLED
     // printf("task id is %d, dpst node is %p \n", task->task_id, task->node_in_dpst);
     // fj: update current dpst node
     if(task->node_in_dpst == NULL){
@@ -811,6 +815,7 @@ static inline void execute_task(hclib_task_t *task) {
         set_current_dpst_node((void*) task->node_in_dpst->children_list_tail);
         DPST.current_step_node = task->node_in_dpst->children_list_tail;
     }
+#endif
 
 #ifdef VERBOSE
     fprintf(stderr, "execute_task: setting current finish of %p to %p for task "
@@ -832,8 +837,10 @@ static inline void execute_task(hclib_task_t *task) {
     }
 #endif
 
+#ifdef DRDP_ENABLED
     // fj: update task state as FINISHED_NOT_JOINED in ds
     ds_update_task_state(task->task_id,2);
+#endif
     free(task);
     
 }
@@ -941,9 +948,10 @@ void spawn_handler(hclib_task_t *task, hclib_locale_t *locale,
     } else {
         check_in_finish(ws->current_finish);
         set_current_finish(task, ws->current_finish);
-
+#ifdef DRDP_ENABLED
         // fj: ds operation
         ds_add_task_to_finish(ws->current_finish->node_in_dpst->index, task->task_id);
+#endif
     }
 
     if (locale) {
@@ -1334,6 +1342,7 @@ void _help_wait(LiteCtx *ctx) {
     task->_fp = _finish_ctx_resume; // reuse _finish_ctx_resume
     task->args = wait_ctx;
 
+#ifdef DRDP_ENABLED
     // fj: update task info
     hclib_worker_state *ws = current_ws();
     hclib_task_t *curr_task = (hclib_task_t *) ws->curr_task;
@@ -1342,7 +1351,7 @@ void _help_wait(LiteCtx *ctx) {
     task->task_id = curr_task->task_id;
     task->parent_id = curr_task->parent_id;
     task->node_in_dpst = curr_task->node_in_dpst;
-    
+#endif    
 
     spawn_escaping((hclib_task_t *)task, continuation_dep);
 
@@ -1354,6 +1363,7 @@ int hclib_future_is_satisfied(hclib_future_t *future) {
     return future->owner->satisfied;
 }
 
+#ifdef DRDP_ENABLED
 void *hclib_future_wait(hclib_future_t *future) {
     // save current finish scope (in case of worker swap)
     hclib_worker_state *ws = CURRENT_WS_INTERNAL;
@@ -1456,7 +1466,51 @@ void *hclib_future_wait(hclib_future_t *future) {
     // end fj
     return future->owner->datum;
 }
+#else
+void *hclib_future_wait(hclib_future_t *future) {
+    if (future->owner->satisfied) {
+        return (void *)future->owner->datum;
+    }
 
+#ifdef HCLIB_STATS
+    worker_stats[CURRENT_WS_INTERNAL->id].count_future_waits++;
+#endif
+
+    // save current finish scope (in case of worker swap)
+    hclib_worker_state *ws = CURRENT_WS_INTERNAL;
+    finish_t *current_finish = ws->current_finish;
+    hclib_task_t *current_task = ws->curr_task;
+
+    hclib_task_t *need_to_swap_ctx = NULL;
+    while (future->owner->satisfied == 0 &&
+            need_to_swap_ctx == NULL) {
+        need_to_swap_ctx = find_and_run_task(ws, 0,
+                &(future->owner->satisfied), 1, NULL);
+    }
+
+    if (need_to_swap_ctx) {
+        LiteCtx *currentCtx = get_curr_lite_ctx();
+        HASSERT(currentCtx);
+        LiteCtx *newCtx = LiteCtx_create(_help_wait);
+        newCtx->arg1 = future;
+        newCtx->arg2 = need_to_swap_ctx;
+
+#ifdef HCLIB_STATS
+        worker_stats[CURRENT_WS_INTERNAL->id].count_ctx_creates++;
+#endif
+
+        ctx_swap(currentCtx, newCtx, __func__);
+        LiteCtx_destroy(currentCtx->prev);
+    }
+    // restore current finish scope (in case of worker swap)
+    ws = CURRENT_WS_INTERNAL;
+    ws->current_finish = current_finish;
+    ws->curr_task = current_task;
+
+    HASSERT(future->owner->satisfied);
+    return future->owner->datum;
+}
+#endif
 /*
  * _help_finish_ctx is the function we switch to on a new context when
  * encountering an end finish to allow the current hardware thread to make
@@ -1482,6 +1536,7 @@ static void _help_finish_ctx(LiteCtx *ctx) {
     task->_fp = _finish_ctx_resume;
     task->args = hclib_finish_ctx;
 
+#ifdef DRDP_ENABLED
     // fj: update task info
     hclib_worker_state *ws = current_ws();
     hclib_task_t *curr_task = (hclib_task_t *) ws->curr_task;
@@ -1490,8 +1545,7 @@ static void _help_finish_ctx(LiteCtx *ctx) {
     task->task_id = curr_task->task_id;
     task->parent_id = curr_task->parent_id;
     task->node_in_dpst = curr_task->node_in_dpst;
-
-
+#endif
 
     /*
      * Create an async to handle the continuation after the finish, whose state
@@ -1573,6 +1627,7 @@ static void yield_helper(LiteCtx *ctx) {
     continuation->_fp = _finish_ctx_resume;
     continuation->args = ctx->prev;
 
+#ifdef DRDP_ENABLED
     // fj: record task_id, parent_id and node_in_dpst to continuation
     hclib_worker_state *ws = current_ws();
     hclib_task_t *task = (hclib_task_t *) ws->curr_task;
@@ -1581,7 +1636,7 @@ static void yield_helper(LiteCtx *ctx) {
     continuation->task_id = task->task_id;
     continuation->parent_id = task->parent_id;
     continuation->node_in_dpst = task->node_in_dpst;
-    
+#endif
 
     spawn_escaping_at(locale, continuation, NULL);
 
@@ -1675,6 +1730,7 @@ void hclib_start_finish() {
     finish_t *finish = (finish_t *)calloc(1, sizeof(*finish));
     HASSERT(finish);
 
+#ifdef DRDP_ENABLED
     // fj: insert a finish node into DPST
     hclib_task_t *curr_task = (hclib_task_t *)ws->curr_task;
 
@@ -1710,6 +1766,7 @@ void hclib_start_finish() {
 
     // ds operation
     ds_addFinish(finish->node_in_dpst->index, finish->belong_to_task_id, finish->node_in_dpst, finish);
+#endif
 
     /*
      * Set finish counter to 1 initially to emulate the main thread inside the
@@ -1760,13 +1817,14 @@ void hclib_end_finish() {
             current_finish->parent, current_finish);
 #endif
 
+#ifdef DRDP_ENABLED
     // fj: ds operation
     if(current_finish->node_in_dpst->index > 1){
         tree_node* continuation = current_finish->node_in_dpst->next_sibling;
         HASSERT(continuation->this_node_type == STEP);
         ds_end_finish_merge(current_finish->node_in_dpst->index, (void*)continuation);
     }
-
+#endif
 
     // Don't reuse worker-state! (we might not be on the same worker anymore)
     ws = CURRENT_WS_INTERNAL;
@@ -1774,6 +1832,7 @@ void hclib_end_finish() {
     ws->curr_task = current_task;
     free(current_finish);
 
+#ifdef DRDP_ENABLED
     // fj: update current node in dpst
     if(current_task == NULL || current_task->node_in_dpst == NULL){
         
@@ -1786,6 +1845,8 @@ void hclib_end_finish() {
         set_current_dpst_node((void*) current_task->node_in_dpst->children_list_tail);
         DPST.current_step_node = current_task->node_in_dpst->children_list_tail;
     }
+#endif
+
 }
 
 // Based on help_finish

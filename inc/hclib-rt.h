@@ -41,7 +41,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #include <assert.h>
 #include "litectx.h"
+#ifdef DRDP_ENABLED
 #include "drdp_routine.h"
+#endif
 
 #ifndef HCLIB_RT_H_
 #define HCLIB_RT_H_
@@ -78,6 +80,7 @@ typedef enum {
 } hclib_affinity_t;
 #endif
 
+#ifdef DRDP_ENABLED
 int get_task_id_unique();
 void increase_task_id_unique();
 
@@ -122,7 +125,7 @@ int get_task_id_unique();
 int get_dpst_height();
 int get_nt_count();
 extern struct dpst DPST;
-
+#endif
 
 typedef struct _hclib_worker_state {
     // Global context for this instance of the runtime.

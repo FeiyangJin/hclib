@@ -45,9 +45,11 @@ typedef struct hclib_task_t {
     hclib_locale_t *locale;
     int non_blocking;
     struct hclib_task_t *next_waiter;
+#ifdef DRDP_ENABLED
     int task_id;
     int parent_id;
     tree_node *node_in_dpst;
+#endif
 } hclib_task_t;
 
 /** @struct loop_domain_t

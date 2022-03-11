@@ -56,11 +56,13 @@ struct promise_t: public hclib_promise_t {
         hclib_promise_put(this, tmp);
     }
 
+#ifdef DRDP_ENABLED
     void end_put(T datum){
         void *tmp;
         *reinterpret_cast<T*>(&tmp) = datum;
         hclib_promise_end_task_put(this, tmp);
     }
+#endif
 
     future_t<T> *get_future() {
         // this is the simplest expression I could come up with
@@ -83,9 +85,11 @@ struct promise_t<T*>: public hclib_promise_t {
         hclib_promise_put(this, datum);
     }
 
+#ifdef DRDP_ENABLED
     void end_put(T *datum){
         hclib_promise_end_task_put(this, datum);
     }
+#endif
 
     future_t<T*> *get_future() {
         return static_cast<future_t<T*>*>(
@@ -104,9 +108,11 @@ struct promise_t<T&>: public hclib_promise_t {
         hclib_promise_put(this, &datum);
     }
 
+#ifdef DRDP_ENABLED
     void end_put(T &datum) {
         hclib_promise_end_task_put(this, &datum);
     }
+#endif
 
     future_t<T&> *get_future() {
         return static_cast<future_t<T&>*>(
@@ -125,9 +131,11 @@ struct promise_t<void>: public hclib_promise_t {
         hclib_promise_put(this, nullptr);
     }
 
+#ifdef DRDP_ENABLED
     void end_put() {
         hclib_promise_end_task_put(this, nullptr);
     }
+#endif
 
     future_t<void> *get_future() {
         return static_cast<future_t<void>*>(

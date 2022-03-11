@@ -41,9 +41,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "hclib-async-struct.h"
 #include "hclib_promise.h"
 #include "hclib_future.h"
+
+#ifdef DRDP_ENABLED
 #include "hclib-finish.h"
 #include "drdp_routine.h"
-
+#endif
 
 #ifndef HCLIB_ASYNC_H_
 #define HCLIB_ASYNC_H_
@@ -140,6 +142,7 @@ inline hclib_task_t *initialize_task(Function lambda_caller, T1 *lambda_on_heap)
     t->_fp = lambda_wrapper<Function, T1>;
     t->args = args;
 
+#ifdef DRDP_ENABLED
     int task_id_unique = get_task_id_unique();
     increase_task_id_unique();
 
@@ -164,7 +167,7 @@ inline hclib_task_t *initialize_task(Function lambda_caller, T1 *lambda_on_heap)
         // disjoint set operation
         ds_addSet(task_id_unique);
     }
-    
+#endif
     
     return t;
 }
@@ -196,8 +199,9 @@ inline void async_await_at_helper(T&& lambda, hclib_future_t **futures,
 
 template <typename T>
 inline void async(T &&lambda) {
+#ifdef DRDP_ENABLED
     // ds_hclib_ready(false);
-	MARK_OVH(current_ws()->id);
+    MARK_OVH(current_ws()->id);
     typedef typename std::remove_reference<T>::type U;
     hclib_task_t *task = initialize_task(call_lambda<U>, new U(lambda));
 
@@ -232,6 +236,12 @@ inline void async(T &&lambda) {
     spawn(task);
 
     hclib_yield(NULL);
+#else
+    MARK_OVH(current_ws()->id);
+    typedef typename std::remove_reference<T>::type U;
+    spawn(initialize_task(call_lambda<U>, new U(lambda)));
+    hclib_yield(NULL);
+#endif
 }
 
 template <typename T>
@@ -462,6 +472,8 @@ auto async_future(T&& lambda) -> hclib::future_t<decltype(lambda())>* {
     typedef decltype(wrapper) U;
 
     hclib_task_t* task = initialize_task(call_lambda<U>, new U(wrapper));
+
+#ifdef DRDP_ENABLED
     // get the last step node before this spawn
     void* current_step_node = (void*) get_current_step_node();
 
@@ -489,9 +501,13 @@ auto async_future(T&& lambda) -> hclib::future_t<decltype(lambda())>* {
     // fj: disjoint set operation
     int finish_id = task->current_finish == NULL ? -1:task->current_finish->node_in_dpst->index;
     ds_addtask(task->task_id,curr_task->task_id,the_node,task,0,finish_id, current_step_node);
+#endif
 
     spawn(task);
+
+#ifdef DRDP_ENABLED
     hclib_yield(NULL);
+#endif
     return event->get_future();
 }
 

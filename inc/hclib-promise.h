@@ -68,7 +68,9 @@ struct hclib_promise_st;
 
 typedef struct _hclib_future_t {
     struct hclib_promise_st *owner;
+#ifdef DRDP_ENABLED
     int corresponding_task_id;
+#endif
 } hclib_future_t;
 
 struct hclib_task_t;
@@ -78,10 +80,12 @@ typedef struct hclib_promise_st {
     hclib_future_t future;
     volatile int satisfied;
     void *volatile datum;
+#ifdef DRDP_ENABLED
     int setter_task_id;
     tree_node* setter_node;
     int empty_future_id;
     bool end_task_put;
+#endif
     /*
      * List of tasks that are awaiting the satisfaction of this promise.
      * wait_list_head is initialized to SENTINEL_FUTURE_WAITLIST_PTR when
@@ -149,7 +153,9 @@ void *hclib_future_get(hclib_future_t *future);
  */
 void hclib_promise_put(hclib_promise_t *promise, void *datum);
 
+#ifdef DRDP_ENABLED
 void hclib_promise_end_task_put(hclib_promise_t *promise, void *datum);
+#endif
 
 /*
  * Block the currently executing task on the provided promise. Returns the datum

@@ -60,11 +60,13 @@ void hclib_promise_init(hclib_promise_t *promise) {
     promise->datum = UNINITIALIZED_PROMISE_DATA_PTR;
     promise->wait_list_head = SENTINEL_FUTURE_WAITLIST_PTR;
     promise->future.owner = promise;
+#ifdef DRDP_ENABLED
     promise->future.corresponding_task_id = -1;
     promise->setter_task_id = -1;
     promise->setter_node = NULL;
     promise->empty_future_id = -1;
     promise->end_task_put = false;
+#endif
 }
 
 /**
@@ -199,6 +201,7 @@ int register_on_all_promise_dependencies(hclib_task_t *wrapper_task) {
     return 1;
 }
 
+#ifdef DRDP_ENABLED
 void hclib_promise_end_task_put(hclib_promise_t *promise_to_be_put, void *datum_to_be_put){
     HASSERT(promise_to_be_put != NULL && "can not put into NULL promise");
     HASSERT(promise_to_be_put->satisfied == 0 && "violated single assignment property for promises");
@@ -244,6 +247,7 @@ void hclib_promise_end_task_put(hclib_promise_t *promise_to_be_put, void *datum_
 
     // hclib_promise_put(promise_to_be_put, datum_to_be_put);
 }
+#endif
 
 /**
  * Put datum in the promise.
@@ -259,6 +263,7 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put, void *datum_to_be_put
 
     promise_to_be_put->datum = datum_to_be_put;
     promise_to_be_put->satisfied = 1;
+#ifdef DRDP_ENABLED
     hclib_task_t *curr_task = wait_list_of_promise;
 
     // fj: set the promise's setter
@@ -292,6 +297,7 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put, void *datum_to_be_put
     }
 
     hclib_task_t *next_task = NULL;
+#endif
     /*
      * Loop while this CAS fails, trying to atomically grab the list of tasks
      * dependent on the future of this promise. Anyone else who comes along will
@@ -304,6 +310,12 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put, void *datum_to_be_put
         wait_list_of_promise = promise_to_be_put->wait_list_head;
     }
 
+#ifdef DRDP_ENABLED
+#else
+    hclib_worker_state *ws = CURRENT_WS_INTERNAL;
+    hclib_task_t *curr_task = wait_list_of_promise;
+    hclib_task_t *next_task = NULL;
+#endif
     int counter = 0;
     while (curr_task != SENTINEL_FUTURE_WAITLIST_PTR) {
 
@@ -328,7 +340,6 @@ void hclib_promise_put(hclib_promise_t *promise_to_be_put, void *datum_to_be_put
         hclib_yield(NULL);
         counter --;
     }
-    
 }
 
 
