@@ -3,7 +3,7 @@ set -e
 
 ROOT=$(readlink -f $(dirname $0)/..)
 CURRENT_DIR=$(pwd)
-BENCHMARKS="health knapsack matmul_promise sort poisson sparselu strassen"
+BENCHMARKS="health knapsack matmul sort poisson sparselu strassen"
 EXPERIMENTS="orig rd"
 TIMES=${TIMES:=5}
 OUTPUT="${CURRENT_DIR}/eval-$(date +%y%m%d-%H%M%S).csv"
@@ -13,7 +13,7 @@ ln -fs ${OUTPUT} ${CURRENT_DIR}/latest-result
 HEAD="Benchmark"
 for e in ${EXPERIMENTS}; do
     for i in $(seq 1 1 ${TIMES}); do
-        HEAD="${HEAD},${e^}-Time-${i} (sec),${e^}-Memory-${i} (kb)"
+        HEAD="${HEAD},${e^}-Time-${i} (sec),${e^}-Memory-${i} (kB)"
     done
 done
 echo "${HEAD}" >> ${OUTPUT}

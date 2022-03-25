@@ -14,6 +14,7 @@ report_error() {
 }
 
 ROOT=$(readlink -f $(dirname $0))
+HCLIB_LIB_PATH=$(readlink -f ${ROOT}/../lib)
 PASS_LIB="libinstrumentation.so"
 DETECTOR="asap"
 DETECTOR_LIB="lib${DETECTOR}.so"
@@ -73,54 +74,59 @@ if [ ! -e ${CLANG} ]; then
 fi
 
 LLVM_LIB="${CLANG/bin\/clang/lib}"
-echo "================== Install Instrumentation Pass ==============================="
-pushd ${ROOT} > /dev/null 2>&1
-if [ ! -e "${PASS_LIB}" ]; then
-    echo "Instrumentation pass is not found, try to install it using install-inst.sh"
-    if [ ${USE_SYSTEM_LLVM} == "1" ]; then
-        ${ROOT}/install-inst.sh -s
-    else
-        ${ROOT}/install-inst.sh ${LLVM_PATH}
-    fi
-    echo "Install instrumentation pass successfully"
-else
-    echo "Instrumentation pass exists, skip the installation"
-fi
 
-if [ ! -e "${DETECTOR_LIB}" ]; then
-    ${CLANG} -c -o check.o check.c
-    ${CLANG} -shared -fpic -o ${DETECTOR_LIB} check.o
-fi
+# # Check and install DRDP
+# echo "================== Install Instrumentation Pass ==============================="
+# pushd ${ROOT} > /dev/null 2>&1
+# if [ ! -e "${PASS_LIB}" ]; then
+#     echo "Instrumentation pass is not found, try to install it using install-inst.sh"
+#     if [ ${USE_SYSTEM_LLVM} == "1" ]; then
+#         ${ROOT}/install-inst.sh -s
+#     else
+#         ${ROOT}/install-inst.sh ${LLVM_PATH}
+#     fi
+#     echo "Install instrumentation pass successfully"
+# else
+#     echo "Instrumentation pass exists, skip the installation"
+# fi
 
-echo "==============================================================================="
-echo ""
-echo "================== Instrument Source File ====================================="
+# if [ ! -e "${DETECTOR_LIB}" ]; then
+#     ${CLANG} -c -o check.o check.c
+#     ${CLANG} -shared -fpic -o ${DETECTOR_LIB} check.o
+# fi
+
+# echo "==============================================================================="
+# echo ""
+# popd > /dev/null 2>&1
+
+
 # The check in line 44 guarantees that SOURCE_FILE must end with .c or .cpp
-popd > /dev/null 2>&1
+echo "================== Instrument Source File ====================================="
 if [ ${SOURCE_FILE: -2} == ".c" ]; then
     BC=${SOURCE_FILE/%.c/.bc}
     INST_BC=${SOURCE_FILE/%.c/-inst.bc}
     EXE=${SOURCE_FILE/%.c/.exe}
     echo "${CLANG} -c -emit-llvm ${DEFAULT_OPTIONS} ${OPTIONS} -o ${BC} ${SOURCE_FILE}"
-    ${CLANG} -c -g -emit-llvm ${DEFAULT_OPTIONS} ${OPTIONS} -o ${BC} ${SOURCE_FILE}
-    echo "${OPT} -load-pass-plugin ${ROOT}/${PASS_LIB} --passes=\"asap-inst\" -o ${INST_BC} ${BC}"
-    ${OPT} -load-pass-plugin ${ROOT}/${PASS_LIB} --passes="asap-inst" -o ${INST_BC} ${BC}
-    echo "${CLANG} -L${ROOT} ${INST_BC} -lasap ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}"
-    ${CLANG} -L${ROOT} ${INST_BC} -lasap ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE} 
+    ${CLANG} -c -emit-llvm ${DEFAULT_OPTIONS} ${OPTIONS} -o ${BC} ${SOURCE_FILE}
+    echo "${OPT} -load-pass-plugin ${HCLIB_LIB_PATH}/${PASS_LIB} --passes=\"${DETECTOR}-inst\" -o ${INST_BC} ${BC}"
+    ${OPT} -load-pass-plugin ${HCLIB_LIB_PATH}/${PASS_LIB} --passes="${DETECTOR}-inst" -o ${INST_BC} ${BC}
+    echo "${CLANG} -L${HCLIB_LIB_PATH} -L${LLVM_LIB} ${INST_BC} -l${DETECTOR} ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}"
+    ${CLANG} -L${HCLIB_LIB_PATH} -L${LLVM_LIB} ${INST_BC} -l${DETECTOR} ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE} 
 else
     BC=${SOURCE_FILE/%.cpp/.bc}
     INST_BC=${SOURCE_FILE/%.cpp/-inst.bc}
     EXE=${SOURCE_FILE/%.cpp/.exe}
     echo "${CLANGPP} -c -emit-llvm ${DEFAULT_OPTIONS} ${OPTIONS} -o ${BC} ${SOURCE_FILE}"
-    ${CLANGPP} -c -g -emit-llvm ${DEFAULT_OPTIONS} ${OPTIONS} -o ${BC} ${SOURCE_FILE}
-    echo "${OPT} -load-pass-plugin ${ROOT}/${PASS_LIB} --passes=\"asap-inst\" -o ${INST_BC} ${BC}"
-    ${OPT} -load-pass-plugin ${ROOT}/${PASS_LIB} --passes="asap-inst" -o ${INST_BC} ${BC}
-    echo "${CLANGPP} -L${ROOT} -L${LLVM_LIB} ${INST_BC} -lasap ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}"
-    ${CLANGPP} -L${ROOT} -L${LLVM_LIB} ${INST_BC} -lasap ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}
+    ${CLANGPP} -c -emit-llvm ${DEFAULT_OPTIONS} ${OPTIONS} -o ${BC} ${SOURCE_FILE}
+    echo "${OPT} -load-pass-plugin ${HCLIB_LIB_PATH}/${PASS_LIB} --passes=\"${DETECTOR}-inst\" -o ${INST_BC} ${BC}"
+    ${OPT} -load-pass-plugin ${HCLIB_LIB_PATH}/${PASS_LIB} --passes="${DETECTOR}-inst" -o ${INST_BC} ${BC}
+    echo "${CLANGPP} -L${HCLIB_LIB_PATH} -L${LLVM_LIB} ${INST_BC} -l${DETECTOR} ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}"
+    ${CLANGPP} -L${HCLIB_LIB_PATH} -L${LLVM_LIB} ${INST_BC} -l${DETECTOR} ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}
 fi
 
 echo "==============================================================================="
 echo ""
 echo "Instrument successfully. The instrumented execuable is $(pwd)/${EXE}"
 echo "To execute the executable, use following command:" 
-echo "    LD_LIBRARY_PATH=\"${ROOT}:"'${LD_LIBRARY_PATH}" ' "./${EXE}"
+#echo "    LD_LIBRARY_PATH=\"${ROOT}:"'${LD_LIBRARY_PATH}" ' "./${EXE}"
+echo "./${EXE}"

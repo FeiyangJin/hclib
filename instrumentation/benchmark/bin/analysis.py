@@ -27,6 +27,8 @@ def main():
     unit = {}
     data_for_figure = {}
     prog = re.compile(r'(\w+)-(\w+)-(\d+)\s*\((\w+)\)')
+    memory_in_gb = True
+
     for col in data.columns:
         result = prog.match(col)
         if (not result):
@@ -42,9 +44,14 @@ def main():
             unit[metric] = result[4]
     for m, met in data_organized.items():
         data_for_figure[m] = {}
+        convert_to_gb = True if memory_in_gb and m.strip().casefold() == 'memory' and unit[m].strip() == 'kB' else False
         for c, cat in met.items():
             avg = np.average(cat, axis=0)
+            if convert_to_gb:
+                avg /= 1000000
             data_for_figure[m][c] = avg
+        if convert_to_gb:
+            unit[m] = 'GB'
     
     #draw figures
     width = 0.2
@@ -60,7 +67,7 @@ def main():
         bars = []
         ylim = 0
         for i, g in enumerate(groups):
-            bar = ax.bar(index + i * width, met[g], width=width)
+            bar = ax.bar(index + i * width, met[g], width=width, align='edge')
             for x,y in zip(index + i * width, met[g]):
                 label = "{:.2f}".format(y)
                 ax.annotate(label, (x,y), textcoords="offset points", xytext=(0,5), ha='center', fontsize=6)
@@ -71,7 +78,7 @@ def main():
         while ylim > ylim_round:
             ylim_round *= 10
         ax.set_xticks(index + width * len(groups) / 2)
-        ax.set_xticklabels(xticks)
+        ax.set_xticklabels(xticks, rotation=30)
         ax.set_xlabel("Benchmarks")
         ax.set_ylabel("{} ({})".format(m, unit[m]))
         ax.set_yscale('log')
@@ -86,7 +93,7 @@ def main():
         ylim = 0
         for i, g in enumerate(groups):
             val = met[g]/met[groups[0]]
-            bar = ax.bar(index + i * width, val, width=width)
+            bar = ax.bar(index + i * width, val, width=width, align='edge')
             for x,y in zip(index + i * width, val):
                 label = "{:.2f}".format(y)
                 ax.annotate(label, (x,y), textcoords="offset points", xytext=(0,5), ha='center', fontsize=6)
@@ -97,7 +104,7 @@ def main():
         while ylim > ylim_round:
             ylim_round *= 10
         ax.set_xticks(index + width * len(groups) / 2)
-        ax.set_xticklabels(xticks)
+        ax.set_xticklabels(xticks, rotation=30)
         ax.set_xlabel("Benchmarks")
         ax.set_ylabel("{} Overhead (\u2715)".format(m))
         ax.set_yscale('log')

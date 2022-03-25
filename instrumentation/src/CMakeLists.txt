@@ -2,9 +2,11 @@
 include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 link_directories(${LLVM_LIBRARY_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
-add_definitions(-DREPORT -DDEBUG)
+if (HCLIB_DRDP_DEBUG_INFO)
+  add_definitions(-DREPORT -DDEBUG)
+endif()
 
-set(CMAKE_CXX_STANDARD 14 CACHE STRING "")
+# set(CMAKE_CXX_STANDARD 14 CACHE STRING "")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall\
     -fdiagnostics-color=always")
@@ -37,4 +39,4 @@ set(DETECTOR_SOURCE "check.cpp" "ds_dpst.cpp" "ds_to_hclib.cpp" "mem_access.cpp"
 add_library(${DETECTOR} SHARED ${DETECTOR_SOURCE})
 target_include_directories(${DETECTOR} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-install(TARGETS ${PASS} ${DETECTOR} DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(TARGETS ${PASS} ${DETECTOR} DESTINATION lib)

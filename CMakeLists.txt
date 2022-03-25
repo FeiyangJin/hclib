@@ -30,6 +30,7 @@ option(HCLIB_ENABLE_PRODUCTION  "disable assertions and stats"        OFF)
 option(HCLIB_PRIVATIZE_C_STD_11    "whether to publicize c_std_11 compiler features" OFF)
 option(HCLIB_INLINE_FUTURES_ONLY   "disable support for arbitary numbers of futures for tasks" OFF)
 option(HCLIB_ENABLE_DRDP        "enable DRDP determinacy race detector" OFF)
+option(HCLIB_DRDP_DEBUG_INFO    "whether to collect and report debug info when DRDP conducts race detection" ON)
 
 set(COMPILE_DEFINITIONS "")
 
@@ -113,3 +114,6 @@ install(
   DESTINATION include
 )
 
+if (HCLIB_ENABLE_DRDP)
+  add_subdirectory(instrumentation)
+endif()

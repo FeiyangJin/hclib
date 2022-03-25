@@ -1,14 +1,21 @@
-project(instrumentation)
-cmake_minimum_required(VERSION 3.12)
-enable_language(CXX)
-set(CMAKE_VERBOSE_MAKEFILE on)
+#project(instrumentation)
+#cmake_minimum_required(VERSION 3.12)
+#enable_language(CXX)
+#set(CMAKE_VERBOSE_MAKEFILE on)
 
 # Set up paths to the include and library directries of the installed LLVM
 if (NOT SYS_LLVM_INSTALL_DIR)
-    message(FATAL_ERROR "Path to the installed llvm (SYS_LLVM_INSTALL_DIR) is not specified")
+    get_filename_component(CXX_COMPILER ${CMAKE_CXX_COMPILER} NAME)
+    if (NOT CXX_COMPILER STREQUAL "clang++")
+        message("DRDP requires a valid instance of llvm")
+        message(FATAL_ERROR "Please specify the path to the installed llvm (SYS_LLVM_INSTALL_DIR) or set the CMAKE_CXX_COMPILER to clang++")
+    endif()
+    get_filename_component(CXX_COMPILER_EXE_PATH ${CMAKE_CXX_COMPILER} DIRECTORY)
+    get_filename_component(SYS_LLVM_INSTALL_DIR "${CXX_COMPILER_EXE_PATH}/.." REALPATH)
 endif()
+message(STATUS "LLVM instance to be used by DRDP: ${SYS_LLVM_INSTALL_DIR}")
 
-set(SYS_LLVM_INSTALL_DIR "" CACHE PATH "LLVM Installation Directory")
+#set(SYS_LLVM_INSTALL_DIR "" CACHE PATH "LLVM Installation Directory")
 set(SYS_LLVM_INCLUDE_DIR "${SYS_LLVM_INSTALL_DIR}/include/llvm")
 if(NOT EXISTS "${SYS_LLVM_INCLUDE_DIR}")
     message(FATAL_ERROR "${SYS_LLVM_INCLUDE_DIR} does not exist")
@@ -39,9 +46,12 @@ if (${LLVM_VERSION_MAJOR} VERSION_LESS ${SYS_LLVM_MINIMUM_VERSION})
     message(FATAL_ERROR "Found LLVM ${LLVM_VERSION_MAJOR} < ${SYS_LLVM_MINIMUM_VERSION}")
 endif()
 
-if (NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug CACHE
-      STRING "Build type (default Debug):" FORCE)
-endif()
+#if (NOT CMAKE_BUILD_TYPE)
+#  set(CMAKE_BUILD_TYPE Debug CACHE
+#      STRING "Build type (default Debug):" FORCE)
+#endif()
 
 add_subdirectory(src)
+
+
+install(PROGRAMS inst.sh DESTINATION bin)

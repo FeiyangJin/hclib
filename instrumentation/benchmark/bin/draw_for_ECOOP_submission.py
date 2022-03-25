@@ -13,11 +13,11 @@ def main():
     index = np.arange(len(xticks)) * width * (len(groups) + space)
     plt.clf()
     fig, ax = plt.subplots()
-    bar1 = ax.bar(index + 0 * width, time, width=width)
+    bar1 = ax.bar(index + 0 * width, time, width=width, align='edge')
     for x,y in zip(index + 0 * width, time):
         label = "{:.2f}".format(y)
         ax.annotate(label, (x,y), textcoords="offset points", xytext=(0,5), ha='center', fontsize=6)
-    ax.set_xticks(index)
+    ax.set_xticks(index + width/2)
     ax.set_xticklabels(xticks)
     ax.set_xlabel("Benchmarks")
     ax.set_ylabel("Time Overhead (\u2715)")
