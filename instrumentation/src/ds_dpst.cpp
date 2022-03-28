@@ -525,7 +525,7 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned
     return result;
 }
 
-#define BFS
+// #define BFS
 // #define FB
 
 bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned int task_a, unsigned int task_b, robin_hood::unordered_set<int> &visited){

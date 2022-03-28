@@ -31,6 +31,9 @@ option(HCLIB_PRIVATIZE_C_STD_11    "whether to publicize c_std_11 compiler featu
 option(HCLIB_INLINE_FUTURES_ONLY   "disable support for arbitary numbers of futures for tasks" OFF)
 option(HCLIB_ENABLE_DRDP        "enable DRDP determinacy race detector" OFF)
 option(HCLIB_DRDP_DEBUG_INFO    "whether to collect and report debug info when DRDP conducts race detection" ON)
+option(HCLIB_DRDP_ENABLE_CONST_QUERY "" OFF)
+option(HCLIB_DRDP_BFS_QUERY "" ON)
+option(HCLIB_DRDP_FB "" OFF)
 
 set(COMPILE_DEFINITIONS "")
 

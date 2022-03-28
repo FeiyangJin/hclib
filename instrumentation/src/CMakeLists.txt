@@ -6,6 +6,18 @@ if (HCLIB_DRDP_DEBUG_INFO)
   add_definitions(-DREPORT -DDEBUG)
 endif()
 
+if (HCLIB_DRDP_ENABLE_CONST_QUERY)
+  add_definitions(-DCONSTQUERY)
+endif()
+
+if (HCLIB_DRDP_BFS_QUERY)
+  add_definitions(-DBFS)
+endif()
+
+if (HCLIB_DRDP_FB)
+  add_definitions(-DFB)
+endif()
+
 # set(CMAKE_CXX_STANDARD 14 CACHE STRING "")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall\
