@@ -31,7 +31,7 @@ option(HCLIB_PRIVATIZE_C_STD_11    "whether to publicize c_std_11 compiler featu
 option(HCLIB_INLINE_FUTURES_ONLY   "disable support for arbitary numbers of futures for tasks" OFF)
 option(HCLIB_ENABLE_DRDP        "enable DRDP determinacy race detector" OFF)
 option(HCLIB_DRDP_DEBUG_INFO    "(option for evaluation) whether to collect and report debug info when DRDP conducts race detection" ON)
-option(HCLIB_DRDP_SKIP_QUERY    "(option for evaluation) naively return true for reachability query" OFF)
+option(HCLIB_DRDP_QUERY_ALWAYS_TRUE    "(option for evaluation) naively return true for reachability query" OFF)
 option(HCLIB_DRDP_BFS_QUERY     "(option for evaluation) apply BFS/DFS when traversing the computational graph; by default BFS is applied" ON)
 option(HCLIB_DRDP_REVERSE_NT_ORDER "(option for evaluation) traverse a node's non-tree join edge list in reverse order; otherwise these edges are accessed from the beginning to the end" ON)
 

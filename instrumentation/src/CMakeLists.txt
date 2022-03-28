@@ -6,7 +6,7 @@ if (HCLIB_DRDP_DEBUG_INFO)
   add_definitions(-DREPORT -DDEBUG)
 endif()
 
-if (HCLIB_DRDP_SKIP_QUERY)
+if (HCLIB_DRDP_QUERY_ALWAYS_TRUE)
   add_definitions(-DCONSTQUERY)
 endif()
 
