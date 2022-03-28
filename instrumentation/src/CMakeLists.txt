@@ -6,7 +6,7 @@ if (HCLIB_DRDP_DEBUG_INFO)
   add_definitions(-DREPORT -DDEBUG)
 endif()
 
-if (HCLIB_DRDP_ENABLE_CONST_QUERY)
+if (HCLIB_DRDP_SKIP_QUERY)
   add_definitions(-DCONSTQUERY)
 endif()
 
@@ -14,7 +14,7 @@ if (HCLIB_DRDP_BFS_QUERY)
   add_definitions(-DBFS)
 endif()
 
-if (HCLIB_DRDP_FB)
+if (NOT HCLIB_DRDP_REVERSE_NT_ORDER)
   add_definitions(-DFB)
 endif()
 
