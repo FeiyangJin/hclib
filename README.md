@@ -59,74 +59,20 @@ For example, to enable production setting:
 
     ./install.sh -DHCLIB_ENABLE_PRODUCTION=ON
 
-HClib Modules
+
+DRDP Race Detector
 ---------------------------------------------
+The following option in the CMakeList.txt in the root directory can be turned on to enable race detection
 
-To support unified scheduling on heterogeneous computation and communication
-resources HClib uses a module system. Loading a given module automatically adds
-support the the HClib API and runtime for accessing some new resource
-in HClib. By default, HClib only supports executing parallel
-programs on multi-core x86 platforms. However, with existing modules this can be
-extended to include support for GPU execution and communication over MPI,
-OpenSHMEM, and UPC++.
+option(HCLIB_ENABLE_DRDP        "enable DRDP determinacy race detector" OFF)
 
-While you can write a fully functioning HClib program without any additional
-modules, many of the test programs saved in this repo load the `system` module.
-The `system` module adds basic OS-related routines, such as asynchronous memory
-allocation and deallocation. If you would like to run any of these basic tests,
-the instructions below guide you through the process of building and installing
-the 'system' module.
+The constructs currently supported include async, finish, and promises.
 
-If install.sh is used to create an HClib installation, the `system` module will
-automatically be built and installed. However, if you wish to configure and
-install HClib manually you will also need to build and install the `system`
-module manually. Once you have completed your HClib install, navigate to the
-`hclib/modules/system` directory and run:
 
-    mkdir build; cd build
-    cmake -DCMAKE_INSTALL_PREFIX=<installation-dir> ..
-    make install
-
-Ensure that you have `HCLIB_ROOT` set in your environment first.
-
-Dependencies
+DRDP Race Detector Tutorial
 ---------------------------------------------
+The race detector source file and benchmarks is under instrumentation.
 
-* automake
-* gcc >= 4.8.4, or clang >= 3.5
-  (must support -std=c++11 and -std=c11)
+### Details of source file:
 
-Tutorial
----------------------------------------------
-
-If you are new to HClib then take a look of `hclib/tutorial` directory.
-It contains presentations and simple examples that appeared in our
-past tutorials on HClib. You can follow the README inside sub-directories
-there to build and run those examples.
-
-
-Testing
----------------------------------------------
-
-The main regression tests for HClib are in the test/c and test/cpp folders. The
-`test_all.sh` scripts in each of those folders will automatically build and run
-all test cases.
-
-
-Static Checks
----------------------------------------------
-
-As part of the development workflow for HClib, any newly committed code should
-be checked using standard static checking tools.
-
-In particular, run cppcheck on all modified files. cppcheck is available online
-at [1]. cppcheck should be run by cd-ing to tools/cppcheck and executing the
-run.sh script from there (this assumes cppcheck is on your path). Any new errors
-printed by cppcheck should be addressed before committing.
-
-You should also run astyle on all modified files. astyle is a source code
-auto-formatter. Simply cd to tools/astyle and execute the run.sh script from
-there. This assumes you have astyle installed and it is on your path.
-
-[1] https://sourceforge.net/projects/cppcheck/
-
+### Details of benchmarks:
