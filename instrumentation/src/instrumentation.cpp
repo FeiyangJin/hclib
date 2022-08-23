@@ -13,6 +13,11 @@
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Demangle/Demangle.h"
 #include "llvm/ProfileData/InstrProf.h"
+
+#if (LLVM_VERSION_MAJOR > 14)
+#include "llvm/Transforms/Instrumentation.h"
+#endif
+
 #include <cstdlib>
 
 using namespace llvm;
@@ -94,7 +99,7 @@ class RaceDetector{
   void instrumentProgramInput();
   void instrumentAlloc(CallBase *invokeAlloc);
   void chooseInstructiontoInstrument(SmallVectorImpl<Instruction *> &local, SmallVectorImpl<Instruction *> &all);
-  int getMemoryAccessSize(Value *addr, const DataLayout &dl);
+  int getMemoryAccessSize(Type *origTy, const DataLayout &dl);
   StringRef getFunctionBaseName(StringRef func);
   StringRef getNameSpace(StringRef func);
 };
@@ -220,13 +225,19 @@ void RaceDetector::sanitizeFunction() {
 }
 
 void RaceDetector::instrumentLoadAndStore(Instruction *inst, const DataLayout &dl) {
+#if (LLVM_VERSION_MAJOR > 14)
+  InstrumentationIRBuilder irb(inst);
+#else
   IRBuilder<> irb(inst);
+#endif
+
   bool isWrite = isa<StoreInst>(inst);
   Value *addr = isWrite ? cast<StoreInst>(inst)->getPointerOperand()
                         : cast<LoadInst>(inst)->getPointerOperand();
   isWrite ? instrumentedWrites++ : instrumentedReads++;
   FunctionCallee func = isWrite ? checkWrite : checkRead;
-  int size = getMemoryAccessSize(addr, dl);
+  Type *origTy = getLoadStoreType(inst);
+  int size = getMemoryAccessSize(origTy, dl);
   assert(size > 0);
   irb.CreateCall(func, 
                  {irb.CreatePointerCast(addr, irb.getInt8PtrTy()), 
@@ -261,6 +272,16 @@ void RaceDetector::instrumentAlloc(CallBase *invokeAlloc) {
                            irb.CreateIntCast(size, irb.getInt32Ty(), true)});
     irb.CreateBr(next);
     invoke->setNormalDest(newBB);
+    //errs() << "Instrument invoke" << *invokeAlloc << "\n";
+    Instruction &firstInsInNext = *next->begin();
+    if (isa<PHINode>(firstInsInNext)) {
+      PHINode *phi = cast<PHINode>(&firstInsInNext);
+      for (auto &incomingBB : phi->blocks()) {
+        if (incomingBB == invoke->getParent()) {
+          incomingBB = newBB;
+        }
+      }
+    }
   }
   instrumentedAllocs++;
   
@@ -298,10 +319,10 @@ void RaceDetector::chooseInstructiontoInstrument(SmallVectorImpl<Instruction *> 
   local.clear();
 }
 
-int RaceDetector::getMemoryAccessSize(Value *addr, const DataLayout &dl) {
-  Type *origPtrTy = addr->getType();
-  Type *origTy = cast<PointerType>(origPtrTy)->getElementType();
-  assert(origTy->isSized());
+int RaceDetector::getMemoryAccessSize(Type *origTy, const DataLayout &dl) {
+  // Type *origPtrTy = addr->getType();
+  // Type *origTy = cast<PointerType>(origPtrTy)->getElementType();
+  // assert(origTy->isSized());
   uint32_t typeSize = dl.getTypeStoreSizeInBits(origTy);
   if (typeSize != 8  && typeSize != 16 &&
       typeSize != 32 && typeSize != 64 && typeSize != 128) {
@@ -343,11 +364,11 @@ PreservedAnalyses InstrumentationPass::run(Function &F,
   rd.sanitizeFunction();
   // errs() << "Skipped reads: " << rd.getSkippedReads() << "\n";
   // errs() << "Skipped writes: " << rd.getSkippedWrites() << "\n"; 
-  errs() << "Instrumented reads: " <<  rd.getInstrumentedReads() << "\n";
-  errs() << "Instrumented writes: " << rd.getInstrumentedWrites() << "\n";
+  // errs() << "Instrumented reads: " <<  rd.getInstrumentedReads() << "\n";
+  // errs() << "Instrumented writes: " << rd.getInstrumentedWrites() << "\n";
   // errs() << "Skipped inst-routine param reads: " << rd.getSkippedInstParamReads() << "\n";
-  errs() << "Instrumented malloc/new: " << rd.getInstrumentedAllocs() << "\n";
-
+  // errs() << "Instrumented malloc/new: " << rd.getInstrumentedAllocs() << "\n";
+  // errs() << *F.getParent() << "\n";
   return PreservedAnalyses::none();
 }
 
