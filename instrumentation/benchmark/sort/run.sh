@@ -79,6 +79,6 @@ else
         make ${RD_EXE}
     fi
     echo "Run race detection"
-    echo "LD_LIBRARY_PATH=\"../../../instrumentation:${LD_LIBRARY_PATH}\" HCLIB_WORKERS=1 ./${RD_EXE} ${INPUT}"
-    LD_LIBRARY_PATH="../../../instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 /usr/bin/time -f "\nTime: %e sec\nMemory: %M kb" ./${RD_EXE} ${INPUT}
+    echo "LD_LIBRARY_PATH=\"../../instrumentation:${LD_LIBRARY_PATH}\" HCLIB_WORKERS=1 ./${RD_EXE} ${INPUT}"
+    LD_LIBRARY_PATH="../../instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 /usr/bin/time -f "\nTime: %e sec\nMemory: %M kb" ./${RD_EXE} ${INPUT}
 fi
