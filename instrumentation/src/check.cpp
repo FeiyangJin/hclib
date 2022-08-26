@@ -8,10 +8,6 @@
 
 extern tree_node_cpp* current_dpst_node = nullptr;
 static ShadowMem<MemAccessList_t> *shadow_mem = new ShadowMem<MemAccessList_t>();
-// access_info current_task_and_step;
-// static int current_finish_id;
-static bool is_step = false;
-// static bool is_future = false;
 static bool is_asap_promise_task = false;
 static unsigned long long check_write_count = 0;
 static unsigned long long check_read_count = 0;
@@ -20,8 +16,6 @@ static int reachability_count = 0;
 static unsigned long long handle_read_count = 0;
 static unsigned long long handle_write_count = 0;
 // #define STEPSKIP
-// #define CONSTQUERY
-// #define REPORT
 
 #ifdef STEPSKIP
   static int current_step_id = -1;
@@ -428,14 +422,6 @@ extern "C" __attribute__((weak)) void asap_check_write(int *addr, int bytes) {
       return;
     }
 
-    // current_task_and_step.node_in_dpst = hclib_get_current_task_info(&current_task_and_step.task_id,&current_finish_id, &is_step, &is_future);
-    // current_task_and_step.node_in_dpst = (void*) current_dpst_node;
-    // current_task_and_step.task_id = current_dpst_node->corresponding_task_id;
-
-    // if(!((tree_node_cpp*)current_task_and_step.node_in_dpst)->this_node_type == STEP){
-    //   return;
-    // }
-
     #ifdef STEPSKIP
       stepid = current_dpst_node->index;
       if(stepid != current_step_id){
@@ -522,14 +508,6 @@ extern "C" __attribute__((weak)) void asap_check_read(int *addr, int bytes) {
     if(!(current_dpst_node->this_node_type == STEP)){
       return;
     }
-
-    // current_task_and_step.node_in_dpst = hclib_get_current_task_info(&current_task_and_step.task_id,&current_finish_id, &is_step, &is_future);
-    // current_task_and_step.node_in_dpst = (void*) current_dpst_node;
-    // current_task_and_step.task_id = current_dpst_node->corresponding_task_id;
-
-    // if(!((tree_node_cpp*)current_task_and_step.node_in_dpst)->this_node_type == STEP){
-    //   return;
-    // }
 
 
     #ifdef STEPSKIP

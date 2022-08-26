@@ -1,0 +1,31 @@
+// Adapted from DRB027-taskdependmissing-orig-yes.c
+// https://github.com/LLNL/dataracebench/blob/master/micro-benchmarks/DRB027-taskdependmissing-orig-yes.c
+// Author: Feiyang Jin
+// Email: fjin35@gatech.edu
+
+#include "hclib_cpp.h"
+#include <unistd.h>
+
+int main(int argc, char **argv) {
+  char const *deps[] = { "system" }; 
+  
+  hclib::launch(deps, 1, [&]() {
+
+    ds_hclib_ready(true);
+
+    int i = 0;
+
+    hclib::async([&](){
+        i = 1;
+    });
+
+    hclib::async([&](){
+        i = 2;
+    });
+
+    printf("all tests passsed in test10 \n");
+    // end of hclib
+  });
+  
+  return 0;
+}

@@ -115,13 +115,13 @@ void increase_task_id_unique(){
     task_id_unique++;
 }
 
-// int get_current_task_id(){
-//     return DPST.current_step_node->corresponding_task_id;
+int get_current_task_id(){
+    // return DPST.current_step_node->corresponding_task_id;
 
-//     // hclib_worker_state *ws = current_ws();
-//     // hclib_task_t *task = (hclib_task_t *) ws->curr_task;
-//     // return task->task_id;
-// }
+    hclib_worker_state *ws = current_ws();
+    hclib_task_t *task = (hclib_task_t *) ws->curr_task;
+    return task->task_id;
+}
 
 /**
  * @brief  Insert a tree node (not a step node) under parent
@@ -1414,24 +1414,24 @@ void *hclib_future_wait(hclib_future_t *future) {
     tree_node* continuation = insert_leaf(get_current_step_node()->parent);
     
     // fj: work on disjoint set
-    // if(future->corresponding_task_id >= 0){
-    //     // fj: this part is not necessary, because out program has just async,finish and promise
-    //     int future_task_id = future->corresponding_task_id;
-    //     int future_parent_id = ds_parentid(future_task_id);
-    //     // if(ds_findSet(current_task->task_id) == ds_findSet(future_parent_id)){
-    //     //     // merge two sets
-    //     //     ds_merge(current_task->task_id, future_task_id, (void*)continuation);
-    //     // }
-    //     // else{
-    //         // add future task to current tasks' nt
-    //         void* current_step_node = (void*) get_current_step_node();
-    //         ds_addnt(current_task->task_id,future_task_id,current_step_node);
-    //         // nt_count++;
-    //     //}
-    //     // mark the future task joined
-    //     ds_update_task_state(future->corresponding_task_id,3);
-    // }
-    // else{
+    if(future->corresponding_task_id >= 0){
+        // fj: this part is not necessary, because out program has just async,finish and promise
+        int future_task_id = future->corresponding_task_id;
+        int future_parent_id = ds_parentid(future_task_id);
+        // if(ds_findSet(current_task->task_id) == ds_findSet(future_parent_id)){
+        //     // merge two sets
+        //     ds_merge(current_task->task_id, future_task_id, (void*)continuation);
+        // }
+        // else{
+            // add future task to current tasks' nt
+            void* current_step_node = (void*) get_current_step_node();
+            ds_addnt(current_task->task_id,future_task_id,current_step_node);
+            // nt_count++;
+        //}
+        // mark the future task joined
+        ds_update_task_state(future->corresponding_task_id,3);
+    }
+    else{
         // the corrsponding task is less than 0, the future is just an access to a promise, we do promise operations on disjoint set
         if(future->owner->end_task_put){
             // case1: simulating finish
@@ -1458,7 +1458,7 @@ void *hclib_future_wait(hclib_future_t *future) {
             ds_addnt(current_task->task_id,future->owner->empty_future_id,current_step_node);
             nt_count++;
         }
-    // }
+    }
 
     set_current_dpst_node((void*) continuation);
     DPST.current_step_node = continuation;

@@ -30,25 +30,6 @@ typedef struct cache_key{
   }
 } cache_key;
 
-class CacheHashFunction {
-  public:
-    size_t operator()(const cache_key& key) const
-    {
-      //Cantor pairing function:
-      //(a + b) * (a + b + 1) / 2 + a;
-      int result = (key.task_a + key.task_b) * (key.task_a + key.task_b + 1) / 2 + key.task_a;
-      return result;
-    }
-};
-
-struct eqint
-{
-  bool operator()(unsigned int a, unsigned int b) const
-  {
-    return (a == b);
-  }
-};
-
 // A class to represent a disjoint set
 class DisjointSet
 {
@@ -60,8 +41,6 @@ class DisjointSet
     robin_hood::unordered_map<int, hclib_finish*> all_finishes;
 
     robin_hood::unordered_map<unsigned long int, unsigned int> cache;
-    // boost::unordered_map<unsigned int, unsigned int> cache;
-    // google::dense_hash_map<unsigned int, unsigned int, hash<unsigned int>, eqint> cache = google::dense_hash_map<unsigned int, unsigned int, hash<unsigned int>, eqint>(100000);
     // unordered_map<unsigned int,unsigned int> cache;
     // unordered_map<cache_key,int,CacheHashFunction> cache;
     // unordered_map<cache_key,tree_node_cpp*,CacheHashFunction> cache;

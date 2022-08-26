@@ -1,16 +1,16 @@
-include $(HCLIB_ROOT)/../modules/system/inc/hclib_system.pre.mak
-include $(HCLIB_ROOT)/include/hclib.mak
-include $(HCLIB_ROOT)/../modules/system/inc/hclib_system.post.mak
+SHELL:=/bin/bash
 
+TEST_RD_OPTIONS=-O3 -std=c++11 -I$(HCLIB_INSTALL)/include -L$(HCLIB_INSTALL)/lib -lhclib -lrt -ldl -g
+TEST_ORIGIN_OPTIONS=-O3 -std=c++11 -I$(HCLIB_ORIGIN_INSTALL)/include -L$(HCLIB_ORIGIN_INSTALL)/lib -lhclib -lrt -ldl -g
+
+CC=clang
 CXX=clang++
 
-EXE=test7 life
-#EXE=test1 test2 test3 test4 update_test test5 test6 
+all: test1.exe
+# test2 test3 test4 update_test test5 test6 
 
-all: $(EXE)
-
-test1: test1.cpp
-	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
+test1.exe: test1.cpp
+	$(INST) $^ -DRACE_DETECTION -DDRDP_ENABLED $(TEST_RD_OPTIONS)
 
 test2: test2.cpp
 	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
@@ -34,4 +34,4 @@ update_test: update_test.cpp
 	$(CXX) -O0 $(HCLIB_CXXFLAGS) $(HCLIB_LDFLAGS) -o $@ $^ $(HCLIB_LDLIBS)
 
 clean:
-	rm -rf $(EXE)
+	rm *.exe *.bc *.ll
