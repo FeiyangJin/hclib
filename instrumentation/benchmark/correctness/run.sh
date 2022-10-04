@@ -18,7 +18,7 @@ BENCHMARK_NAME="test"
 echo "Run race detection"
 echo "LD_LIBRARY_PATH=\"../../instrumentation:${LD_LIBRARY_PATH}\" HCLIB_WORKERS=1 ./${RD_EXE} ${INPUT}"
 
-for i in {21..21}
+for i in {22..22}
 do
     DEFAULT_INPUT=""
     ORIGIN_EXE="${BENCHMARK_NAME}${i}-origin.exe"

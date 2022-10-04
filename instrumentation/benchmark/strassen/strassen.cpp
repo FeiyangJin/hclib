@@ -208,51 +208,93 @@ static void mm_additive_base(REAL *C, REAL *A, REAL *B, int n) {
     ds_hclib_ready(false);
   #endif
 
-  for(int row = 0; row < n; row++) { // going down the row 
-    for(int col = 0; col < n; col+=8) { // doing 8 columns at a time
-      ptrToB = B;  // put ptrToB back to the beginning of B 
-      REAL valA = *ptrToA;
-      ptrToA++; // advance A to the next element in the row block
-      REAL c0 = *(C)   + valA * ptrToB[col];
-      REAL c1 = *(C+1) + valA * ptrToB[col+1];
-      REAL c2 = *(C+2) + valA * ptrToB[col+2];
-      REAL c3 = *(C+3) + valA * ptrToB[col+3];
-      REAL c4 = *(C+4) + valA * ptrToB[col+4];
-      REAL c5 = *(C+5) + valA * ptrToB[col+5];
-      REAL c6 = *(C+6) + valA * ptrToB[col+6];
-      REAL c7 = *(C+7) + valA * ptrToB[col+7];
+  for(int row = 0; row < n; row++) {
+    for(int col = 0; col < n; col+=8) {
 
-      // accumulate into c_i the product that needs to go into current row
-      // block of C 
+      REAL valA = A[row * n];
+
+      REAL c0 = C[row*n + col]   + valA * B[col];
+      REAL c1 = C[row*n + col + 1] + valA * B[col+1];
+      REAL c2 = C[row*n + col + 2] + valA * B[col+2];
+      REAL c3 = C[row*n + col + 3] + valA * B[col+3];
+      REAL c4 = C[row*n + col + 4] + valA * B[col+4];
+      REAL c5 = C[row*n + col + 5] + valA * B[col+5];
+      REAL c6 = C[row*n + col + 6] + valA * B[col+6];
+      REAL c7 = C[row*n + col + 7] + valA * B[col+7];
+
       for(int j = 1; j < n; j++) {  
-        // each iter does a block of columns in the current row
-        ptrToB += n; // advance B to the next row
-        valA = *ptrToA;
-        ptrToA++; // advance A to the next element 
-        c0 += valA * ptrToB[col];
-        c1 += valA * ptrToB[col+1];
-        c2 += valA * ptrToB[col+2];
-        c3 += valA * ptrToB[col+3];
-        c4 += valA * ptrToB[col+4];
-        c5 += valA * ptrToB[col+5];
-        c6 += valA * ptrToB[col+6];
-        c7 += valA * ptrToB[col+7];
+
+        REAL valA = A[row * n + j];
+
+        c0 += valA * B[j*n + col];
+        c1 += valA * B[j*n + col+1];
+        c2 += valA * B[j*n + col+2];
+        c3 += valA * B[j*n + col+3];
+        c4 += valA * B[j*n + col+4];
+        c5 += valA * B[j*n + col+5];
+        c6 += valA * B[j*n + col+6];
+        c7 += valA * B[j*n + col+7];
       }
-      ptrToA -= n; // move A back to beginning of the row
-      *(C) = c0;
-      *(C+1) = c1;
-      *(C+2) = c2;
-      *(C+3) = c3;
-      *(C+4) = c4;
-      *(C+5) = c5;
-      *(C+6) = c6;
-      *(C+7) = c7;
-      // assert(C == &oldC[row*n + col]);
-      C += 8;
+
+      // ptrToA -= n;
+      C[row*n + col] = c0;
+      C[row*n + col + 1] = c1;
+      C[row*n + col + 2] = c2;
+      C[row*n + col + 3] = c3;
+      C[row*n + col + 4] = c4;
+      C[row*n + col + 5] = c5;
+      C[row*n + col + 6] = c6;
+      C[row*n + col + 7] = c7;
+
     }
-    // assert(C == &oldC[row*n + n]);
-    ptrToA += n; // advance A to the next row
+
   }
+
+  // for(int row = 0; row < n; row++) { // going down the row 
+  //   for(int col = 0; col < n; col+=8) { // doing 8 columns at a time
+  //     ptrToB = B;  // put ptrToB back to the beginning of B 
+  //     REAL valA = *ptrToA;
+  //     ptrToA++; // advance A to the next element in the row block
+  //     REAL c0 = *(C)   + valA * ptrToB[col];
+  //     REAL c1 = *(C+1) + valA * ptrToB[col+1];
+  //     REAL c2 = *(C+2) + valA * ptrToB[col+2];
+  //     REAL c3 = *(C+3) + valA * ptrToB[col+3];
+  //     REAL c4 = *(C+4) + valA * ptrToB[col+4];
+  //     REAL c5 = *(C+5) + valA * ptrToB[col+5];
+  //     REAL c6 = *(C+6) + valA * ptrToB[col+6];
+  //     REAL c7 = *(C+7) + valA * ptrToB[col+7];
+
+  //     // accumulate into c_i the product that needs to go into current row
+  //     // block of C 
+  //     for(int j = 1; j < n; j++) {  
+  //       // each iter does a block of columns in the current row
+  //       ptrToB += n; // advance B to the next row
+  //       valA = *ptrToA;
+  //       ptrToA++; // advance A to the next element 
+  //       c0 += valA * ptrToB[col];
+  //       c1 += valA * ptrToB[col+1];
+  //       c2 += valA * ptrToB[col+2];
+  //       c3 += valA * ptrToB[col+3];
+  //       c4 += valA * ptrToB[col+4];
+  //       c5 += valA * ptrToB[col+5];
+  //       c6 += valA * ptrToB[col+6];
+  //       c7 += valA * ptrToB[col+7];
+  //     }
+  //     ptrToA -= n; // move A back to beginning of the row
+  //     *(C) = c0;
+  //     *(C+1) = c1;
+  //     *(C+2) = c2;
+  //     *(C+3) = c3;
+  //     *(C+4) = c4;
+  //     *(C+5) = c5;
+  //     *(C+6) = c6;
+  //     *(C+7) = c7;
+  //     // assert(C == &oldC[row*n + col]);
+  //     C += 8;
+  //   }
+  //   // assert(C == &oldC[row*n + n]);
+  //   ptrToA += n; // advance A to the next row
+  // }
 
   #ifdef RACE_DETECTION
     ds_hclib_ready(false);
@@ -285,56 +327,97 @@ static void mm_base(REAL *C, REAL *A, REAL *B, int n) {
 
   REAL *ptrToA = A;
   REAL *ptrToB = B;
+  for(int row = 0; row < n; row++) {
+    for(int col = 0; col < n; col+=8) {
 
-  for(int row = 0; row < n; row++) { // going down the row 
-    for(int col = 0; col < n; col+=8) { // doing 8 columns at a time
-      REAL valA = *ptrToA;
-      ptrToA++; // advance A to the next element in the row block
-      REAL c0 = valA * ptrToB[col];
-      REAL c1 = valA * ptrToB[col+1];
-      REAL c2 = valA * ptrToB[col+2];
-      REAL c3 = valA * ptrToB[col+3];
-      REAL c4 = valA * ptrToB[col+4];
-      REAL c5 = valA * ptrToB[col+5];
-      REAL c6 = valA * ptrToB[col+6];
-      REAL c7 = valA * ptrToB[col+7];
+      REAL valA = A[row * n];
 
-      // accumulate into c_i the product that needs to go into current row
-      // block of C 
+      REAL c0 = C[row*n + col]   + valA * B[col];
+      REAL c1 = C[row*n + col + 1] + valA * B[col+1];
+      REAL c2 = C[row*n + col + 2] + valA * B[col+2];
+      REAL c3 = C[row*n + col + 3] + valA * B[col+3];
+      REAL c4 = C[row*n + col + 4] + valA * B[col+4];
+      REAL c5 = C[row*n + col + 5] + valA * B[col+5];
+      REAL c6 = C[row*n + col + 6] + valA * B[col+6];
+      REAL c7 = C[row*n + col + 7] + valA * B[col+7];
+
       for(int j = 1; j < n; j++) {  
-        // each iter does a block of columns in the current row
-        ptrToB += n; // advance B to the next row
-        valA = *ptrToA;
-        ptrToA++; // advance A to the next element 
-        c0 += valA * ptrToB[col];
-        c1 += valA * ptrToB[col+1];
-        c2 += valA * ptrToB[col+2];
-        c3 += valA * ptrToB[col+3];
-        c4 += valA * ptrToB[col+4];
-        c5 += valA * ptrToB[col+5];
-        c6 += valA * ptrToB[col+6];
-        c7 += valA * ptrToB[col+7];
+
+        REAL valA = A[row * n + j];
+
+        c0 += valA * B[j*n + col];
+        c1 += valA * B[j*n + col+1];
+        c2 += valA * B[j*n + col+2];
+        c3 += valA * B[j*n + col+3];
+        c4 += valA * B[j*n + col+4];
+        c5 += valA * B[j*n + col+5];
+        c6 += valA * B[j*n + col+6];
+        c7 += valA * B[j*n + col+7];
       }
-      // at this point ptrToB points to the bottom row
-      // and ptrToA points to the end of a row
-      // assert(ptrToA == &A[row*n + n]);
-      // assert(ptrToB == &B[n*(n-1)]);
-      ptrToB = B;  // put ptrToB back to the beginning of B 
-      ptrToA -= n; // move A back to beginning of the row
-      *(C) = c0;
-      *(C+1) = c1;
-      *(C+2) = c2;
-      *(C+3) = c3;
-      *(C+4) = c4;
-      *(C+5) = c5;
-      *(C+6) = c6;
-      *(C+7) = c7;
-      // assert(C == &oldC[row*n + col]);
-      C += 8;
+
+      // ptrToA -= n;
+      C[row*n + col] = c0;
+      C[row*n + col + 1] = c1;
+      C[row*n + col + 2] = c2;
+      C[row*n + col + 3] = c3;
+      C[row*n + col + 4] = c4;
+      C[row*n + col + 5] = c5;
+      C[row*n + col + 6] = c6;
+      C[row*n + col + 7] = c7;
+
     }
-    // assert(C == &oldC[row*n + n]);
-    ptrToA += n; // advance A to the next row
+
   }
+
+  // for(int row = 0; row < n; row++) { // going down the row 
+  //   for(int col = 0; col < n; col+=8) { // doing 8 columns at a time
+  //     REAL valA = *ptrToA;
+  //     ptrToA++; // advance A to the next element in the row block
+  //     REAL c0 = valA * ptrToB[col];
+  //     REAL c1 = valA * ptrToB[col+1];
+  //     REAL c2 = valA * ptrToB[col+2];
+  //     REAL c3 = valA * ptrToB[col+3];
+  //     REAL c4 = valA * ptrToB[col+4];
+  //     REAL c5 = valA * ptrToB[col+5];
+  //     REAL c6 = valA * ptrToB[col+6];
+  //     REAL c7 = valA * ptrToB[col+7];
+
+  //     // accumulate into c_i the product that needs to go into current row
+  //     // block of C 
+  //     for(int j = 1; j < n; j++) {  
+  //       // each iter does a block of columns in the current row
+  //       ptrToB += n; // advance B to the next row
+  //       valA = *ptrToA;
+  //       ptrToA++; // advance A to the next element 
+  //       c0 += valA * ptrToB[col];
+  //       c1 += valA * ptrToB[col+1];
+  //       c2 += valA * ptrToB[col+2];
+  //       c3 += valA * ptrToB[col+3];
+  //       c4 += valA * ptrToB[col+4];
+  //       c5 += valA * ptrToB[col+5];
+  //       c6 += valA * ptrToB[col+6];
+  //       c7 += valA * ptrToB[col+7];
+  //     }
+  //     // at this point ptrToB points to the bottom row
+  //     // and ptrToA points to the end of a row
+  //     // assert(ptrToA == &A[row*n + n]);
+  //     // assert(ptrToB == &B[n*(n-1)]);
+  //     ptrToB = B;  // put ptrToB back to the beginning of B 
+  //     ptrToA -= n; // move A back to beginning of the row
+  //     *(C) = c0;
+  //     *(C+1) = c1;
+  //     *(C+2) = c2;
+  //     *(C+3) = c3;
+  //     *(C+4) = c4;
+  //     *(C+5) = c5;
+  //     *(C+6) = c6;
+  //     *(C+7) = c7;
+  //     // assert(C == &oldC[row*n + col]);
+  //     C += 8;
+  //   }
+  //   // assert(C == &oldC[row*n + n]);
+  //   ptrToA += n; // advance A to the next row
+  // }
 
   #ifdef RACE_DETECTION
     ds_hclib_ready(false);
@@ -1003,7 +1086,7 @@ int main(int argc, char *argv[]) {
   if(verify) {
     printf("WRONG RESULT!\n");
   } else {
-    printf("Cilk Example: strassen\n");
+    printf("Correct Result \n");
     printf("Options: n = %d\n\n", n);
   }
 
