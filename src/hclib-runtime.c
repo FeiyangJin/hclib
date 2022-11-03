@@ -55,7 +55,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <hclib-module.h>
 #include <hclib-instrument.h>
 
-
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif
@@ -536,7 +535,6 @@ static __inline__ void ctx_swap(LiteCtx *current, LiteCtx *next,
     // switching to new context
     set_curr_lite_ctx(next);
 
-    //printf("        at hclib-runtime line 427 \n");
     LiteCtx_swap(current, next, lbl);
 
     // switched back to this context
@@ -1690,11 +1688,9 @@ void hclib_yield(hclib_locale_t *locale) {
         }
 
         if (task) {
-            //printf("the task we yield is %d \n",task->task_id);
             if (task->non_blocking) {
                 execute_task(task);
             } else {
-                //printf("    at hclib-runtime line 1457 \n");
                 LiteCtx *currentCtx = get_curr_lite_ctx();
                 HASSERT(currentCtx);
                 LiteCtx *newCtx = LiteCtx_create(yield_helper);
@@ -1899,7 +1895,6 @@ void hclib_user_harness_timer(double dur) {
  */
 void hclib_init(const char **module_dependencies,
         int n_module_dependencies, const int instrument) {
-	//my_init();
     if (getenv("HCLIB_PROFILE_LAUNCH_BODY")) {
         profile_launch_body = 1;
     }
