@@ -104,6 +104,7 @@ typedef struct tree_node{
     struct tree_node *children_list_tail;
     struct tree_node *next_sibling;
     int inline_finish_step;
+    bool saved;
 } tree_node;
 
 typedef struct dpst{

@@ -6,7 +6,7 @@
 #include "mem_access.h"
 #include "ds_to_hclib.h"
 
-extern tree_node_cpp* current_dpst_node = nullptr;
+tree_node_cpp* current_dpst_node = nullptr;
 static ShadowMem<MemAccessList_t> *shadow_mem = new ShadowMem<MemAccessList_t>();
 static bool is_asap_promise_task = false;
 static unsigned long long check_write_count = 0;

@@ -30,18 +30,12 @@ int fib(int n) {
     });
 
     hclib::async([&](){
-        task1 = get_current_task_id();
-        step1 = (void*) get_current_step_node();
-
         j = fib(n-2);
         q->put();
     });
 
     hclib::async([&](){
         p->get_future()->wait();
-
-        task2 = get_current_task_id();
-        step2 = (void*) get_current_step_node();
 
         s = i + j;
 
@@ -51,12 +45,6 @@ int fib(int n) {
     q->get_future()->wait();
     t->get_future()->wait();
 
-    assert(ds_precede(step1,step2,task1,task2) == false);
-
-    void* c_step = (void*) get_current_step_node();
-    int c_task = get_current_task_id();
-
-    assert(ds_precede(step2,c_step,task2,c_task) == true);
     return i + j;
 }
 
@@ -65,7 +53,7 @@ int main(int argc, char **argv) {
   
   hclib::launch(deps, 1, [&]() {
 
-    // ds_hclib_ready(true);
+    ds_hclib_ready(true);
 
     int n = 3;
     if (argc > 1){

@@ -71,11 +71,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef DRDP_ENABLED
 struct dpst DPST;
 
-char *node_char[5] = {'R','F','A','f','S'};
+char node_char[5] = {'R','F','A','f','S'};
 static int node_index = 0;
 static int task_id_unique = 0;
 
 int nt_count = 0;
+
+void set_current_step_node(tree_node* node){
+    DPST.current_step_node = node;
+    if (!node->saved && node->this_node_type == STEP)
+    // if (!node->saved)
+    {
+        ds_add_step_to_vector((void*) node);
+        node->saved = true;
+        // printf("    saved \n");
+    }
+}
 
 /**
  * @brief  get the tree_node of current task
@@ -335,6 +346,7 @@ tree_node* newtreeNode()
     node->number_of_child = 0;
     node->is_parent_nth_child = 0;
     node->inline_finish_step = -2;
+    node->saved = false;
 
     node->index = node_index;
     node_index ++;
@@ -644,6 +656,7 @@ static void hclib_entrypoint(const char **module_dependencies,
      */
     HASSERT(sizeof(worker_done_t) == 64);
 
+    printf("hclib entry point \n");
     // fj: send function pointer to shadow memory instrumentation
     // ds_set_task_id_pointer(&get_current_task_id);
     // ds_set_step_node_pointer(&get_current_step_node);
@@ -787,32 +800,41 @@ static inline void execute_task(hclib_task_t *task) {
     hclib_worker_state *ws = CURRENT_WS_INTERNAL;
     ws->current_finish = current_finish;
     ws->curr_task = task;
+    printf("current finish is null: %s \n", (current_finish == NULL) ? "true":"false");
 
 #ifdef DRDP_ENABLED
     // printf("task id is %d, dpst node is %p \n", task->task_id, task->node_in_dpst);
     // fj: update current dpst node
+    tree_node* step;
     if(task->node_in_dpst == NULL){
         
     }
     else if(current_finish == NULL){
         if(task->task_id == 0){
             set_current_dpst_node((void*) task->node_in_dpst->children_list_tail->children_list_tail);
-            DPST.current_step_node = task->node_in_dpst->children_list_tail->children_list_tail;
+            step = task->node_in_dpst->children_list_tail->children_list_tail;
+            printf("current finish is null and current task is main task, step id is %d \n", step->index);
         }
         else{
             set_current_dpst_node((void*) task->node_in_dpst->children_list_tail);
-            DPST.current_step_node = task->node_in_dpst->children_list_tail;
+            step = task->node_in_dpst->children_list_tail;
         }
 
     }
     else if(task->node_in_dpst->depth == 0 || task->node_in_dpst->depth < current_finish->node_in_dpst->depth){
         set_current_dpst_node((void*) current_finish->node_in_dpst->children_list_tail);
-        DPST.current_step_node = current_finish->node_in_dpst->children_list_tail;
+        step = current_finish->node_in_dpst->children_list_tail;
     }   
     else{
         set_current_dpst_node((void*) task->node_in_dpst->children_list_tail);
-        DPST.current_step_node = task->node_in_dpst->children_list_tail;
+        step = task->node_in_dpst->children_list_tail;
     }
+    if (step)
+    {
+        // printf("set current step node in execute task \n");
+        set_current_step_node(step);
+    }
+    
 #endif
 
 #ifdef VERBOSE
@@ -1345,7 +1367,7 @@ void _help_wait(LiteCtx *ctx) {
     hclib_worker_state *ws = current_ws();
     hclib_task_t *curr_task = (hclib_task_t *) ws->curr_task;
 
-    task->current_finish = curr_task->current_finish;
+    // task->current_finish = curr_task->current_finish;
     task->task_id = curr_task->task_id;
     task->parent_id = curr_task->parent_id;
     task->node_in_dpst = curr_task->node_in_dpst;
@@ -1460,6 +1482,7 @@ void *hclib_future_wait(hclib_future_t *future) {
 
     set_current_dpst_node((void*) continuation);
     DPST.current_step_node = continuation;
+    // set_current_step_node(continuation);
 
     // end fj
     return future->owner->datum;
@@ -1539,7 +1562,7 @@ static void _help_finish_ctx(LiteCtx *ctx) {
     hclib_worker_state *ws = current_ws();
     hclib_task_t *curr_task = (hclib_task_t *) ws->curr_task;
 
-    task->current_finish = curr_task->current_finish;
+    // task->current_finish = curr_task->current_finish;
     task->task_id = curr_task->task_id;
     task->parent_id = curr_task->parent_id;
     task->node_in_dpst = curr_task->node_in_dpst;
@@ -1758,7 +1781,10 @@ void hclib_start_finish() {
     // fj: update current dpst node
     tree_node* new_step = insert_leaf(finish->node_in_dpst);
     set_current_dpst_node((void*) new_step);
-    DPST.current_step_node = new_step;
+    // DPST.current_step_node = new_step;
+    // printf("set current step node in finish start \n");
+    set_current_step_node(new_step);
+
 
     // ds operation
     ds_addFinish(finish->node_in_dpst->index, finish->belong_to_task_id, finish->node_in_dpst, finish);
@@ -1830,17 +1856,26 @@ void hclib_end_finish() {
 
 #ifdef DRDP_ENABLED
     // fj: update current node in dpst
+    tree_node* step = NULL;
     if(current_task == NULL || current_task->node_in_dpst == NULL){
         
     }
     else if(current_task->node_in_dpst->depth == 0 || current_task->node_in_dpst->depth < ws->current_finish->node_in_dpst->depth){
         set_current_dpst_node((void*) ws->current_finish->node_in_dpst->children_list_tail);
-        DPST.current_step_node = ws->current_finish->node_in_dpst->children_list_tail;
+        // DPST.current_step_node = ws->current_finish->node_in_dpst->children_list_tail;
+        step = ws->current_finish->node_in_dpst->children_list_tail;
     }   
     else{
         set_current_dpst_node((void*) current_task->node_in_dpst->children_list_tail);
         DPST.current_step_node = current_task->node_in_dpst->children_list_tail;
+        step = current_task->node_in_dpst->children_list_tail;
     }
+    if (step != NULL)
+    {
+        // printf("set current step node in finish end \n");
+        set_current_step_node(step);
+    }
+    
 #endif
 
 }

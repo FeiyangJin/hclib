@@ -54,6 +54,7 @@ __attribute__((weak)) void ds_set_task_id_pointer(void* function_p);
 __attribute__((weak)) void ds_set_step_node_pointer(void* function_p);
 __attribute__((weak)) void ds_set_print_dpst_pointer(void* function_p);
 __attribute__((weak)) bool ds_dpst_precede(void* node1, void* node);
+__attribute__((weak)) void ds_add_step_to_vector(void* step);
 
 #ifdef __cplusplus
 }

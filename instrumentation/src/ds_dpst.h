@@ -40,10 +40,10 @@ class DisjointSet
     // a map from finish dpst node id to finish
     robin_hood::unordered_map<int, hclib_finish*> all_finishes;
 
+    // the key will be caculated based on two task id. Assume we have two task ids a and b
+    // the key is caculated as key = (a << 23) | b
+    // an unordered_map from key to the deepest step node index in the first task that precedes the second task
     robin_hood::unordered_map<unsigned long int, unsigned int> cache;
-    // unordered_map<unsigned int,unsigned int> cache;
-    // unordered_map<cache_key,int,CacheHashFunction> cache;
-    // unordered_map<cache_key,tree_node_cpp*,CacheHashFunction> cache;
 
     // a map from task_id to task
     robin_hood::unordered_map<int, hclib_task> all_tasks;
@@ -52,6 +52,8 @@ class DisjointSet
     robin_hood::unordered_map<int, set_info*> parent_aka_setnowin;
 
 public:
+    vector<tree_node_cpp*> all_step_nodes;
+
     int get_find_count();
     
     DisjointSet();

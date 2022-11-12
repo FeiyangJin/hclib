@@ -87,6 +87,7 @@ DisjointSet::DisjointSet(){
     this->all_tasks.reserve(5000);
     this->parent_aka_setnowin.reserve(5000);
     this->cache.reserve(650000);
+    this->all_step_nodes.reserve(1000000);
 }
 
 void DisjointSet::addSet(int task_index){
@@ -104,7 +105,7 @@ void DisjointSet::addSet(int task_index){
 }
 
 int DisjointSet::get_find_count(){
-    printf("size of disjoint set: %d \n", parent_aka_setnowin.size());
+    printf("size of disjoint set: %zu \n", parent_aka_setnowin.size());
     return this->find_count;
 }
 
@@ -396,7 +397,6 @@ tree_node_cpp* DisjointSet::find_lca_left_child_cpp(tree_node_cpp* node1, tree_n
 
 
 #define CACHE ;
-// bool return_false_directly = false;
 
 /**
  * @brief  check if node1 precedes node2 in dpst
@@ -476,8 +476,6 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned
 
     #ifdef CACHE
         unsigned long int key = (((unsigned long int)task_a) << 23) | task_b;
-        // bool in_cache = cache.count(key);
-        // if(in_cache && step_a->index <= cache.at(key)){
         unsigned int& in_cache = cache[key];
         if(in_cache >= (unsigned) step_a->index){
             #ifdef DEBUG
@@ -493,23 +491,12 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned
 
     visited.clear();
     visited.reserve(5);
-    // robin_hood::unordered_set<int> visited;
     bool result = this->visit(step_a,step_b,task_a,task_b,visited);
 
     #ifdef CACHE
         if(result == true){
+            // in_cache is a reference to the cache[key] value, so the update will be show in the cache.
             in_cache = step_a->index;
-            // if(in_cache){
-            //     cache[key] = step_a->index;
-            //     // cache.at(key) = step_a->index;
-            // }
-            // else{
-            //     cache.insert({key,step_a->index});
-            //     // cache.insert(std::pair<unsigned int,unsigned int>(key,step_a->index));
-            //     // cache[key] = step_a->index;
-            //     // cache.insert(std::pair<unsigned int,unsigned int>(key,step_a->index));
-            //     // cache.insert(std::pair<cache_key,int>(key,step_a->index));
-            // }
         }
     #endif
 
@@ -525,18 +512,8 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned
     return result;
 }
 
-// #define BFS
-// #define FB
 
-bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned int task_a, unsigned int task_b, robin_hood::unordered_set<int> &visited){
-    // #ifdef CACHE
-    //     unsigned int key = (task_a << 18) | task_b;
-    //     bool in_cache = cache.count(key);
-    //     if(in_cache && step_a->index <= cache[key]){
-    //         return true;
-    //     }
-    // #endif
-    
+bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned int task_a, unsigned int task_b, robin_hood::unordered_set<int> &visited){    
 #ifndef BFS
     bool b_in_visited = visited.count(task_b);
     if(b_in_visited){
@@ -564,7 +541,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned i
     // bfs nt joins
     deque<tree_node_cpp*> steps;
     // steps.push_back(step_b);
-    int last_push_task = -1;
+    // int last_push_task = -1;
 
     // prepare for lsa
     deque<tree_node_cpp*> all_lsa_query_node;
@@ -624,7 +601,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned i
                         steps.push_back(last_step_node);
                     // } 
                 }
-                last_push_task = step_task;
+                // last_push_task = step_task;
             // }
 
             // prepare for lsa
@@ -645,7 +622,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned i
         // bfs lsa
         // check nt in lsa and goes up until lsa become null
         // if lsa in visited, do not check its nt, just check the new lsa and add it to the dequeue.
-        int last_check_lsa = -1;
+        // int last_check_lsa = -1;
         set_info* lsa_set_info;
 
         // while(all_lsa_query_node.size() > 0){
@@ -808,7 +785,15 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned i
 }
 
 int DisjointSet::get_cache_size(){
-    printf("cache hit %d, cache miss %d, hit rate = %f \n", cachehit, cachemiss, (double) cachehit / (double) totalprecede);
+    printf("cache hit %d, cache miss %d, hit rate = %f, cache size %zu \n", cachehit, cachemiss, (double) cachehit / (double) totalprecede, cache.size());
+    printf("all step nodes size %lu, step nodes: \n", this->all_step_nodes.size());
+    for (auto i = all_step_nodes.begin(); i != all_step_nodes.end(); i++)
+    {
+        printf(" %d ", (*i)->index);
+    }
+    printf("\n");
+    
+    
     printf("same step count: %d \n", samestepcount);
     if(visitcount > 0){
         printf("min visited size: %d, max visited size: %d , average nt visit size %f \n", visitmin, visitmax, (double) visittotalsize / (double) visitcount);

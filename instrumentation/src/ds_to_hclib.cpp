@@ -21,6 +21,12 @@ hclib_function_dpst hclib_print_dpst = NULL;
 //     current_dpst_node = (tree_node_cpp*) node;
 // }
 
+void ds_add_step_to_vector(void* step){
+    ds->all_step_nodes.push_back((tree_node_cpp*) step);
+    // TODO: get happens-before relationship between all previous step and current step
+    
+}
+
 
 hclib_task test_get_task_info(int task_id){
     return ds->get_task_info(task_id);

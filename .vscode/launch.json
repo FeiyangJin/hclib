@@ -5,16 +5,40 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "clang++ - Build and debug active file",
+            "name": "HCLIB test2-orig",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}/${fileBasenameNoExtension}",
+            "program": "/home/fjin/gitRepo/hclib/instrumentation/benchmark/test/test2-origin.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [],
+            "environment": [{"name": "HCLIB_WORKERS","value": "1"},{"name": "LD_LIBRARY_PATH", "value": "\"../../instrumentation:/home/fjin/gitRepo/hclib/hclib-install-orig/lib:/home/fjin/gitRepo/hclib/hclib-install/lib:/usr/lib/gcc/x86_64-linux-gnu/7.4.0:/home/lyu/Software/llvm-install/ompt/lib:/home/lyu/Software/llvm-install/ompt/lib/x86_64-unknown-linux-gnu:\""}],
             "externalConsole": false,
-            "MIMode": "lldb",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description":  "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "HCLIB test2-rd",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/fjin/gitRepo/hclib/instrumentation/benchmark/test/test2.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [{"name": "HCLIB_WORKERS","value": "1"},{"name": "LD_LIBRARY_PATH", "value": "\"../../instrumentation:/home/fjin/gitRepo/hclib/hclib-install/lib:/home/fjin/gitRepo/hclib/hclib-install/lib:/usr/lib/gcc/x86_64-linux-gnu/7.4.0:/home/lyu/Software/llvm-install/ompt/lib:/home/lyu/Software/llvm-install/ompt/lib/x86_64-unknown-linux-gnu:/home/fjin/gitRepo/hclib/hclib-install/lib:\""}],
+            "externalConsole": false,
+            "MIMode": "gdb",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -22,8 +46,8 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "C/C++: clang++ build active file",
-            "miDebuggerPath": "/usr/bin/lldb-mi"
+            // "preLaunchTask": "C/C++: clang++ build active file",
+            // "miDebuggerPath": "/usr/bin/lldb-mi"
         }
     ]
 }
