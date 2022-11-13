@@ -130,19 +130,39 @@ void mat_mul_par_promise(const REAL *const A, const REAL *const B, REAL *C, int 
         #ifdef RACE_DETECTION
             ds_hclib_ready(false);
             int a;
-            for(a = 0; a < n*n-1; a++){
-                int* p = (int*) &C[a];
-                int* p2 = (int*) &A[a];
-                int* p3 = (int*) &B[a];
+            int b;
+            for(a = 0; a < n; a++){
+                for(b = 0; b < n; b++){
+                    int* p = (int*) &C[a * n + b];
+                    int* p2 = (int*) &A[a * n + b];
+                    int* p3 = (int*) &B[a * n + b];
 
-                ds_hclib_ready(true);
-                asap_check_write(p,4);
-                asap_check_read(p2,4);
-                asap_check_read(p3,4);
-                ds_hclib_ready(false); 
+                    ds_hclib_ready(true);
+                    asap_check_write(p,4);
+                    asap_check_read(p2,4);
+                    asap_check_read(p3,4);
+                    ds_hclib_ready(false); 
+                }
             }
             ds_hclib_ready(false);
         #endif
+
+        // #ifdef RACE_DETECTION
+        //     ds_hclib_ready(false);
+        //     int a;
+        //     for(a = 0; a < n*n-1; a++){
+        //         int* p = (int*) &C[a];
+        //         int* p2 = (int*) &A[a];
+        //         int* p3 = (int*) &B[a];
+
+        //         ds_hclib_ready(true);
+        //         asap_check_write(p,4);
+        //         asap_check_read(p2,4);
+        //         asap_check_read(p3,4);
+        //         ds_hclib_ready(false); 
+        //     }
+        //     ds_hclib_ready(false);
+        // #endif
 
         for(i = 0; i < n; i++){
             for(k = 0; k < n; k++){

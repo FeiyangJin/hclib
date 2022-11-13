@@ -11,4 +11,4 @@ matmul-origin.exe: matmul.cpp
 
 .PHONY: clean
 clean:
-	rm *.exe *.bc *.ll
+	rm -f *.exe *.bc *.ll

@@ -149,13 +149,44 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                 #ifdef RACE_DETECTION
                     ds_hclib_ready(false);
 
-                    // try to reduce overhead
-                    for (int k=0; k<ny; k++){
-                        // 0. calculating index
-                        int index = index2d(ny, i, k);
+                    // if (ny >= 3 && nx >= 3){
+                    //     for (int c1 = 0; c1 < nx; c1 += 1) {
+                    //         if (c1 >= 1) {
+                    //             if (nx >= c1 + 2) {
+                    //                 u_read(c1, 0);
+                    //                 if (ny + nx >= 7 && c1 == 1)
+                    //                     u_read(1, 1);
+                    //             }
+                    //             for (int c2 = max(1, -c1 + 3); c2 < min(ny, ny + nx - c1 - 2); c2 += 1)
+                    //                 u_read(c1, c2);
+                    //         } else {
+                    //             for (int c2 = 1; c2 < ny - 1; c2 += 1)
+                    //                 u_read(0, c2);
+                    //         }
+                    //     }
+                    // }
+
+                    // for (int c1 = 0; c1 < nx; c1 += 1)
+                    //     for (int c2 = 0; c2 < ny; c2 += 1)
+                    //         f_read(c1, c2);
+                        
+                    // for (int k=0; k<ny; k++){
+                    //     // 0. calculating index
+                    //     int index = index2d(ny, i, k);
+                    //     int* p = ((int*)&unew[index]);
+
+                    //     // 1. access unew
+                    //     ds_hclib_ready(true);
+                    //     asap_check_write(p, 4);
+                    //     ds_hclib_ready(false);
+                    // }
+
+
+                    for (int c2 = 0; c2 < ny; c2 += 1){
+                        // 1. access unew
+                        int index = index2d(ny, i, c2);
                         int* p = ((int*)&unew[index]);
 
-                        // 1. access unew
                         ds_hclib_ready(true);
                         asap_check_write(p, 4);
                         ds_hclib_ready(false);
@@ -167,15 +198,14 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                         asap_check_read(p2, 4);
                         ds_hclib_ready(false);
 
-                        
                         // 3. access u under some condition
-                        if (i == 0 || k == 0 || i == nx - 1 || k == ny - 1) {
+                        if (i == 0 || c2 == 0 || i == nx - 1 || c2 == ny - 1) {
                             unew[index] = f[index];
                         }
                         else{
                             // access u
-                            int index3 = index2d(ny, i-1, k);
-                            int index4 = index2d(ny, i+1, k);
+                            int index3 = index2d(ny, i-1, c2);
+                            int index4 = index2d(ny, i+1, c2);
                             int* p3 = ((int*) &u[index3]);
                             int* p4 = ((int*) &u[index4]);
 
@@ -184,24 +214,22 @@ void sweep (int nx, int ny, float dx, float dy, float *f_, int itold, int itnew,
                             asap_check_read(p4, 4);
                             ds_hclib_ready(false);
 
-                            unew[index] = 0.25 * (u[index3] + u[index2d(ny, i, k+1)] + u[index2d(ny, i, k-1)] + u[index4] 
+                            unew[index] = 0.25 * (u[index3] + u[index2d(ny, i, c2+1)] + u[index2d(ny, i, c2-1)] + u[index4] 
                                         + f[index] * dx * dy);
                         }
                     }
 
                     ds_hclib_ready(false);
-                #else
-
-                    for (int jb = 0; jb < ny; jb++) {
-                        if (i == 0 || jb == 0 || i == nx - 1 || jb == ny - 1) {
-                            unew[index2d(ny, i, jb)] = f[index2d(ny, i, jb)];
-                        } else {
-                            unew[index2d(ny, i, jb)] = 0.25 * (u[index2d(ny, i-1, jb)] + u[index2d(ny, i, jb+1)] + u[index2d(ny, i, jb-1)] + u[index2d(ny, i+1, jb)]
-                                                    + f[index2d(ny, i, jb)] * dx * dy);
-                        }
-                    }
-
                 #endif
+
+                for (int jb = 0; jb < ny; jb++) {
+                    if (i == 0 || jb == 0 || i == nx - 1 || jb == ny - 1) {
+                        unew[index2d(ny, i, jb)] = f[index2d(ny, i, jb)];
+                    } else {
+                        unew[index2d(ny, i, jb)] = 0.25 * (u[index2d(ny, i-1, jb)] + u[index2d(ny, i, jb+1)] + u[index2d(ny, i, jb-1)] + u[index2d(ny, i+1, jb)]
+                                                + f[index2d(ny, i, jb)] * dx * dy);
+                    }
+                }
  
                 promise_unew[i]->put();
 

@@ -415,18 +415,35 @@ void lu0(float *diag, int submatrix_size)
         int n = submatrix_size;
         int* p;
 
-        for(int a = 0; a <= n*n - 1 ; a++){
-            p = (int*) &diag[a];
+        // for(int a = 0; a <= n*n - 1 ; a++){
+        //     p = (int*) &diag[a];
 
-            ds_hclib_ready(true);
-            if(a <= n - 1){
-                asap_check_read(p, 4);
-            }
-            else{
-                asap_check_write(p, 4);
-            }
+        //     ds_hclib_ready(true);
+        //     if(a <= n - 1){
+        //         asap_check_read(p, 4);
+        //     }
+        //     else{
+        //         asap_check_write(p, 4);
+        //     }
             
-            ds_hclib_ready(false);
+        //     ds_hclib_ready(false);
+        // }
+
+        for(int c1 = 0; c1 < n ; c1+=1){
+            for (int c2 = 0; c2 < n; c2+=1)
+            {
+                p = (int*) &diag[c1 * n + c2];
+
+                ds_hclib_ready(true);
+                if (c1 < 1)
+                {
+                    asap_check_read(p, 4);
+                }
+                else{
+                    asap_check_write(p, 4);
+                }
+                
+            }
         }
 
         ds_hclib_ready(false);
@@ -458,14 +475,32 @@ void bdiv(float *diag, float *row, int submatrix_size)
         int* p;
         int* p2;
 
-        for(int a = 0; a <= n*n - 1 ; a++){
-            p = (int*) &diag[a];
-            p2 = (int*) &row[a];
+        // for(int a = 0; a <= n*n - 1 ; a++){
+        //     p = (int*) &diag[a];
+        //     p2 = (int*) &row[a];
 
-            ds_hclib_ready(true);
-            asap_check_read(p,4);
-            asap_check_write(p2,4);
-            ds_hclib_ready(false);
+        //     ds_hclib_ready(true);
+        //     asap_check_read(p,4);
+        //     asap_check_write(p2,4);
+        //     ds_hclib_ready(false);
+        // }
+
+        for(int c1 = 0; c1 < n ; c1 += 1){
+            for(int c2 = 0; c2 < n; c2 += 1){
+                p2 = (int*) &row[c1 * n + c2];
+
+                ds_hclib_ready(true);
+                asap_check_write(p2,4);
+                ds_hclib_ready(false);
+
+                if (c2 >= c1)
+                {
+                    p = (int*) &diag[c1 * n + c2];
+                    ds_hclib_ready(true);
+                    asap_check_read(p,4);
+                    ds_hclib_ready(false);
+                }
+            }
         }
 
         // read diag[i], 0 <= i <= n^2 - 1
@@ -502,16 +537,31 @@ void bmod(float *row, float *col, float *inner, int submatrix_size)
         int* p2;
         int* p3;
 
-        for(int a = 0; a <= n*n - 1 ; a++){
-            p = (int*) &inner[a];
-            p2 = (int*) &row[a];
-            p3 = (int*) &col[a];
+        // for(int a = 0; a <= n*n - 1 ; a++){
+        //     p = (int*) &inner[a];
+        //     p2 = (int*) &row[a];
+        //     p3 = (int*) &col[a];
 
-            ds_hclib_ready(true);
-            asap_check_write(p,4);
-            asap_check_read(p2,4);
-            asap_check_read(p3,4);
-            ds_hclib_ready(false);
+        //     ds_hclib_ready(true);
+        //     asap_check_write(p,4);
+        //     asap_check_read(p2,4);
+        //     asap_check_read(p3,4);
+        //     ds_hclib_ready(false);
+        // }
+
+        for(int c1 = 0; c1 < n ; c1 += 1){
+            for (int c2 = 0; c2 < n; c2 += 1)
+            {
+                p = (int*) &inner[c1 * n + c2];
+                p2 = (int*) &row[c1 * n + c2];
+                p3 = (int*) &col[c1 * n + c2];
+
+                ds_hclib_ready(true);
+                asap_check_write(p,4);
+                asap_check_read(p2,4);
+                asap_check_read(p3,4);
+                ds_hclib_ready(false);
+            }
         }
 
         ds_hclib_ready(false);
@@ -544,21 +594,40 @@ void fwd(float *diag, float *col, int submatrix_size)
         int* p;
         int* p2;
 
-        for(int a = 0; a <= n*n - 1 ; a++){
-            p = (int*) &col[a];
-            p2 = (int*) &diag[a];
+        // for(int a = 0; a <= n*n - 1 ; a++){
+        //     p = (int*) &col[a];
+        //     p2 = (int*) &diag[a];
 
-            ds_hclib_ready(true);
-            asap_check_read(p2,4);
+        //     ds_hclib_ready(true);
+        //     asap_check_read(p2,4);
             
-            if(a <= n-1){
-                asap_check_read(p,4);
-            }
-            else{
-                asap_check_write(p,4);
-            }
+        //     if(a <= n-1){
+        //         asap_check_read(p,4);
+        //     }
+        //     else{
+        //         asap_check_write(p,4);
+        //     }
 
-            ds_hclib_ready(false);
+        //     ds_hclib_ready(false);
+        // }
+
+        for(int c1 = 0; c1 < n; c1+=1){
+            for (int c2 = 0; c2 < n; c2+=1)
+            {
+                p = (int*) &col[c1 * n + c2];
+                p2 = (int*) &diag[c1 * n +c2];
+
+                ds_hclib_ready(true);
+                if (c1 < 1)
+                {
+                    asap_check_read(p,4);
+                }
+                else{
+                    asap_check_write(p,4);
+                    if (c2 < c1)
+                        asap_check_read(p2,4);
+                }
+            }
         }
 
         ds_hclib_ready(false);
