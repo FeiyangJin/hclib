@@ -1,5 +1,5 @@
-// Adapted from DRB133-taskdep5-orig-omp45-no.c
-// https://github.com/LLNL/dataracebench/blob/master/micro-benchmarks/DRB133-taskdep5-orig-omp45-no.c
+// Adapted from DRB134-taskdep5-orig-omp45-no.c
+// https://github.com/LLNL/dataracebench/blob/master/micro-benchmarks/DRB134-taskdep5-orig-omp45-no.c
 // Author: Feiyang Jin
 // Email: fjin35@gatech.edu
 

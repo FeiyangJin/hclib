@@ -15,26 +15,24 @@ int main(int argc, char **argv) {
 
     int x = 0, y = 2;
     hclib::promise_t<void> *p = new hclib::promise_t<void>();
+    hclib::promise_t<void> *q = new hclib::promise_t<void>();
 
-    hclib::finish([&](){
-
-        hclib::promise_t<void> *q = new hclib::promise_t<void>();
-        hclib::async([&](){
-            x ++ ;
-            p->put();
-            q->put();
-        });
-
-        hclib::async([&](){
-            q->get_future()->wait();
-            y = y - x;
-        });
-
-        p->get_future()->wait();
-
-        printf("x=%d\n",x);
-
+    hclib::async([&](){
+        x ++ ;
+        p->put();
     });
+
+    hclib::async([&](){
+        p->get_future()->wait();
+        y = y - x;
+        q->put();
+    });
+
+    p->get_future()->wait();
+
+    printf("x=%d\n",x);
+
+    q->get_future()->wait();
 
     printf("y=%d\n",y);
     

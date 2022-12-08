@@ -16,7 +16,7 @@ fi
 
 BENCHMARK_NAME="sparselu"
 DEFAULT_INPUT="128 32"
-# DEFAULT_INPUT="32 8"
+# DEFAULT_INPUT="64 16"
 ORIGIN_EXE="${BENCHMARK_NAME}-origin.exe"
 RD_EXE="${BENCHMARK_NAME}-rd.exe"
 
@@ -80,6 +80,6 @@ else
         make ${RD_EXE}
     fi
     echo "Run race detection"
-    echo "LD_LIBRARY_PATH=\"../../../instrumentation:${LD_LIBRARY_PATH}\" HCLIB_WORKERS=1 ./${RD_EXE} ${INPUT}"
-    LD_LIBRARY_PATH="../../../instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 /usr/bin/time -f "\nTime: %e sec\nMemory: %M kb" ./${RD_EXE} ${INPUT}
+    echo "LD_LIBRARY_PATH=\"../../instrumentation:${LD_LIBRARY_PATH}\" HCLIB_WORKERS=1 ./${RD_EXE} ${INPUT}"
+    LD_LIBRARY_PATH="../../instrumentation:${LD_LIBRARY_PATH}" HCLIB_WORKERS=1 /usr/bin/time -f "\nTime: %e sec\nMemory: %M kb" ./${RD_EXE} ${INPUT}
 fi

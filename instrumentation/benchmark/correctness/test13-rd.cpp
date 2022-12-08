@@ -1,5 +1,5 @@
-// Adapted from DRB079-taskdep3-orig-no.c, but this one **dose** have a race
-// https://github.com/LLNL/dataracebench/blob/master/micro-benchmarks/DRB079-taskdep3-orig-no.c
+// Adapted from DRB078-taskdep2-orig-no.c
+// https://github.com/LLNL/dataracebench/blob/master/micro-benchmarks/DRB078-taskdep2-orig-no.c
 // Author: Feiyang Jin
 // Email: fjin35@gatech.edu
 
@@ -13,19 +13,24 @@ int main(int argc, char **argv) {
 
     ds_hclib_ready(true);
 
-    int i=0, j, k;
+    int i=0;
     hclib::promise_t<void> *p = new hclib::promise_t<void>();
 
-    hclib::async([&](){
-        p->put();
-        i = 1;
+    hclib::finish([&](){
+
+      hclib::async([&](){
+          sleep(3);
+          i = 1;
+          p->put();
+      });
+
+      hclib::async([&](){
+          p->get_future()->wait();
+          i = 2;
+      });
     });
 
-    hclib::async([&](){
-        p->get_future()->wait();
-        j = i;
-    });
-
+    assert(i == 2);
     printf("all tests passsed in test13 \n");
     // end of hclib
   });
