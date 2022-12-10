@@ -77,7 +77,7 @@ DRDP Race Detector Tutorial
 We use a simple HClib program, `race_example.cpp` to illustrate the usage of DRDP. The code resides in the folder `race_detector_benchmark/race_example`.
 To compile the program with DRDP enabled, we use the compilation script `inst.sh`. This script has been added to `$PATH` after setting up HClib environment variables. The commandline of `inst.sh` is `inst.sh [--llvm LLVM_ROOT] [-o OUTPUT] SOURCE_FILE [OPTIONS_FOR_LLVM]`. The two options, `--llvm` and `-o`, are optional, and all additional options after the source file will be passed to the clang compiler.
 
-* Assume the HClib is installed into the default location (`$PWD/hclib-install`)
+Assume the HClib is installed into the default location (`$PWD/hclib-install`)
 
     cd race_detector_benchmark/race_example
     inst.sh -o race_example.exe race_example.cpp -O3 -std=c++11 -I../../hclib-install/include -L../../hclib-install/lib -lhclib -lrt -ldl -g
@@ -94,12 +94,12 @@ We provide a series of scripts to help re-evaluate our result of DRDP in the ECO
 
 All seven benchmarks reside in the folder `race_detector_benchmark`. To launch these benchmarks, please use the script `race_detector_benchmark/bin/evaluation.sh`. It will execute all benchmark five times and generate the bar charts of time and memory overhead. To launch a single benchmark, please use the script `run.sh`. All these scripts will set up the correct HClib environment variables for the execution, so you don't need to manually set them.
 
-* Launch all benchmarks
+Launch all benchmarks:
 
     cd race_detector_benchmark
     ./bin/evaluate.sh
 
-* Launch a single benchmark
+Launch a single benchmark:
 
     cd race_detector_example
     ./run.sh --orig  # native execution
