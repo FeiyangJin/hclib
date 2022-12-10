@@ -44,7 +44,7 @@ fi
 source ${RUNTIME}/bin/hclib_setup_env.sh
 #fi
 
-for i in {1..22}; do
+for i in {1..23}; do
   RD_EXE="${BENCHMARK_NAME}${i}-rd.exe"
   if [ ! -e ${RD_EXE} ]; then
       make ${RD_EXE} > /dev/null 2>&1
