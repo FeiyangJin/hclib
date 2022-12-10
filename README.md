@@ -57,22 +57,55 @@ HCLIB_ENABLE_HWLOC, HCLIB_ENABLE_PRODUCTION, HCLIB_ENABLE_STATS, HCLIB_ENABLE_VE
 
 For example, to enable production setting:
 
-    ./install.sh -DHCLIB_ENABLE_PRODUCTION=ON
+    `./install.sh` -DHCLIB_ENABLE_PRODUCTION=ON
 
 
 DRDP Race Detector
 ---------------------------------------------
-The following option in the CMakeList.txt in the root directory can be turned on to enable race detection
+DRDP is a dynamic determinacy race detector designed for HClib programs. It leverages an LLVM plugin to instrument a HClib program, and
+carries out dynamic analysis along with the program execution. Through one execution, DRDP can identidy all hidden determinacy races under 
+the given input, regardless of the actual task schedule. Currently, DRDP can tackle a subset of constructs in HClib including `async`, `finish`, 
+and `promise`.
 
-option(HCLIB_ENABLE_DRDP        "enable DRDP determinacy race detector" OFF)
+To install HClib with DRDP support, you should use an LLVM 14 release or higher version. We recommend using the following release from the [LLVM official website](https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.0/clang+llvm-14.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz). 
+By default, DRDP support is turned off when installing HClib using the installation script `install.sh`. To enable DRDP, add the the option `-DHCLIB_ENABLE_DRDP=ON` to the commandline.
 
-The constructs currently supported include async, finish, and promises.
-
+    ./install.sh -DHCLIB_ENABLE_DRDP=ON
 
 DRDP Race Detector Tutorial
 ---------------------------------------------
-The race detector source file and benchmarks is under instrumentation.
+We use a simple HClib program, `race_example.cpp` to illustrate the usage of DRDP. The code resides in the folder `race_detector_benchmark/race_example`.
+To compile the program with DRDP enabled, we use the compilation script `inst.sh`. This script has been added to `$PATH` after setting up HClib environment variables. The commandline of `inst.sh` is `inst.sh [--llvm LLVM_ROOT] [-o OUTPUT] SOURCE_FILE [OPTIONS_FOR_LLVM]`. The two options, `--llvm` and `-o`, are optional, and all additional options after the source file will be passed to the clang compiler.
 
+* Assume the HClib is installed into the default location (`$PWD/hclib-install`)
+
+    cd race_detector_benchmark/race_example
+    inst.sh -o race_example.exe race_example.cpp -O3 -std=c++11 -I../../hclib-install/include -L../../hclib-install/lib -lhclib -lrt -ldl -g
+
+Currently, DRDP enforces that HClib programs should execute sequentially during the race detection, otherwise DRDP may report runtime errors. Therefore, the the number of worker thread for `race_example.exe` should be set to 1 through the environment variable `HCLIB_WORKERS`.
+
+    HCLIB_WORKERS=1 ./race_example.exe
+
+DRDP Artifact for ECOOP 2023 Submission
+---------------------------------------------
+We provide a series of scripts to help re-evaluate our result of DRDP in the ECOOP 2023 submission. To faciliate the HClib installtion, please use the script `install_artifact.sh` (no input parameter needs to be specified in the commandline). It will install two hclib runtimes in `PWD`. `hclib-install-orig` is the original HClib runtime while `hclib-install-orig` is a HClib runtime with DRDP enabled.
+
+    ./install_artifact.sh
+
+All seven benchmarks reside in the folder `race_detector_benchmark`. To launch these benchmarks, please use the script `race_detector_benchmark/bin/evaluation.sh`. It will execute all benchmark five times and generate the bar charts of time and memory overhead. To launch a single benchmark, please use the script `run.sh`. All these scripts will set up the correct HClib environment variables for the execution, so you don't need to manually set them.
+
+* Launch all benchmarks
+    cd race_detector_benchmark
+    ./bin/evaluate.sh
+
+* Launch a single benchmark
+    cd race_detector_example
+    ./run.sh --orig  # native execution
+    ./run.sh --rd    # execution with race detection
+
+You can also use our Docker image at [Dockerhub](https://hub.docker.com/r/lecheny/drdp) to test the artifact. The image has installed the artifact at `/opt/hclib`
 ### Details of source file:
+The socrce code of DRDP resides in the folder `race_detector`. It includes the compilation script `inst.sh`, source code for the LLVM plugin, and source code for the DRDP runtime.
 
 ### Details of benchmarks:
+The socrce code of benchmarks used for ECOOP 2023 submission resides in the folder `race_detector_benchmark`.

@@ -1,0 +1,35 @@
+#include "hclib_cpp.h"
+#include <inttypes.h>
+
+using namespace std;
+
+int main(int argc, char** argv) {
+
+  char const *deps[] = { "system" }; 
+  hclib::launch(deps, 1, [&]() {
+
+    ds_hclib_ready(true);
+
+    int x = 10;
+
+    hclib::async([&x](){
+      x = 70;
+    });
+
+    printf("\n x is %d \n \n",x);
+    printf("should detect race\n");
+    
+
+    // #ifdef RACE_DETECTION
+    //     printf("DPST height is: %d \n", get_dpst_height());
+    //     printf("cache size is %d \n",ds_get_cache_size());
+    //     printf("number of task is %d \n",get_task_id_unique());
+    //     printf("number of nt join %d \n", get_nt_count());
+    //     printf("number of tree joins %d \n", ds_get_tree_join_count());
+    //     ds_print_check_write_count();
+    //     ds_print_check_read_count();
+    // #endif
+  });
+
+  return 0;
+}
