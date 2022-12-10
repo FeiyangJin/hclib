@@ -118,5 +118,5 @@ install(
 )
 
 if (HCLIB_ENABLE_DRDP)
-  add_subdirectory(instrumentation)
+  add_subdirectory(race_detector)
 endif()

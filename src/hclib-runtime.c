@@ -72,7 +72,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef DRDP_ENABLED
 struct dpst DPST;
 
-char *node_char[5] = {'R','F','A','f','S'};
+char node_char[5] = {'R','F','A','f','S'};
 static int node_index = 0;
 static int task_id_unique = 0;
 
