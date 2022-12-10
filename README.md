@@ -95,10 +95,12 @@ We provide a series of scripts to help re-evaluate our result of DRDP in the ECO
 All seven benchmarks reside in the folder `race_detector_benchmark`. To launch these benchmarks, please use the script `race_detector_benchmark/bin/evaluation.sh`. It will execute all benchmark five times and generate the bar charts of time and memory overhead. To launch a single benchmark, please use the script `run.sh`. All these scripts will set up the correct HClib environment variables for the execution, so you don't need to manually set them.
 
 * Launch all benchmarks
+
     cd race_detector_benchmark
     ./bin/evaluate.sh
 
 * Launch a single benchmark
+
     cd race_detector_example
     ./run.sh --orig  # native execution
     ./run.sh --rd    # execution with race detection
