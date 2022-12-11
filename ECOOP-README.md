@@ -110,7 +110,7 @@ All evaluations are conducted using benchmarks in `/opt/hclib/race_detector_benc
 | ---          | ---                                                                   |
 | bin          | scripts to help launch evaluations                                    |
 | common       | global Makefile settings                                              |
-| race_example | a simple HCLib program with a data race                               |
+| race_example | a simple HClib program with a data race                               |
 | correctness  | benchmarks to validate DRDP's implementation                          |
 | bench        | performance benchmarks with polyhedral-analysis-based optimization    |
 | noskip       | performance benchmarks without polyhedral-analysis-based optimization |
