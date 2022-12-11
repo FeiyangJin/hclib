@@ -1,12 +1,12 @@
 include ../../common/make.inc
 SHELL:=/bin/bash
 
-all: #name-rd.exe #name-origin.exe
+all: matmul-rd.exe matmul-origin.exe
 
-#name-rd.exe: #name.cpp 
+matmul-rd.exe: matmul.cpp 
 	$(INST) -o $@ $^ -- -DRACE_DETECTION -DDRDP_ENABLED $(TEST_RD_OPTIONS)
 
-#name-origin.exe: #name.cpp
+matmul-origin.exe: matmul.cpp
 	${CXX} -o $@ $^ $(TEST_ORIGIN_OPTIONS)
 
 .PHONY: clean

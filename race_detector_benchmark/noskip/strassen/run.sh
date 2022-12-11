@@ -15,8 +15,13 @@ if [ $# -lt 1 ]; then
   exit 1
 fi
 
-BENCHMARK_NAME="#name"
-DEFAULT_INPUT="#input"
+BENCHMARK_NAME="strassen"
+
+# use the following for 512 16 because 2^4 = 16
+DEFAULT_INPUT="512 4"
+
+# use the following for 32 8
+# DEFAULT_INPUT="32 3"
 ORIGIN_EXE="${BENCHMARK_NAME}-origin.exe"
 RD_EXE="${BENCHMARK_NAME}-rd.exe"
 CURR=$(readlink -f $(dirname $0))

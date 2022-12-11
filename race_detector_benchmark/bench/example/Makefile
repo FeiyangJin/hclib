@@ -1,14 +1,14 @@
 include ../../common/make.inc
 SHELL:=/bin/bash
 
-all: #name-rd.exe #name-origin.exe
+all: example-rd.exe example-origin.exe
 
-#name-rd.exe: #name.cpp 
+example-rd.exe: example.cpp
 	$(INST) -o $@ $^ -- -DRACE_DETECTION -DDRDP_ENABLED $(TEST_RD_OPTIONS)
 
-#name-origin.exe: #name.cpp
+example-origin.exe: example.cpp
 	${CXX} -o $@ $^ $(TEST_ORIGIN_OPTIONS)
 
 .PHONY: clean
 clean:
-	rm -f *.exe *.bc *.ll
+	rm *.exe *.bc *.ll

@@ -1,12 +1,12 @@
 include ../../common/make.inc
 SHELL:=/bin/bash
 
-all: #name-rd.exe #name-origin.exe
+all: strassen-rd.exe strassen-origin.exe
 
-#name-rd.exe: #name.cpp 
+strassen-rd.exe: strassen.cpp 
 	$(INST) -o $@ $^ -- -DRACE_DETECTION -DDRDP_ENABLED $(TEST_RD_OPTIONS)
 
-#name-origin.exe: #name.cpp
+strassen-origin.exe: strassen.cpp
 	${CXX} -o $@ $^ $(TEST_ORIGIN_OPTIONS)
 
 .PHONY: clean

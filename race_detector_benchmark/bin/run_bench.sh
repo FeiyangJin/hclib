@@ -1,17 +1,61 @@
 #!/bin/bash
 set -e
 
+usage() {
+  echo "run_bench.sh [--bench bench|noskip ] [-h]"
+  echo "options:"
+  echo "  --bench: benchmark set to be evaluated. The valid value is 'bench' or 'noskip'"
+  echo "  -h:      print usage"
+}
+
 ROOT=$(readlink -f $(dirname $0)/..)
 CURRENT_DIR=$(pwd)
-BENCHMARKS="health knapsack matmul sort strassen sparselu poisson"
-OUTPUT="${CURRENT_DIR}/run-$(date +%y%m%d-%H%M%S).csv"
+BENCHMARKS_DEFAULT="health knapsack matmul poisson sort sparselu strassen"
+BENCHMARKS_NOSKIP="matmul poisson sort sparselu strassen"
+
+while [ $# -gt "0" ]; do
+  case "$1" in
+      -h)
+      usage
+      exit 1
+      ;;
+    --bench)
+      shift
+      if [ $# -eq "0" ]; then
+        echo "Miss benchmark set name after '--bench'"
+        exit 1
+      fi
+      BENCHMARK_SET=$1
+      shift
+      ;;
+    *)
+      echo "Unknown parameter $1"
+      usage
+      exit 1
+  esac
+done
+
+if [ -z ${BENCHMARK_SET:+x} ]; then
+ BENCHMARK_SET=bench
+fi
+
+if [ ${BENCHMARK_SET} == 'bench' ]; then
+  BENCHMARKS=${BENCHMARKS_DEFAULT}
+elif [ ${BENCHMARK_SET} == 'noskip' ]; then
+  BENCHMARKS=${BENCHMARKS_NOSKIP}
+else
+  echo "Unknown benchmark set name '${BENCHMARK_SET}'"
+  exit 1
+fi
+
+OUTPUT="${CURRENT_DIR}/run-${BENCHMARK_SET}-$(date +%y%m%d-%H%M%S).csv"
 
 touch ${OUTPUT}
 ln -fs ${OUTPUT} ${CURRENT_DIR}/latest-result
 echo "Benchmark,Orig-Time(sec),Orig-Memory(kb),Rd-Time(sec),Rd-Memory(kb),Time Overhead,Memory Overhead" >> $OUTPUT
 
 for bench in ${BENCHMARKS}; do 
-  pushd $ROOT/$bench > /dev/null
+  pushd ${ROOT}/${BENCHMARK_SET}/${bench} > /dev/null
    
   NAME="${bench}-origin.exe"
   echo "Execute ${NAME}"

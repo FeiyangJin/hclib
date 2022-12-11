@@ -4,7 +4,7 @@ set -e
 #set -x
 
 usage() {
-  echo "usage: inst.sh [--llvm LLVM_ROOT] [-o OUTPUT] SOURCE_FILE [OPTIONS_FOR_LLVM]"
+  echo "usage: inst.sh [--llvm LLVM_ROOT] [-o OUTPUT] SOURCE_FILE -- [OPTIONS_FOR_LLVM]"
 }
 
 report_error() {
@@ -20,7 +20,8 @@ DETECTOR="drdp"
 DETECTOR_LIB="lib${DETECTOR}.so"
 LINK_OPTION1="-lLLVMSymbolize -lLLVMDebugInfoDWARF -lLLVMDebugInfoPDB -lLLVMDebugInfoMSF -lLLVMObject -lLLVMBitReader -lLLVMCore -lLLVMRemarks -lLLVMBitstreamReader -lLLVMMCParser -lLLVMMC -lLLVMDebugInfoCodeView -lLLVMTextAPI -lLLVMBinaryFormat -lLLVMSupport -lLLVMDemangle -lrt -ldl -lpthread -lm /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/x86_64-linux-gnu/libtinfo.so"
 LINK_OPTION2="-lLLVMSymbolize -lLLVMDebugInfoDWARF -lLLVMDebugInfoPDB -lLLVMDebugInfoMSF -lLLVMObject -lLLVMIRReader -lLLVMBitReader -lLLVMCore -lLLVMRemarks -lLLVMBitstreamReader -lLLVMMCParser -lLLVMMC -lLLVMDebugInfoCodeView -lLLVMTextAPI -lLLVMBinaryFormat -lLLVMSupport -lLLVMDemangle -lrt -ldl -lpthread -lm /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/x86_64-linux-gnu/libtinfo.so"
-DEFAULT_OPTIONS="-g"
+#DEFAULT_OPTIONS="-g"
+DEFAULT_OPTIONS=""
 
 if [ $# -lt "1" ]; then
   usage
@@ -59,6 +60,9 @@ while [ $# -gt "0" ]; do
       fi
       SOURCE_FILE=$1
       shift
+      if [ $1 == '--' ]; then
+        shift
+      fi
       OPTIONS=$*
       shift $#
   esac

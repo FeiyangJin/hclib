@@ -15,8 +15,9 @@ if [ $# -lt 1 ]; then
   exit 1
 fi
 
-BENCHMARK_NAME="#name"
-DEFAULT_INPUT="#input"
+BENCHMARK_NAME="poisson"
+# DEFAULT_INPUT="7424 128 3"
+DEFAULT_INPUT="8192 128 3"
 ORIGIN_EXE="${BENCHMARK_NAME}-origin.exe"
 RD_EXE="${BENCHMARK_NAME}-rd.exe"
 CURR=$(readlink -f $(dirname $0))

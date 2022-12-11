@@ -1,12 +1,12 @@
 include ../../common/make.inc
 SHELL:=/bin/bash
 
-all: #name-rd.exe #name-origin.exe
+all: poisson-rd.exe poisson-origin.exe
 
-#name-rd.exe: #name.cpp 
+poisson-rd.exe: poisson.cpp 
 	$(INST) -o $@ $^ -- -DRACE_DETECTION -DDRDP_ENABLED $(TEST_RD_OPTIONS)
 
-#name-origin.exe: #name.cpp
+poisson-origin.exe: poisson.cpp
 	${CXX} -o $@ $^ $(TEST_ORIGIN_OPTIONS)
 
 .PHONY: clean

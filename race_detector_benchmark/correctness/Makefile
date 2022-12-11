@@ -7,8 +7,8 @@ RD_TESTS=$(patsubst %.cpp,%-rd.exe,$(wildcard test*.cpp))
 all_rd: $(RD_TESTS)
 
 %-rd.exe: %.cpp
-	$(INST) -o $@ $^ -DRACE_DETECTION -DDRDP_ENABLED $(TEST_RD_OPTIONS)
+	$(INST) -o $@ $^ -- -DRACE_DETECTION -DDRDP_ENABLED $(TEST_RD_OPTIONS)
 
 .PHONY: clean
 clean:
-	rm *.exe *.bc *.ll
+	rm -f *.exe *.bc *.ll
