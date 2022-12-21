@@ -1,7 +1,5 @@
 // Adapted from DRB175-non-sibling-taskdep2-yes.c
 // https://github.com/LLNL/dataracebench/blob/master/micro-benchmarks/DRB175-non-sibling-taskdep2-yes.c
-// Author: Feiyang Jin
-// Email: fjin35@gatech.edu
 
 #include "hclib_cpp.h"
 #include <unistd.h>

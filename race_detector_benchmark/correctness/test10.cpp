@@ -1,7 +1,5 @@
 // Adapted from DRB027-taskdependmissing-orig-yes.c
 // https://github.com/LLNL/dataracebench/blob/master/micro-benchmarks/DRB027-taskdependmissing-orig-yes.c
-// Author: Feiyang Jin
-// Email: fjin35@gatech.edu
 
 #include "hclib_cpp.h"
 #include <unistd.h>

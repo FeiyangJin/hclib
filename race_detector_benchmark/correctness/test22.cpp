@@ -1,8 +1,5 @@
 // Adapted from DRB176-fib-taskdep-no.c
 // https://github.com/LLNL/dataracebench/blob/master/micro-benchmarks/DRB176-fib-taskdep-no.c
-// Author: Feiyang Jin
-// Email: fjin35@gatech.edu
-// TODO: this one needs more testing because HCLIB lambda may cause problems
 
 #include "hclib_cpp.h"
 #include <unistd.h>

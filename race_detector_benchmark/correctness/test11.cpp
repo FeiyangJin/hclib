@@ -1,7 +1,5 @@
 // Adapted from DRB072-taskdep1-orig-no.c
 // https://github.com/LLNL/dataracebench/blob/master/micro-benchmarks/DRB072-taskdep1-orig-no.c
-// Author: Feiyang Jin
-// Email: fjin35@gatech.edu
 
 #include "hclib_cpp.h"
 #include <unistd.h>

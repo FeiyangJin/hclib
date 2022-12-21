@@ -2,6 +2,7 @@ import re
 import sys
 import numpy as np
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 
 def main():
@@ -57,7 +58,7 @@ def main():
   width = 0.2
   space = 1
   groups = ['Orig', 'Rd']
-  desc = ['Native', "Race Detection"]
+  desc = ['Baseline', "Race Detection"]
   xticks = data[data.columns[0]].astype(str)
   index = np.arange(len(xticks)) * width * (len(groups) + space)
   for m, met in data_for_figure.items():
