@@ -18,9 +18,8 @@ int main(int argc, char** argv) {
       x = 70;
     });
 
-    printf("\n x is %d \n \n",x);
-    printf("should detect race\n");
-    
+	  printf("\n");
+    printf("x is %d \n",x); 
 
     // #ifdef RACE_DETECTION
     //     printf("DPST height is: %d \n", get_dpst_height());

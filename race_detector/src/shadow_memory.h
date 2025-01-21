@@ -1,3 +1,31 @@
+/*
+Author: Feiyang Jin
+Email: feiyanglovesu@gmail.com
+shadow_memory.h contains the class ShadowMem, which will be used to save
+access to each memory location.
+
+The overall structure is:
+ShadowMem has a shadow_dir
+
+shadow_dir = [*shadow_tbl, *shadow_tbl, ...]      size: 2^24
+
+shadow_tbl has a shadow_entries = [T*, T*, ...]   size: 2^20
+
+Each slot in shadow_entries represent consecutive 16 bytes of memory
+
+
+Pointer to slot:
+For most system, 48 out of 64 bits of a pointer is used
+
+[01010.......][101......][1001]
+  24 bits      20 bits    4 bits 
+Table index    
+              slot index
+                         ignored after converting pointer to key 
+
+ADDR_TO_KEY(addr): convert a pointer address to a key (to the ShadoeMem)
+*/
+
 #include <cstdio>
 #include <cstdint>
 
@@ -8,15 +36,20 @@
 #define LOG_TBL_SIZE 20
 
 // macro for address manipulation for shadow mem
+// Notice this means each shadow_entry will handle consecutive 16 bytes of memory
+// This is because the goal of shadow memory is to record access to a range of memory, 
+// instead of each byte of memory. 
 #define ADDR_TO_KEY(addr) ((uint64_t) ((uint64_t)addr >> LOG_KEY_SIZE))
 
 
 template < typename T >
 class ShadowMem {
 public:
-  // 1 << 20 = 1048576 = 2 ^ 20
-  // shadow_entries is an array of size 1048576
-  struct shadow_tbl { T *shadow_entries[1<<LOG_TBL_SIZE]; };
+  // shadow_tbl contains an array of pointers of type T
+  // the array is of size 1 << 20 = 2^20 = 1048576
+  struct shadow_tbl { 
+	  T *shadow_entries[1<<LOG_TBL_SIZE]; 
+  }; 
 
   struct shadow_tbl **shadow_dir;
 
@@ -59,7 +92,9 @@ public:
   }
 
   inline T** find_slot(uint64_t key, bool alloc) {
-    // dest = key >> 20
+    // shadow_dir has 2^24 table
+    // 1. Choose the table by computing index = key >> 20
+    // so table index is floor(key / 2^20)
     shadow_tbl *volatile *dest = &(shadow_dir[key>>LOG_TBL_SIZE]);
     shadow_tbl *tbl = *dest;
 
@@ -77,13 +112,18 @@ public:
       //   delete new_tbl; 
       // }
     }
+
+    // 2. Choose the slot by extracting the lower LOG_TBL_SIZE bits of key
+    // so slot index is the lower 20 bits of key
     T** slot =  &tbl->shadow_entries[key&((1<<LOG_TBL_SIZE) - 1)];
     return slot;
   }
 
 // public:
   ShadowMem() {
-    shadow_dir = new struct shadow_tbl *[1<<(48 - LOG_TBL_SIZE - LOG_KEY_SIZE)]();
+    // Most consumer systems utilize 48 bits out of 64 bits for virtual memory addressing
+    // This means even though a pointer is 64 bits, the upper 16 bits are always 0, only the lower 48 bits are possibly set. 
+    shadow_dir = new struct shadow_tbl *[1<<(48 - LOG_TBL_SIZE - LOG_KEY_SIZE)](); 
   }
 
   inline T* find(uint64_t key) {
