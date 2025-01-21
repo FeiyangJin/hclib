@@ -20,7 +20,6 @@ A memory access may touch one or multiple slot.
 
 // #define LOOP_READERS
 #define LINK_READER
-// #define VECTOR_READER_LIST
 
 using addr_t = uint64_t;
 
@@ -63,13 +62,10 @@ using addr_t = uint64_t;
 
 class MemAccess_t {
 public:
-  // bool promise_task;
-  // access_info task_and_node;
   tree_node_cpp* step_node;
   addr_t rip;
 #ifdef LINK_READER
   MemAccess_t* next;
-  // MemAccess_t* prev;
 #endif
   MemAccess_t(tree_node_cpp* step_node);
   MemAccess_t(tree_node_cpp* step_node, addr_t rip);
@@ -91,9 +87,6 @@ public:
 
   #ifdef LINK_READER
     MemAccess_t* readers[NUM_SLOTS] = {nullptr, nullptr, nullptr, nullptr};
-    // MemAccess_t* readers_tail[NUM_SLOTS] = {nullptr, nullptr, nullptr, nullptr};
-  #elif defined(VECTOR_READER_LIST)
-    std::vector<MemAccess_t>* readers[NUM_SLOTS] = {};
   #else
     std::unordered_map<int,MemAccess_t>* readers[NUM_SLOTS] = {};
   #endif
@@ -103,7 +96,6 @@ public:
 
   MemAccessList_t(addr_t addr, bool is_read, tree_node_cpp* step_node, std::size_t mem_size);
   MemAccessList_t(addr_t addr, bool is_read, tree_node_cpp* step_node, addr_t rip, std::size_t mem_size);
-  // MemAccessList_t(addr_t addr, bool is_read, access_info task_and_node, addr_t rip, std::size_t mem_size, int first_finish_id, bool is_promise);
   ~MemAccessList_t();
 
   void clear();
