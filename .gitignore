@@ -37,3 +37,4 @@ hpctoolkit*
 # individual files
 instrumentation/benchmark/strassen/newAddFunction.cpp
 instrumentation/benchmark/strassen/origAddFunction.cpp
+message.txt

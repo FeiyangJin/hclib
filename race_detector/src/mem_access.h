@@ -18,10 +18,11 @@ A memory access may touch one or multiple slot.
 #include <vector>
 #include "struct_def.h"
 
-// #define LOOP_READERS
-#define LINK_READER
+// #define LINK_READER
 
 using addr_t = uint64_t;
+
+#define MEM_ACCESS_SIZE 4
 
 #ifndef LOG_KEY_SIZE
 #define LOG_KEY_SIZE  4
@@ -70,8 +71,6 @@ public:
   MemAccess_t(tree_node_cpp* step_node);
   MemAccess_t(tree_node_cpp* step_node, addr_t rip);
 
-  // MemAccess_t(access_info t_a_n);
-  // MemAccess_t(access_info t_a_n, addr_t r, bool is_promise);
   // ~MemAccess_t();
 };
 
@@ -88,9 +87,12 @@ public:
   #ifdef LINK_READER
     MemAccess_t* readers[NUM_SLOTS] = {nullptr, nullptr, nullptr, nullptr};
   #else
-    std::unordered_map<int,MemAccess_t>* readers[NUM_SLOTS] = {};
+    MemAccess_t* readers[NUM_SLOTS][MEM_ACCESS_SIZE] = {{nullptr, nullptr, nullptr, nullptr},
+                                                  {nullptr, nullptr, nullptr, nullptr},
+                                                  {nullptr, nullptr, nullptr, nullptr},
+                                                  {nullptr, nullptr, nullptr, nullptr}};
+    unsigned int reader_index[NUM_SLOTS] = {0, 0, 0, 0};
   #endif
-
 
   MemAccess_t* writers[NUM_SLOTS] = {nullptr, nullptr, nullptr, nullptr};
 
@@ -98,6 +100,7 @@ public:
   MemAccessList_t(addr_t addr, bool is_read, tree_node_cpp* step_node, addr_t rip, std::size_t mem_size);
   ~MemAccessList_t();
 
+  void initialize(addr_t addr, bool is_read, tree_node_cpp* step_node, addr_t rip, std::size_t mem_size);
   void clear();
   
 }; // end class MemAccessList_t

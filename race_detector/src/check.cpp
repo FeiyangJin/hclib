@@ -199,6 +199,10 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
               // slot->readers_tail[i] = new_reader;
             // }
           }
+      #else
+          unsigned int k = slot->reader_index[i] % 3;
+          slot->readers[i][k] = new MemAccess_t(current_dpst_node, rip);
+          slot->reader_index[i]++;
       #endif
   }
 }
@@ -269,6 +273,20 @@ extern "C" void handle_write(MemAccessList_t* slot, addr_t rip, addr_t addr, siz
         }
         
         slot->readers[i] = nullptr;
+    #else
+        for(int j=0; j<MEM_ACCESS_SIZE; j++){
+          MemAccess_t* reader = slot->readers[i][j];
+          if(reader == nullptr) break;
+          bool race = !ds->precede(reader->step_node,current_dpst_node,reader->step_node->corresponding_task_id,current_dpst_node->corresponding_task_id);
+          #ifdef REPORT
+            if(race){
+              printf("we find a read-write race !!!!!!!!!! \n");
+              print_debug_info(reader->rip, rip);
+            }
+          #endif
+          delete reader;
+          slot->readers[i][j] = nullptr;
+        }
     #endif
   }
   
