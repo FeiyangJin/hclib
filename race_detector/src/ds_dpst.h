@@ -15,20 +15,20 @@ using namespace std;
 
 // this key means the furtherest step in task_a that precedes task_b
 // notice that key(a,b) != key(b,a)
-typedef struct cache_key{
-  int task_a;
-  int task_b;
+// typedef struct cache_key{
+//   int task_a;
+//   int task_b;
 
-  cache_key(int a, int b){
-    this->task_a = a;
-    this->task_b = b;
-  }
+//   cache_key(int a, int b){
+//     this->task_a = a;
+//     this->task_b = b;
+//   }
 
-  bool operator==(const cache_key& key) const
-  {
-      return task_a == key.task_a && task_b == key.task_b;
-  }
-} cache_key;
+//   bool operator==(const cache_key& key) const
+//   {
+//       return task_a == key.task_a && task_b == key.task_b;
+//   }
+// } cache_key;
 
 // A class to represent a disjoint set
 class DisjointSet

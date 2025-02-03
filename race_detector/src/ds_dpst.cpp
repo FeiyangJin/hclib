@@ -4,13 +4,6 @@ int DisjointSet::get_tree_join_count(){
     return this->tree_join_count;
 }
 
-hclib_finish::hclib_finish(int finish_id, int belong_to_task_id, void *node_in_dpst, void *finish_address){
-    this->finish_id = finish_id;
-    this->belong_to_task_id = belong_to_task_id;
-    this->node_in_dpst = node_in_dpst;
-    this->finish_address = finish_address;
-}
-
 void DisjointSet::add_task_to_finish(int finish_id, int task_id){
     this->all_finishes.at(finish_id)->task_in_this_finish.push_back(task_id);
 }
@@ -53,11 +46,7 @@ void DisjointSet::addTask(int task_id, hclib_task task, tree_node_cpp *last_node
     // else lsa = parent.lsa
     if(parent_set_info->nt->size() > 0){
         assert(last_node_reachable_in_parent != NULL);
-        // lsa_info new_lsa = {
-        //     .task_id = task.parent_id,
-        //     .last_node_reachable_in_lsa = last_node_reachable_in_parent
-        // };
-        // task_set_info->lsa = new_lsa;
+
         task_set_info->lsa.last_node_reachable_in_lsa = last_node_reachable_in_parent;
         task_set_info->lsa.task_id = task.parent_id;
 
@@ -90,16 +79,8 @@ DisjointSet::DisjointSet(){
 }
 
 void DisjointSet::addSet(int task_index){
-    lsa_info null_lsa = {
-        .task_id = -1,
-        .last_node_reachable_in_lsa = NULL,
-        // .lsa_nt = new vector<nt_info>()
-        .lsa_nt = nullptr
-    };
-
-    vector<nt_info> *nontreejoins = new vector<nt_info>();
-
-    set_info* new_set = new set_info(task_index,0,null_lsa,nontreejoins);
+    lsa_info null_lsa = lsa_info();
+    set_info* new_set = new set_info(task_index,0,null_lsa,new vector<nt_info>());
     this->parent_aka_setnowin.insert({task_index,new_set});
 }
 
@@ -199,14 +180,9 @@ void DisjointSet::mergeBtoA(int a, int b, tree_node_cpp* query_node, bool update
 
 void DisjointSet::addnt(int task, int nt_task_id, tree_node_cpp* last_node_before_nt){
     set_info* task_set = find_helper(task);
-    nt_info new_nt = {
-        .task_id = nt_task_id,
-        .last_node_before_this_nt = last_node_before_nt
-    };
-    task_set->nt->push_back(new_nt);
-    // if(this->all_tasks[nt_task_id].this_task_state != JOINED){
-        this->all_tasks.at(nt_task_id).this_task_state = JOINED;
-    // }
+    task_set->nt->push_back(nt_info(nt_task_id, last_node_before_nt));
+
+    this->all_tasks.at(nt_task_id).this_task_state = JOINED;
 }
 
 int DisjointSet::ntcounts(int task_id){

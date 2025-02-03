@@ -56,15 +56,8 @@ class hclib_task
         hclib_task(){
 
         };
-        
-        hclib_task(int task_id, int parent_id, void *node_in_dpst, void *task_address, int belong_to_finish_id, task_state state){
-            this->task_id = task_id;
-            this->parent_id = parent_id;
-            this->node_in_dpst = node_in_dpst;
-            this->task_address = task_address;
-            this->belong_to_finish_id = belong_to_finish_id;
-            this->this_task_state = state;
-        }
+        hclib_task(int task_id, int parent_id, void *node_in_dpst, void *task_address, int belong_to_finish_id, task_state state)
+            : task_id(task_id), parent_id(parent_id), node_in_dpst(node_in_dpst), task_address(task_address), belong_to_finish_id(belong_to_finish_id), this_task_state(state) {}
 };
 
 class hclib_finish
@@ -76,12 +69,16 @@ class hclib_finish
         void *finish_address;
         std::vector<int> task_in_this_finish;
 
-        hclib_finish(int finish_id, int belong_to_task_id, void *node_in_dpst, void *finish_address);
+        hclib_finish(int finish_id, int belong_to_task_id, void *node_in_dpst, void *finish_address)
+            : finish_id(finish_id), belong_to_task_id(belong_to_task_id), node_in_dpst(node_in_dpst), finish_address(finish_address) {}
 };
 
 typedef struct nt_info{
     int task_id;
     tree_node_cpp *last_node_before_this_nt;
+
+    nt_info(int task_id, tree_node_cpp *last_node)
+        : task_id(task_id), last_node_before_this_nt(last_node) {}
 } nt_info;
 
 inline bool operator<(const nt_info& lhs, const nt_info& rhs)
@@ -100,6 +97,8 @@ typedef struct lsa_info{
         lsa_nt = a.lsa_nt;
         return a;
     };
+
+    lsa_info() : task_id(-1), last_node_reachable_in_lsa(NULL), lsa_nt(nullptr) {}
 } lsa_info;
 
 typedef struct set_info{
@@ -108,12 +107,8 @@ typedef struct set_info{
     lsa_info lsa;
     std::vector<nt_info>* nt;
 
-    set_info(int id, int rank, lsa_info li, std::vector<nt_info>* nontree){
-        this->set_id = id;
-        this->rank = rank;
-        this->lsa = li;
-        this->nt = nontree;
-    };
+    set_info(int id, int rank, lsa_info li, std::vector<nt_info>* nontree)
+        : set_id(id), rank(rank), lsa(li), nt(nontree) {}
 
     inline set_info operator=(set_info a) {
         set_id = a.set_id;
