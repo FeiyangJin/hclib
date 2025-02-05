@@ -95,12 +95,16 @@ set_info* DisjointSet::find_helper(int k){
     #endif
 
     assert(k != -1);
-    set_info* current_set_info = parent_aka_setnowin.at(k);
-    if (current_set_info->set_id != k)
-    {
-        *current_set_info = *find_helper(current_set_info->set_id);
+    set_info* node = parent_aka_setnowin.at(k);
+    if (node->set_id != k) {
+        // Recursively find root and apply path compression
+        set_info* root = find_helper(node->set_id);
+        node->set_id = root->set_id;  // Direct path to root
+        node->rank = root->rank;
+        node->lsa = root->lsa;
+        node->nt = root->nt;
     }
-    return current_set_info;
+    return node;
 }
 
 int DisjointSet::Find(int k){
@@ -136,22 +140,18 @@ void DisjointSet::mergeBtoA(int a, int b, tree_node_cpp* query_node, bool update
         return;
     }
 
-    // union nt
-    set<nt_info> unique_nt;
-    vector<nt_info>* a_nt = a_set_info->nt;
-    vector<nt_info>* b_nt = b_set_info->nt;
+    // Create new NT vector using reserve for efficiency
+    std::vector<nt_info>* new_nt = new std::vector<nt_info>();
+    new_nt->reserve(a_set_info->nt->size() + b_set_info->nt->size());
+    
+    // Use set for deduplication
+    std::set<nt_info> unique_nt;
+    unique_nt.insert(a_set_info->nt->begin(), a_set_info->nt->end());
+    unique_nt.insert(b_set_info->nt->begin(), b_set_info->nt->end());
+    
+    // Move elements to new vector
+    new_nt->assign(unique_nt.begin(), unique_nt.end());
 
-    for(auto i=a_nt->begin(); i != a_nt->end(); ++i){
-        unique_nt.insert(*i);
-    }
-
-    for(auto i = b_nt->begin(); i != b_nt->end(); ++i){
-        unique_nt.insert(*i);
-    }
-
-    std::vector<nt_info>().swap(*a_nt);
-    std::vector<nt_info>().swap(*b_nt);
-    std::vector<nt_info> *new_nt = new std::vector<nt_info>(unique_nt.begin(), unique_nt.end());
     // set new lsa
     lsa_info new_lsa = a_set_info->lsa;
 
