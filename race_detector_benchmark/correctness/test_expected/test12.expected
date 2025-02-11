@@ -1,0 +1,5 @@
+DRDP determinacy race detector start
+Program to be checked: ./bin/test12-rd.exe
+Input parameter:
+j is 1, k is 1 
+all tests passsed in test12 

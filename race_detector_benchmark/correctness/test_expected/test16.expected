@@ -1,0 +1,6 @@
+DRDP determinacy race detector start
+Program to be checked: ./bin/test16-rd.exe
+Input parameter:
+x=1
+y=1
+all tests passsed in test16 

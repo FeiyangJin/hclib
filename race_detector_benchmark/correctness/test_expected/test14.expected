@@ -1,0 +1,11 @@
+DRDP determinacy race detector start
+Program to be checked: ./bin/test14-rd.exe
+Input parameter:
+x=1
+we find a write-read race !!!!!!!!!! 
+Previous memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test14.cpp void hclib::call_lambda<main::$_0::operator()() const::'lambda0'()>(main::$_0::operator()() const::'lambda0'()*) 23 11
+Current memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test14.cpp void hclib::call_lambda<main::$_0>(main::$_0*) 29 21
+y=1
+all tests passsed in test14 

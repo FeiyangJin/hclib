@@ -1,0 +1,24 @@
+DRDP determinacy race detector start
+Program to be checked: ./bin/test9-rd.exe
+Input parameter:
+we find a read-write race !!!!!!!!!! 
+Previous memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test9.cpp void hclib::call_lambda<main::$_0::operator()() const::'lambda'()>(main::$_0::operator()() const::'lambda'()*) 23 18
+Current memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test9.cpp void hclib::call_lambda<main::$_0::operator()() const::'lambda'()>(main::$_0::operator()() const::'lambda'()*) 23 17
+we find a read-write race !!!!!!!!!! 
+Previous memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test9.cpp void hclib::call_lambda<main::$_0::operator()() const::'lambda'()>(main::$_0::operator()() const::'lambda'()*) 23 18
+Current memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test9.cpp void hclib::call_lambda<main::$_0::operator()() const::'lambda'()>(main::$_0::operator()() const::'lambda'()*) 23 17
+we find a read-write race !!!!!!!!!! 
+Previous memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test9.cpp void hclib::call_lambda<main::$_0::operator()() const::'lambda'()>(main::$_0::operator()() const::'lambda'()*) 23 18
+Current memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test9.cpp void hclib::call_lambda<main::$_0::operator()() const::'lambda'()>(main::$_0::operator()() const::'lambda'()*) 23 17
+we find a read-write race !!!!!!!!!! 
+Previous memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test9.cpp void hclib::call_lambda<main::$_0::operator()() const::'lambda'()>(main::$_0::operator()() const::'lambda'()*) 23 18
+Current memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test9.cpp void hclib::call_lambda<main::$_0::operator()() const::'lambda'()>(main::$_0::operator()() const::'lambda'()*) 23 17
+all tests passsed in test9

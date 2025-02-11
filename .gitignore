@@ -38,3 +38,6 @@ hpctoolkit*
 instrumentation/benchmark/strassen/newAddFunction.cpp
 instrumentation/benchmark/strassen/origAddFunction.cpp
 message.txt
+
+# correctness test files
+race_detector_benchmark/correctness/test_output/*

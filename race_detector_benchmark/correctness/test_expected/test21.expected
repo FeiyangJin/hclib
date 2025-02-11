@@ -1,0 +1,24 @@
+DRDP determinacy race detector start
+Program to be checked: ./bin/test21-rd.exe
+Input parameter:
+we find a read-write race !!!!!!!!!! 
+Previous memory access:
+/home/fjin/gitRepo/hclib/hclib-install/include/hclib-async.h void hclib::call_lambda<main::$_0::operator()() const::'lambda'()>(main::$_0::operator()() const::'lambda'()*) 77 2
+Current memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test21.cpp void hclib::call_lambda<main::$_0>(main::$_0*) 18 31
+we find a read-write race !!!!!!!!!! 
+Previous memory access:
+/home/fjin/gitRepo/hclib/hclib-install/include/hclib-async.h void hclib::call_lambda<main::$_0::operator()() const::'lambda'()>(main::$_0::operator()() const::'lambda'()*) 77 2
+Current memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test21.cpp void hclib::call_lambda<main::$_0>(main::$_0*) 18 31
+we find a write-write race !!!!!!!!!! 
+Previous memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test21.cpp void hclib::call_lambda<main::$_0::operator()() const::'lambda'()>(main::$_0::operator()() const::'lambda'()*) 22 10
+Current memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test21.cpp void hclib::call_lambda<main::$_0::operator()() const::'lambda'()>(main::$_0::operator()() const::'lambda'()*) 22 10
+we find a write-write race !!!!!!!!!! 
+Previous memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test21.cpp void hclib::call_lambda<main::$_0::operator()() const::'lambda'()>(main::$_0::operator()() const::'lambda'()*) 22 10
+Current memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test21.cpp void hclib::call_lambda<main::$_0::operator()() const::'lambda'()>(main::$_0::operator()() const::'lambda'()*) 22 10
+all tests passsed in test21 

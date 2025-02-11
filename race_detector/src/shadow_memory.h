@@ -94,7 +94,7 @@ public:
   inline T** find_slot(uint64_t key, bool alloc) {
     // shadow_dir has 2^24 table
     // 1. Choose the table by computing index = key >> 20
-    // so table index is floor(key / 2^20)
+    // because key has 44 bits information, and we only use 24 bits for table index
     shadow_tbl *volatile *dest = &(shadow_dir[key>>LOG_TBL_SIZE]);
     shadow_tbl *tbl = *dest;
 

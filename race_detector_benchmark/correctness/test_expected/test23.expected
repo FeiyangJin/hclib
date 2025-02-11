@@ -1,0 +1,14 @@
+DRDP determinacy race detector start
+Program to be checked: ./bin/test23-rd.exe
+Input parameter:
+we find a write-read race !!!!!!!!!! 
+Previous memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test23.cpp void hclib::call_lambda<fib(int)::$_1>(fib(int)::$_1*) 33 11
+Current memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test23.cpp void hclib::call_lambda<fib(int)::$_2>(fib(int)::$_2*) 43 15
+we find a write-read race !!!!!!!!!! 
+Previous memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test23.cpp void hclib::call_lambda<fib(int)::$_1>(fib(int)::$_1*) 33 11
+Current memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test23.cpp void hclib::call_lambda<fib(int)::$_2>(fib(int)::$_2*) 43 15
+all tests passsed in test23 

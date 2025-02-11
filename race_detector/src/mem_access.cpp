@@ -56,7 +56,7 @@ MemAccessList_t::~MemAccessList_t() {
         delete readers[i];
         readers[i] = nullptr;
       #else
-        for (int j = 0; j < MEM_ACCESS_SIZE; j++) {
+        for (int j = 0; j < READER_SIZE; j++) {
           if (readers[i][j]) {
             delete readers[i][j];
             readers[i][j] = nullptr;
@@ -85,7 +85,7 @@ void MemAccessList_t::clear() {
     } while (m);
     readers[i] = nullptr;
 #else
-    for (int j = 0; j < MEM_ACCESS_SIZE; j++) {
+    for (int j = 0; j < READER_SIZE; j++) {
       if (readers[i][j]) {
         delete readers[i][j];
         readers[i][j] = nullptr;

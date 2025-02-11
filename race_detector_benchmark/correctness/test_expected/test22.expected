@@ -1,0 +1,4 @@
+DRDP determinacy race detector start
+Program to be checked: ./bin/test22-rd.exe
+Input parameter:
+all tests passsed in test22 

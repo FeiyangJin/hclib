@@ -44,10 +44,26 @@ fi
 source ${RUNTIME}/bin/hclib_setup_env.sh
 #fi
 
+failed_tests=()
+
 for i in {1..23}; do
-  RD_EXE="${BENCHMARK_NAME}${i}-rd.exe"
+  RD_EXE="bin/${BENCHMARK_NAME}${i}-rd.exe"
+  EXPECTED_OUTPUT="test_expected/test${i}.expected"
+  ACTUAL_OUTPUT="test_output/test${i}.output"
+  
   if [ ! -e ${RD_EXE} ]; then
       make ${RD_EXE} > /dev/null 2>&1
   fi
-  HCLIB_WORKERS=1 /usr/bin/time -f "\nTime: %e sec\nMemory: %M kb" ./${RD_EXE}
+  
+  HCLIB_WORKERS=1 ./${RD_EXE} > ${ACTUAL_OUTPUT}
+  
+  if ! diff ${EXPECTED_OUTPUT} ${ACTUAL_OUTPUT} > /dev/null; then
+    failed_tests+=($i)
+  fi
 done
+
+if [ ${#failed_tests[@]} -eq 0 ]; then
+  echo "All tests have passed."
+else
+  echo "Tests ${failed_tests[@]} have failed."
+fi

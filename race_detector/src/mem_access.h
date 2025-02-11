@@ -22,7 +22,7 @@ A memory access may touch one or multiple slot.
 
 using addr_t = uint64_t;
 
-#define MEM_ACCESS_SIZE 4
+#define READER_SIZE 4
 
 #ifndef LOG_KEY_SIZE
 #define LOG_KEY_SIZE  4
@@ -87,7 +87,7 @@ public:
   #ifdef LINK_READER
     MemAccess_t* readers[NUM_SLOTS] = {nullptr, nullptr, nullptr, nullptr};
   #else
-    MemAccess_t* readers[NUM_SLOTS][MEM_ACCESS_SIZE] = {{nullptr, nullptr, nullptr, nullptr},
+    MemAccess_t* readers[NUM_SLOTS][READER_SIZE] = {{nullptr, nullptr, nullptr, nullptr},
                                                   {nullptr, nullptr, nullptr, nullptr},
                                                   {nullptr, nullptr, nullptr, nullptr},
                                                   {nullptr, nullptr, nullptr, nullptr}};
