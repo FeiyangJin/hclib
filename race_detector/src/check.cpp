@@ -337,43 +337,27 @@ extern "C" __attribute__((weak)) void asap_check_write(int *addr, int bytes) {
 
     #ifdef DEBUG
       void *pc = __builtin_return_address(0);
-      auto a = ADDR_TO_KEY(addr);
-      auto slot = shadow_mem->find(a);
-
-      if(slot == NULL || slot == nullptr){
-        MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, false, current_dpst_node, (addr_t)pc, bytes);
-        slot = shadow_mem->insert(a, mem_list);
-        return;
-      }
-
-      if(write_new_section){
-        slot->~MemAccessList_t();
-      }
-      else{
-        handle_write(slot, (addr_t) pc, (addr_t)addr, bytes);
-      }
-      
-      return;
     #else
-      // void *pc = __builtin_return_address(0);
-      auto a = ADDR_TO_KEY(addr);
-      auto slot = shadow_mem->find(a);
-
-      if(slot == NULL){
-        MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, false, current_dpst_node, bytes);
-        slot = shadow_mem->insert(a, mem_list);
-        return;
-      }
-
-      if(write_new_section){
-        slot->~MemAccessList_t();
-      }
-      else{
-        handle_write(slot, (addr_t)nullptr, (addr_t)addr, bytes);
-      }
-      
-      return;
+      void *pc = nullptr;
     #endif
+
+    auto a = ADDR_TO_KEY(addr);
+    auto slot = shadow_mem->find(a);
+
+    if(slot == NULL){
+      MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, false, current_dpst_node, (addr_t)pc, bytes);
+      slot = shadow_mem->insert(a, mem_list);
+      return;
+    }
+
+    if(write_new_section){
+      slot->~MemAccessList_t();
+    }
+    else{
+      handle_write(slot, (addr_t)pc, (addr_t)addr, bytes);
+    }
+      
+    return;
   }
 
 }
@@ -417,32 +401,22 @@ extern "C" __attribute__((weak)) void asap_check_read(int *addr, int bytes) {
     #endif
 
     #ifdef DEBUG
-        void *pc = __builtin_return_address(0);
-        auto a = ADDR_TO_KEY(addr);
-        auto slot = shadow_mem->find(a);
-
-        if(slot == nullptr){
-          MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, true, current_dpst_node, (addr_t)pc, bytes);
-          slot = shadow_mem->insert(a, mem_list);
-          return;
-        }
-
-        handle_read(slot,(addr_t)pc,(addr_t)addr,bytes);
-        return;
+      void *pc = __builtin_return_address(0);
     #else
-        // void *pc = __builtin_return_address(0);
-        auto a = ADDR_TO_KEY(addr);
-        auto slot = shadow_mem->find(a);
-
-        if(slot == nullptr){
-          MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, true, current_dpst_node, bytes);
-          slot = shadow_mem->insert(a, mem_list);
-          return;
-        }
-
-        handle_read(slot,(addr_t)nullptr,(addr_t)addr,bytes);
-        return;
+      void *pc = nullptr;
     #endif
+    
+    auto a = ADDR_TO_KEY(addr);
+    auto slot = shadow_mem->find(a);
+
+    if(slot == nullptr){
+      MemAccessList_t *mem_list  = new MemAccessList_t((addr_t)addr, true, current_dpst_node, (addr_t)pc, bytes);
+      slot = shadow_mem->insert(a, mem_list);
+      return;
+    }
+
+    handle_read(slot,(addr_t)pc,(addr_t)addr,bytes);
+    return;
   }
     
 }

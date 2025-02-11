@@ -49,7 +49,7 @@ else
   exit 1
 fi
 
-TIMES=${TIMES:=5}
+TIMES=${TIMES:=3}
 OUTPUT="${CURRENT_DIR}/eval-$(date +%y%m%d-%H%M%S).csv"
 touch ${OUTPUT}
 ln -fs ${OUTPUT} ${CURRENT_DIR}/latest-result

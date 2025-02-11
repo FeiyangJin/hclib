@@ -2,13 +2,6 @@
 
 #include "mem_access.h"
 
-MemAccess_t::MemAccess_t(tree_node_cpp* step_node)
-  : step_node(step_node)
-#ifdef LINK_READER
-  , next(nullptr)
-#endif
-{}
-
 MemAccess_t::MemAccess_t(tree_node_cpp* step_node, addr_t rip)
   : step_node(step_node), rip(rip)
 #ifdef LINK_READER
@@ -17,17 +10,7 @@ MemAccess_t::MemAccess_t(tree_node_cpp* step_node, addr_t rip)
 {}
 
 
-MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read, tree_node_cpp* step_node, addr_t rip, std::size_t mem_size)
-{
-  initialize(addr, is_read, step_node, rip, mem_size);
-}
-
-MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read, tree_node_cpp* step_node, std::size_t mem_size)
-{
-  initialize(addr, is_read, step_node, 0, mem_size);
-}
-
-void MemAccessList_t::initialize(addr_t addr, bool is_read, tree_node_cpp* step_node, addr_t rip, std::size_t mem_size) {
+MemAccessList_t::MemAccessList_t(addr_t addr, bool is_read, tree_node_cpp* step_node, addr_t rip, std::size_t mem_size) {
   const int start = ADDR_TO_MEM_INDEX(addr);
   const int grains = SIZE_TO_NUM_GRAINS(mem_size);
 
