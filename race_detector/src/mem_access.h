@@ -18,8 +18,6 @@ A memory access may touch one or multiple slot.
 #include <vector>
 #include "struct_def.h"
 
-// #define LINK_READER
-
 using addr_t = uint64_t;
 
 #define READER_SIZE 4

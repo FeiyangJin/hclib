@@ -157,47 +157,14 @@ extern "C" void handle_read(MemAccessList_t* slot, addr_t rip, addr_t addr, size
 
       #ifdef LINK_READER
           MemAccess_t* reader = slot->readers[i];
-          if(reader == nullptr){ // 1. we have no previous reader
+          if(reader == nullptr){ // we have no previous reader
             MemAccess_t* new_reader = new MemAccess_t(current_dpst_node, rip);
             slot->readers[i] = new_reader;
           }
-          // else if (reader->next == nullptr){ // 2. we only have one reader
-          //   if(reader->task_and_node.task_id == c_id){
-          //     reader->rip = rip;
-          //     reader->task_and_node = current_task_and_step;
-          //     continue;
-          //   }
-          //   // otherwise add the reader directly
-          //   MemAccess_t* new_reader = new MemAccess_t(current_task_and_step, rip, is_asap_promise_task);
-          //   slot->readers_tail[i]->next = new_reader;
-          //   new_reader->prev = slot->readers_tail[i];
-
-          //   slot->readers_tail[i] = new_reader;
-          // }
-          else{ // 3. we have more than 1 reader
-            // bool update = true;
-            // int c_id = current_task_and_step.task_id;
-            // while(reader != nullptr){
-            //   if(reader->task_and_node.task_id == c_id){
-            //     reader->task_and_node = current_task_and_step;
-            //     update = false;
-            //     break;
-            //   }
-            //   reader = reader->next;
-            // }
-            // if(update){
-              // MemAccess_t* new_reader = new MemAccess_t(current_task_and_step, rip, is_asap_promise_task);
-              // MemAccess_t* new_reader = new MemAccess_t(current_task_and_step);
+          else{
               MemAccess_t* new_reader = new MemAccess_t(current_dpst_node, rip);
               new_reader->next = reader->next;
-              // new_reader->prev = reader;
               reader->next = new_reader;
-
-              // slot->readers_tail[i]->next = new_reader;
-              // new_reader->prev = slot->readers_tail[i];
-
-              // slot->readers_tail[i] = new_reader;
-            // }
           }
       #else
           unsigned int k = slot->reader_index[i] % 3;

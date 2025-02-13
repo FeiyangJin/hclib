@@ -372,7 +372,6 @@ tree_node_cpp* DisjointSet::find_lca_left_child_cpp(tree_node_cpp* node1, tree_n
 
 
 #define CACHE ;
-// bool return_false_directly = false;
 
 /**
  * @brief  check if node1 precedes node2 in dpst
@@ -487,12 +486,10 @@ bool DisjointSet::precede(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned
     return result;
 }
 
-// #define BFS
-// #define FB
 
 bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned int task_a, unsigned int task_b, robin_hood::unordered_set<int> &visited){
     
-#ifndef BFS
+#ifdef DFS
     bool b_in_visited = visited.count(task_b);
     if(b_in_visited){
         return false;
@@ -515,7 +512,7 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned i
         return true;
     }
 
-#ifdef BFS
+#ifndef DFS
     // bfs nt joins
     deque<tree_node_cpp*> steps;
     // steps.push_back(step_b);
@@ -620,7 +617,6 @@ bool DisjointSet::visit(tree_node_cpp* step_a, tree_node_cpp* step_b, unsigned i
 
             #ifdef FB
                 for(auto nt_join = lsa_set_info->nt->begin(); nt_join != lsa_set_info->nt->end(); nt_join++){
-                // for(auto nt_join = lsa_set_info->nt->rbegin(); nt_join != lsa_set_info->nt->rend(); nt_join++){
             #else
                 for(auto nt_join = the_lsa.lsa_nt->rbegin(); nt_join != the_lsa.lsa_nt->rend(); nt_join++){
             #endif

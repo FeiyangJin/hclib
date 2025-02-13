@@ -6,15 +6,19 @@ if (HCLIB_DRDP_DEBUG_INFO)
   add_definitions(-DREPORT -DDEBUG)
 endif()
 
+if (HCLIB_DRDP_LINK_READER)
+  add_definitions(-DLINK_READER)
+endif()
+
 if (HCLIB_DRDP_QUERY_ALWAYS_TRUE)
   add_definitions(-DCONSTQUERY)
 endif()
 
-if (HCLIB_DRDP_BFS_QUERY)
-  add_definitions(-DBFS)
+if (HCLIB_DRDP_DFS_QUERY)
+  add_definitions(-DDFS)
 endif()
 
-if (NOT HCLIB_DRDP_REVERSE_NT_ORDER)
+if (HCLIB_DRDP_NT_ORDER)
   add_definitions(-DFB)
 endif()
 

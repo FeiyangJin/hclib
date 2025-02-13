@@ -14,13 +14,8 @@ int main(int argc, char **argv) {
     int a = 0;
 
     for(int i=0; i<3; i++){
-      // ds_hclib_ready(false);
-      hclib::promise_t<void> *p = new hclib::promise_t<void>();
-      // ds_hclib_ready(true);
-
       hclib::async([&](){
         a++;
-        p->put();
       });
     }
 
