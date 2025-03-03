@@ -46,7 +46,7 @@ source ${RUNTIME}/bin/hclib_setup_env.sh
 
 failed_tests=()
 
-for i in {1..23}; do
+for i in {24..28}; do
   RD_EXE="bin/${BENCHMARK_NAME}${i}-rd.exe"
   EXPECTED_OUTPUT="test_expected/test${i}.expected"
   ACTUAL_OUTPUT="test_output/test${i}.output"

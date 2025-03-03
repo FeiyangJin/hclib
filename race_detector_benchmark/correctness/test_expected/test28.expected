@@ -1,0 +1,10 @@
+DRDP determinacy race detector start
+Program to be checked: ./bin/test28-rd.exe
+Input parameter:
+x=1
+we find a write-read race !!!!!!!!!! 
+Previous memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test28.cpp void hclib::call_lambda<main::$_0::operator()() const::'lambda'()::operator()() const::'lambda0'()>(main::$_0::operator()() const::'lambda'()::operator()() const::'lambda0'()*) 30 19
+Current memory access:
+/home/fjin/gitRepo/hclib/race_detector_benchmark/correctness/test28.cpp std::__1::__function::__func<main::$_0::operator()() const::'lambda'(), std::__1::allocator<main::$_0::operator()() const::'lambda'()>, void ()>::operator()() 38 30
+y=1

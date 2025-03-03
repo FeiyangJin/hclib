@@ -1,0 +1,5 @@
+DRDP determinacy race detector start
+Program to be checked: ./bin/test27-rd.exe
+Input parameter:
+x=1
+y=1
