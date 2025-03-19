@@ -33,6 +33,9 @@ hpctoolkit*
 *.a
 *.o
 .vscode/
+*.gz
+massif.out.*
+heaptrack.*
 
 # individual files
 instrumentation/benchmark/strassen/newAddFunction.cpp
