@@ -22,7 +22,13 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
         // #pragma omp task firstprivate(kk) shared(BENCH) depend(inout: BENCH[kk*matrix_size+kk:submatrix_size*submatrix_size])
         task_vector.push_back(new hclib::promise_t<void>());
 
+        #ifdef RACE_DETECTION
+            ds_hclib_ready(false);
+        #endif
         hclib::async([kk, matrix_size, submatrix_size, &BENCH, &promise_array, &task_vector]() {
+            #ifdef RACE_DETECTION
+                ds_hclib_ready(true);
+            #endif
 
             lu0(BENCH[kk*matrix_size+kk], submatrix_size);
 
@@ -45,7 +51,14 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
 
                 task_vector.push_back(new hclib::promise_t<void>());
                 int task_index = task_vector.size() - 1;
+
+                #ifdef RACE_DETECTION
+                    ds_hclib_ready(false);
+                #endif
                 hclib::async([kk, matrix_size, submatrix_size, jj, task_index, &BENCH, &promise_array, &task_vector]() {
+                    #ifdef RACE_DETECTION
+                        ds_hclib_ready(true);
+                    #endif
 
                     promise_array[kk*matrix_size+kk]->get_future()->wait();
 
@@ -73,7 +86,15 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
 
                 task_vector.push_back(new hclib::promise_t<void>());
                 int task_index = task_vector.size() - 1;
+
+                #ifdef RACE_DETECTION
+                    ds_hclib_ready(false);
+                #endif
                 hclib::async([kk, matrix_size, submatrix_size, ii, task_index, &BENCH, &promise_array, &task_vector]() {
+                    #ifdef RACE_DETECTION
+                        ds_hclib_ready(true);
+                    #endif
+
                     promise_array[kk*matrix_size+kk]->get_future()->wait();
 
                     bdiv (BENCH[kk*matrix_size+kk], BENCH[ii*matrix_size+kk], submatrix_size);
@@ -92,7 +113,14 @@ void sparselu_par_call_dep(float **BENCH, int matrix_size, int submatrix_size)
         for (ii=kk+1; ii<matrix_size; ii++){
             if (BENCH[ii*matrix_size+kk] != NULL){
 
+                #ifdef RACE_DETECTION
+                    ds_hclib_ready(false);
+                #endif
                 hclib::async([kk, matrix_size, submatrix_size, ii, &BENCH, &promise_array, &task_vector](){
+                    #ifdef RACE_DETECTION
+                        ds_hclib_ready(true);
+                    #endif
+
                     task_vector.push_back(new hclib::promise_t<void>());
                     int task_index = task_vector.size() - 1;
 
@@ -248,7 +276,13 @@ void lu0(float *diag, int submatrix_size)
         {
             diag[i*submatrix_size+k] = diag[i*submatrix_size+k] / diag[k*submatrix_size+k];
             for (j=k+1; j<submatrix_size; j++)
+                #ifdef RACE_DETECTION
+                    ds_hclib_ready(false);
+                #endif
                 diag[i*submatrix_size+j] = diag[i*submatrix_size+j] - diag[i*submatrix_size+k] * diag[k*submatrix_size+j];
+                #ifdef RACE_DETECTION
+                    ds_hclib_ready(true);
+                #endif
         }
 
     #ifdef RACE_DETECTION

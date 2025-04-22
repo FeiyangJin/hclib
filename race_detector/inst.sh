@@ -18,8 +18,32 @@ HCLIB_LIB_PATH=$(readlink -f ${ROOT}/../lib)
 PASS_LIB="libinstrumentation.so"
 DETECTOR="drdp"
 DETECTOR_LIB="lib${DETECTOR}.so"
-LINK_OPTION1="-lLLVMSymbolize -lLLVMDebugInfoDWARF -lLLVMDebugInfoPDB -lLLVMDebugInfoMSF -lLLVMObject -lLLVMBitReader -lLLVMCore -lLLVMRemarks -lLLVMBitstreamReader -lLLVMMCParser -lLLVMMC -lLLVMDebugInfoCodeView -lLLVMTextAPI -lLLVMBinaryFormat -lLLVMSupport -lLLVMDemangle -lrt -ldl -lpthread -lm /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/x86_64-linux-gnu/libtinfo.so"
-LINK_OPTION2="-lLLVMSymbolize -lLLVMDebugInfoDWARF -lLLVMDebugInfoPDB -lLLVMDebugInfoMSF -lLLVMObject -lLLVMIRReader -lLLVMBitReader -lLLVMCore -lLLVMRemarks -lLLVMBitstreamReader -lLLVMMCParser -lLLVMMC -lLLVMDebugInfoCodeView -lLLVMTextAPI -lLLVMBinaryFormat -lLLVMSupport -lLLVMDemangle -lrt -ldl -lpthread -lm /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/x86_64-linux-gnu/libtinfo.so"
+
+LLVM_LIB_PATH="/storage/pace-apps/spack/packages/linux-rhel9-x86_64_v3/gcc-11.3.1/llvm-16.0.2-ybmhd4ai6gg5n3pt4tv5qoly3nrc5tun/lib"
+
+# Adjusted order to ensure symbols are resolved
+LINK_OPTION1="-lLLVMSupport -lLLVMSymbolize -lLLVMDebugInfoDWARF -lLLVMDebugInfoPDB -lLLVMDebugInfoMSF -lLLVMObject -lLLVMBitReader -lLLVMCore -lLLVMRemarks -lLLVMBitstreamReader -lLLVMMCParser -lLLVMMC -lLLVMDebugInfoCodeView -lLLVMTextAPI ${LLVM_LIB_PATH}/libLLVMBinaryFormat.a ${LLVM_LIB_PATH}/libLLVMTarget.a ${LLVM_LIB_PATH}/libLLVMTargetParser.a ${LLVM_LIB_PATH}/libLLVMAnalysis.a -lLLVMAsmParser -lLLVMDemangle -lrt -ldl -lpthread -lm /usr/lib64/libz.so /usr/lib64/libtinfo.so"
+
+# Find llvm-config corresponding to the clang we're using
+if [ ${USE_SYSTEM_LLVM} == "1" ]; then
+  LLVM_CONFIG=$(which llvm-config)
+  LLVM_LIB_PATH=$(${LLVM_CONFIG} --libdir)
+else
+  LLVM_CONFIG=${LLVM_ROOT}/bin/llvm-config
+  LLVM_LIB_PATH=${LLVM_ROOT}/lib
+fi
+
+# Use llvm-config to get all necessary libraries
+if [ -x "$LLVM_CONFIG" ]; then
+  LINK_OPTION2="$(${LLVM_CONFIG} --libs all) -lrt -ldl -lpthread -lm /usr/lib64/libz.so /usr/lib64/libtinfo.so"
+else
+  # Fallback if llvm-config isn't available
+  LINK_OPTION2="-lLLVMSupport -lLLVMTargetParser -lLLVMAsmParser -lLLVMSymbolize -lLLVMDebugInfoDWARF -lLLVMDebugInfoPDB -lLLVMDebugInfoMSF -lLLVMObject -lLLVMIRReader -lLLVMBitReader -lLLVMCore -lLLVMRemarks -lLLVMBitstreamReader -lLLVMMCParser -lLLVMMC -lLLVMDebugInfoCodeView -lLLVMTextAPI -lLLVMBinaryFormat -lLLVMTarget -lLLVMAnalysis -lLLVMDemangle -lrt -ldl -lpthread -lm /usr/lib64/libz.so /usr/lib64/libtinfo.so"
+fi
+
+# Set LD_LIBRARY_PATH to ensure runtime libraries can be found
+export LD_LIBRARY_PATH="${LLVM_LIB_PATH}:${HCLIB_LIB_PATH}:$LD_LIBRARY_PATH"
+
 #DEFAULT_OPTIONS="-g"
 DEFAULT_OPTIONS=""
 
@@ -86,10 +110,11 @@ if [ ! -e ${CLANG} ]; then
   report_error "clang is not available"
 fi
 
-CLANG_VERSION=$(clang -v |& awk 'BEGIN{ FS="[[:space:]\\.]*"} $1~/clang/ && $2~/version/ { print $3 }')
+# Replace the CLANG_VERSION section with:
+CLANG_VERSION=$(${CLANG} --version | grep -oP 'clang version \K[0-9]+' || echo "0")
 echo "Clang major version: ${CLANG_VERSION}"
 if [ ${CLANG_VERSION} -lt 14 ]; then
-  report "clang's minimum required version is 14"
+  report_error "clang's minimum required version is 14"
 elif [ ${CLANG_VERSION} -eq 14 ]; then
   LINK_OPTION=${LINK_OPTION1}
 else
@@ -133,8 +158,11 @@ if [ ${SOURCE_FILE: -2} == ".c" ]; then
   ${CLANG} -c -emit-llvm ${DEFAULT_OPTIONS} ${OPTIONS} -o ${BC} ${SOURCE_FILE}
   echo "${OPT} -load-pass-plugin ${HCLIB_LIB_PATH}/${PASS_LIB} --passes=\"${DETECTOR}-inst\" -o ${INST_BC} ${BC}"
   ${OPT} -load-pass-plugin ${HCLIB_LIB_PATH}/${PASS_LIB} --passes="${DETECTOR}-inst" -o ${INST_BC} ${BC}
-  echo "${CLANG} -L${HCLIB_LIB_PATH} -L${LLVM_LIB} ${INST_BC} -l${DETECTOR} ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}"
-  ${CLANG} -L${HCLIB_LIB_PATH} -L${LLVM_LIB} ${INST_BC} -l${DETECTOR} ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE} 
+  # echo "${CLANG} -L${HCLIB_LIB_PATH} -L${LLVM_LIB} ${INST_BC} -l${DETECTOR} ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}"
+  # ${CLANG} -L${HCLIB_LIB_PATH} -L${LLVM_LIB} ${INST_BC} -l${DETECTOR} ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}
+  COMPILE_CMD="${CLANG} -L${HCLIB_LIB_PATH} -L${LLVM_LIB_PATH} ${INST_BC} -l${DETECTOR} ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}"
+  echo "$COMPILE_CMD"
+  $COMPILE_CMD
 else
   BC=${SOURCE_FILE/%.cpp/.bc}
   INST_BC=${SOURCE_FILE/%.cpp/-inst.bc}
@@ -143,8 +171,11 @@ else
   ${CLANGPP} -c -emit-llvm ${DEFAULT_OPTIONS} ${OPTIONS} -o ${BC} ${SOURCE_FILE}
   echo "${OPT} -load-pass-plugin ${HCLIB_LIB_PATH}/${PASS_LIB} --passes=\"${DETECTOR}-inst\" -o ${INST_BC} ${BC}"
   ${OPT} -load-pass-plugin ${HCLIB_LIB_PATH}/${PASS_LIB} --passes="${DETECTOR}-inst" -o ${INST_BC} ${BC}
-  echo "${CLANGPP} -L${HCLIB_LIB_PATH} -L${LLVM_LIB} ${INST_BC} -l${DETECTOR} ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}"
-  ${CLANGPP} -L${HCLIB_LIB_PATH} -L${LLVM_LIB} ${INST_BC} -l${DETECTOR} ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}
+  # echo "${CLANGPP} -L${HCLIB_LIB_PATH} -L${LLVM_LIB} ${INST_BC} -l${DETECTOR} ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}"
+  # ${CLANGPP} -L${HCLIB_LIB_PATH} -L${LLVM_LIB} ${INST_BC} -l${DETECTOR} ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}
+  COMPILE_CMD="${CLANGPP} -L${HCLIB_LIB_PATH} -L${LLVM_LIB_PATH} ${INST_BC} -l${DETECTOR} ${LINK_OPTION} ${DEFAULT_OPTIONS} ${OPTIONS} -o ${EXE}"
+  echo "$COMPILE_CMD"
+  $COMPILE_CMD
 fi
 
 echo "==============================================================================="

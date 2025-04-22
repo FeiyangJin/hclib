@@ -275,12 +275,12 @@ void RaceDetector::instrumentAlloc(CallBase *invokeAlloc) {
     //errs() << "Instrument invoke" << *invokeAlloc << "\n";
     Instruction &firstInsInNext = *next->begin();
     if (isa<PHINode>(firstInsInNext)) {
-      PHINode *phi = cast<PHINode>(&firstInsInNext);
-      for (auto &incomingBB : phi->blocks()) {
-        if (incomingBB == invoke->getParent()) {
-          incomingBB = newBB;
+        PHINode *phi = cast<PHINode>(&firstInsInNext);
+        for (unsigned i = 0; i < phi->getNumIncomingValues(); ++i) {
+            if (phi->getIncomingBlock(i) == invoke->getParent()) {
+                phi->setIncomingBlock(i, newBB);
+            }
         }
-      }
     }
   }
   instrumentedAllocs++;
