@@ -10,7 +10,7 @@ usage() {
 
 ROOT=$(readlink -f $(dirname $0)/..)
 CURRENT_DIR=$(pwd)
-BENCHMARKS_DEFAULT="health knapsack matmul poisson sort sparselu strassen"
+BENCHMARKS_DEFAULT="health knapsack matmul sort strassen sparselu poisson"
 BENCHMARKS_NOSKIP="matmul poisson sort sparselu strassen"
 EXPERIMENTS="orig rd"
 

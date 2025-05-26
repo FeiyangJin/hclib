@@ -230,46 +230,46 @@ void cilkmerge(ELM *low1, ELM *high1, ELM *low2, ELM *high2, ELM *lowdest) {
 
   if (high2 - low2 < MERGESIZE) {
     
-    // #ifdef RACE_DETECTION
-    //   // try to reduce overhead
-    //   // write lowdest
-    //   // read low1~high1, low2~high2
-    //   ds_hclib_ready(false);
+    #ifdef RACE_DETECTION
+      // try to reduce overhead
+      // write lowdest
+      // read low1~high1, low2~high2
+      ds_hclib_ready(false);
 
-    //   // access skip count should be 44108
-    //   ELM *p;
-    //   for(p = low1; p <= high1; p++){
-    //     ds_hclib_ready(true);
+      // access skip count should be 44108
+      ELM *p;
+      for(p = low1; p <= high1; p++){
+        ds_hclib_ready(true);
 
-    //     asap_check_read((int*)p, 4);
+        asap_check_read((int*)p, 4);
 
-    //     ds_hclib_ready(false);
-    //   }
+        ds_hclib_ready(false);
+      }
 
-    //   for(p = low2; p <= high2; p++){
-    //     ds_hclib_ready(true);
+      for(p = low2; p <= high2; p++){
+        ds_hclib_ready(true);
 
-    //     asap_check_read((int*)p, 4);
+        asap_check_read((int*)p, 4);
 
-    //     ds_hclib_ready(false);
-    //   }
+        ds_hclib_ready(false);
+      }
 
-    //   // check write to lowdest
-    //   p = lowdest;
-    //   int count = high1 - low1 + high2 - low2;
-    //   while(count > 0){
-    //     ds_hclib_ready(true);
+      // check write to lowdest
+      p = lowdest;
+      int count = high1 - low1 + high2 - low2;
+      while(count > 0){
+        ds_hclib_ready(true);
 
-    //     asap_check_write((int*)p, 4);
+        asap_check_write((int*)p, 4);
 
-    //     ds_hclib_ready(false);
+        ds_hclib_ready(false);
 
-    //     p++;
-    //     count--;
-    //   }
+        p++;
+        count--;
+      }
 
-    //   ds_hclib_ready(false);
-    // #endif
+      ds_hclib_ready(false);
+    #endif
 
     seqmerge(low1, high1, low2, high2, lowdest);
 
@@ -318,20 +318,20 @@ void cilksort(ELM *low, ELM *tmp, long size) {
   ELM *A, *B, *C, *D, *tmpA, *tmpB, *tmpC, *tmpD;
 
   if (size < QUICKSIZE) {
-      // #ifdef RACE_DETECTION
-      //   ds_hclib_ready(false);
+      #ifdef RACE_DETECTION
+        ds_hclib_ready(false);
 
-      //   // try to reduce overhead
-      //   for(ELM* p = low; p <= low + size - 1; p++){
-      //     ds_hclib_ready(true);
+        // try to reduce overhead
+        for(ELM* p = low; p <= low + size - 1; p++){
+          ds_hclib_ready(true);
 
-      //     asap_check_write((int*) p, 4);
+          asap_check_write((int*) p, 4);
 
-      //     ds_hclib_ready(false);
-      //   }
+          ds_hclib_ready(false);
+        }
 
-      //   ds_hclib_ready(false);
-      // #endif
+        ds_hclib_ready(false);
+      #endif
 
     seqquick(low, low + size - 1);
 
